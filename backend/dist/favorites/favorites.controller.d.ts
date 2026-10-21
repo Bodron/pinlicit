@@ -1,0 +1,55 @@
+import { FavoritesService } from "./favorites.service";
+export declare class FavoritesController {
+    private readonly favoritesService;
+    constructor(favoritesService: FavoritesService);
+    mine(user: any): Promise<{
+        isFavorite: boolean;
+        seller: import("mongoose").Types.ObjectId;
+        reservedBy?: import("mongoose").Types.ObjectId;
+        category: import("mongoose").Types.ObjectId;
+        title: string;
+        description: string;
+        videoKey: string;
+        videoUrl: string;
+        thumbnailUrl?: string;
+        status: import("../products/schemas/product.schema").ProductStatus;
+        startingPrice: number;
+        reservePrice?: number;
+        currentPrice: number;
+        minBidIncrement: number;
+        buyNowPrice: number;
+        favoriteCount: number;
+        startsAt: Date;
+        endsAt: Date;
+        highestBid?: import("mongoose").Types.ObjectId;
+        _id: import("mongoose").Types.ObjectId;
+        __v: number;
+    }[]>;
+    add(user: any, productId: string): Promise<{
+        isFavorite: boolean;
+        seller: import("mongoose").Types.ObjectId;
+        reservedBy?: import("mongoose").Types.ObjectId;
+        category: import("mongoose").Types.ObjectId;
+        title: string;
+        description: string;
+        videoKey: string;
+        videoUrl: string;
+        thumbnailUrl?: string;
+        status: import("../products/schemas/product.schema").ProductStatus;
+        startingPrice: number;
+        reservePrice?: number;
+        currentPrice: number;
+        minBidIncrement: number;
+        buyNowPrice: number;
+        favoriteCount: number;
+        startsAt: Date;
+        endsAt: Date;
+        highestBid?: import("mongoose").Types.ObjectId;
+        _id: import("mongoose").Types.ObjectId;
+        __v: number;
+    }>;
+    remove(user: any, productId: string): Promise<{
+        productId: string;
+        isFavorite: boolean;
+    }>;
+}

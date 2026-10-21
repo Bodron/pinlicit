@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary": "#363a34",
+                        "primary-container": "#4d514a",
+                        "surface": "#f9f9fa",
+                        "on-tertiary-fixed-variant": "#444747",
+                        "surface-container-low": "#f3f3f4",
+                        "tertiary-fixed": "#e0e3e2",
+                        "on-error": "#ffffff",
+                        "on-secondary-fixed-variant": "#474740",
+                        "on-secondary-fixed": "#1b1c16",
+                        "on-secondary": "#ffffff",
+                        "surface-tint": "#5c6058",
+                        "outline": "#757872",
+                        "on-error-container": "#93000a",
+                        "on-background": "#1a1c1d",
+                        "on-secondary-container": "#65655d",
+                        "inverse-surface": "#2f3132",
+                        "on-tertiary-fixed": "#181c1c",
+                        "tertiary": "#363a3a",
+                        "error-container": "#ffdad6",
+                        "on-primary-fixed-variant": "#444841",
+                        "on-surface": "#1a1c1d",
+                        "surface-container": "#eeeeef",
+                        "secondary": "#5e5f57",
+                        "on-tertiary": "#ffffff",
+                        "surface-variant": "#e2e2e3",
+                        "secondary-fixed-dim": "#c8c7bd",
+                        "outline-variant": "#c5c7c0",
+                        "inverse-on-surface": "#f0f1f2",
+                        "primary-fixed": "#e0e4da",
+                        "on-tertiary-container": "#c0c3c2",
+                        "tertiary-fixed-dim": "#c4c7c6",
+                        "surface-bright": "#f9f9fa",
+                        "surface-container-lowest": "#ffffff",
+                        "on-surface-variant": "#454842",
+                        "secondary-container": "#e4e3d8",
+                        "on-primary-container": "#c0c3ba",
+                        "surface-dim": "#d9dadb",
+                        "surface-container-high": "#e8e8e9",
+                        "error": "#ba1a1a",
+                        "background": "#f9f9fa",
+                        "primary-fixed-dim": "#c4c8bf",
+                        "on-primary": "#ffffff",
+                        "on-primary-fixed": "#191d17",
+                        "secondary-fixed": "#e4e3d8",
+                        "inverse-primary": "#c4c8bf",
+                        "tertiary-container": "#4d5150",
+                        "surface-container-highest": "#e2e2e3"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "sm": "8px",
+                        "xxl": "64px",
+                        "gutter": "24px",
+                        "xs": "4px",
+                        "lg": "24px",
+                        "md": "16px",
+                        "container-max": "1280px",
+                        "xl": "40px",
+                        "unit": "4px"
+                    },
+                    "fontFamily": {
+                        "headline-sm": ["Montserrat"],
+                        "display-lg": ["Montserrat"],
+                        "display-lg-mobile": ["Montserrat"],
+                        "body-lg": ["Montserrat"],
+                        "body-md": ["Montserrat"],
+                        "label-md": ["Montserrat"],
+                        "headline-md": ["Montserrat"],
+                        "caption": ["Montserrat"]
+                    },
+                    "fontSize": {
+                        "headline-sm": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                        "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "display-lg-mobile": ["36px", {"lineHeight": "1.2", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                        "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "label-md": ["14px", {"lineHeight": "1.2", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "headline-md": ["30px", {"lineHeight": "1.3", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "caption": ["12px", {"lineHeight": "1.4", "fontWeight": "500"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            background-color: #f9f9fa;
+            color: #1a1c1d;
+            font-family: 'Montserrat', sans-serif;
+            overflow: hidden;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: rgba(252, 252, 253, 0.4);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(197, 199, 192, 0.2);
+        }
+        .active-tab-pill {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .vertical-snap-container {
+            scroll-snap-type: y mandatory;
+            overflow-y: scroll;
+            height: 100vh;
+        }
+        .video-slide {
+            scroll-snap-align: start;
+            height: 100vh;
+            position: relative;
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background">
+<!-- Top Navigation Bar -->
+<header class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-md dark:bg-surface-dim/80 border-b border-outline-variant/30 flex items-center justify-between px-md h-16 w-full">
+<div class="flex items-center gap-sm">
+<button class="material-symbols-outlined text-primary active:scale-95 transition-transform" data-icon="menu">menu</button>
+</div>
+<h1 class="font-display-lg-mobile text-display-lg-mobile font-bold tracking-tighter text-primary">Licit</h1>
+<div class="flex items-center gap-md">
+<button class="material-symbols-outlined text-primary hover:opacity-80 transition-opacity" data-icon="search">search</button>
+<button class="material-symbols-outlined text-primary hover:opacity-80 transition-opacity" data-icon="shopping_bag">shopping_bag</button>
+</div>
+</header>
+<!-- Category Chips -->
+<nav class="fixed top-16 left-0 w-full z-40 py-sm overflow-x-auto no-scrollbar glass-panel flex items-center gap-sm px-md">
+<button class="bg-primary-container text-white px-lg py-1 rounded-full font-label-md text-label-md whitespace-nowrap active-tab-pill">For You</button>
+<button class="bg-surface-container text-on-surface-variant px-lg py-1 rounded-full font-label-md text-label-md whitespace-nowrap hover:bg-surface-container-high transition-colors">Watches</button>
+<button class="bg-surface-container text-on-surface-variant px-lg py-1 rounded-full font-label-md text-label-md whitespace-nowrap hover:bg-surface-container-high transition-colors">Art</button>
+<button class="bg-surface-container text-on-surface-variant px-lg py-1 rounded-full font-label-md text-label-md whitespace-nowrap hover:bg-surface-container-high transition-colors">Jewelry</button>
+<button class="bg-surface-container text-on-surface-variant px-lg py-1 rounded-full font-label-md text-label-md whitespace-nowrap hover:bg-surface-container-high transition-colors">Classic Cars</button>
+</nav>
+<!-- Main Feed Content -->
+<main class="vertical-snap-container no-scrollbar">
+<!-- Slide 1 -->
+<section class="video-slide bg-black">
+<img class="w-full h-full object-cover opacity-90" data-alt="A cinematic close-up shot of a luxury minimalist automatic watch with a deep green face and polished silver casing. The lighting is soft and atmospheric, highlighting the intricate mechanical movements through a skeletal window. The overall aesthetic is premium, clean, and organic, using a sophisticated light-mode palette with subtle earth tones. High-end product photography style with shallow depth of field." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDdI-rV1hbma8YhNs1G2xktk8M6BDvBr0AntZjfiS9-jwIAv_o_iF-HEo34Tw-VdvnbXQzi-AvT9PCi4PC8Chn4XfVvfRAHruV0SVKQpWjAlTsbh0f3RSslNZDJOU1kyaiwESZLWefJPZcpAnNvx2o5rQMKbvPkQ3wgCU-BGTWJWgb5HdD1E8O2DdZWuuBoahhYZtVKzQBIW00FR5v_3pk77lW98BbnSM5HlqCuu2iwB4V-3fEX8eI6rgnBslDyOnEna5AZwcmGlw"/>
+<!-- Overlay Content -->
+<div class="absolute inset-0 flex flex-col justify-end p-lg pb-32">
+<div class="flex justify-between items-end w-full">
+<!-- Bottom Left Info -->
+<div class="glass-panel rounded-xl p-md max-w-[280px] animate-fade-in">
+<div class="flex items-center gap-xs mb-xs text-primary">
+<span class="material-symbols-outlined text-[18px]" data-icon="timer">timer</span>
+<span class="font-label-md text-label-md uppercase tracking-wider">04:12:09 REMAINING</span>
+</div>
+<h2 class="font-headline-sm text-headline-sm text-primary mb-xs">Aethelgard Chronograph v2</h2>
+<div class="flex items-baseline gap-xs">
+<span class="font-body-md text-body-md text-on-surface-variant">Current Bid:</span>
+<span class="font-headline-md text-headline-md text-primary">12.450 RON</span>
+</div>
+</div>
+<!-- Right Action Rail -->
+<div class="flex flex-col gap-lg items-center ml-auto">
+<div class="flex flex-col items-center gap-sm">
+<button class="w-14 h-14 rounded-full glass-panel flex items-center justify-center text-primary hover:bg-surface-container transition-all active:scale-90">
+<span class="material-symbols-outlined" data-icon="favorite">favorite</span>
+</button>
+<span class="font-label-md text-label-md text-white drop-shadow-md">2.4k</span>
+</div>
+<div class="flex flex-col items-center gap-sm">
+<button class="w-14 h-14 rounded-full glass-panel flex items-center justify-center text-primary hover:bg-surface-container transition-all active:scale-90">
+<span class="material-symbols-outlined" data-icon="share">share</span>
+</button>
+</div>
+<div class="flex flex-col gap-sm mt-md">
+<button class="bg-primary text-white font-label-md text-label-md px-xxl py-md rounded-lg active:scale-95 transition-transform shadow-xl">BID NOW</button>
+<button class="bg-white/10 backdrop-blur-md border border-white/20 text-white font-label-md text-label-md px-xxl py-md rounded-lg active:scale-95 transition-transform">BUY 18.000 RON</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Slide 2 -->
+<section class="video-slide bg-black">
+<img class="w-full h-full object-cover opacity-90" data-alt="A minimalist fine art painting displayed in a high-end, spacious gallery with soft, natural light streaming from a high window. The painting features abstract organic shapes in muted earth tones, blacks, and off-whites. The surrounding walls are a warm, textured white, emphasizing the gallery-like aesthetic. The mood is serene and sophisticated, capturing a quiet luxury atmosphere." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCkV-NIMahMle-d3y46c_QMQlhTkwCqxjNtqOktIuj0Piz1uD61Nl0aWzqFTtXzmUWCn3Fquksd23RXQUBuAbX3uVYblarD8U2WhMDbV6ul7S3H32561yIaRmgbCd6kERaYtrqhUc3wp6MzhW7cHnF4vIP1XYQm7WUL7x-5mzH_QCMF5tk1HTCPKFmyNn1LR68atmcIrnIba16vsBs-RoH4DkOQoMpBrwgL_53130MgNshWFYc8BSKn27SD38RrZbtfw_hFjXAgFg"/>
+<!-- Overlay Content -->
+<div class="absolute inset-0 flex flex-col justify-end p-lg pb-32">
+<div class="flex justify-between items-end w-full">
+<div class="glass-panel rounded-xl p-md max-w-[280px]">
+<div class="flex items-center gap-xs mb-xs text-primary">
+<span class="material-symbols-outlined text-[18px]" data-icon="timer">timer</span>
+<span class="font-label-md text-label-md uppercase tracking-wider">LIVE AUCTION</span>
+</div>
+<h2 class="font-headline-sm text-headline-sm text-primary mb-xs">Silent Horizon #04</h2>
+<div class="flex items-baseline gap-xs">
+<span class="font-body-md text-body-md text-on-surface-variant">Opening Bid:</span>
+<span class="font-headline-md text-headline-md text-primary">4.200 RON</span>
+</div>
+</div>
+<div class="flex flex-col gap-lg items-center ml-auto">
+<div class="flex flex-col items-center gap-sm">
+<button class="w-14 h-14 rounded-full glass-panel flex items-center justify-center text-primary hover:bg-surface-container transition-all">
+<span class="material-symbols-outlined" data-icon="favorite">favorite</span>
+</button>
+<span class="font-label-md text-label-md text-white drop-shadow-md">842</span>
+</div>
+<div class="flex flex-col items-center gap-sm">
+<button class="w-14 h-14 rounded-full glass-panel flex items-center justify-center text-primary hover:bg-surface-container transition-all">
+<span class="material-symbols-outlined" data-icon="share">share</span>
+</button>
+</div>
+<div class="flex flex-col gap-sm mt-md">
+<button class="bg-primary text-white font-label-md text-label-md px-xxl py-md rounded-lg active:scale-95 transition-transform shadow-xl">BID NOW</button>
+<button class="bg-white/10 backdrop-blur-md border border-white/20 text-white font-label-md text-label-md px-xxl py-md rounded-lg active:scale-95 transition-transform">BUY 6.500 RON</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface border-t border-outline-variant/20 flex justify-around items-center h-20 px-sm w-full">
+<!-- Feed Tab (Active) -->
+<a class="flex flex-col items-center justify-center text-primary bg-secondary-container/50 rounded-xl px-4 py-1 active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="play_circle" style="font-variation-settings: 'FILL' 1;">play_circle</span>
+<span class="font-label-md text-label-md">Feed</span>
+</a>
+<!-- Explore -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant opacity-60 hover:text-primary transition-colors active:scale-90" href="#">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+<span class="font-label-md text-label-md">Explore</span>
+</a>
+<!-- Sell -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant opacity-60 hover:text-primary transition-colors active:scale-90" href="#">
+<span class="material-symbols-outlined" data-icon="add_circle">add_circle</span>
+<span class="font-label-md text-label-md">Sell</span>
+</a>
+<!-- Activity -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant opacity-60 hover:text-primary transition-colors active:scale-90" href="#">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+<span class="font-label-md text-label-md">Activity</span>
+</a>
+<!-- Profile -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant opacity-60 hover:text-primary transition-colors active:scale-90" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-label-md text-label-md">Profile</span>
+</a>
+</nav>
+<!-- Micro-interaction Scripts -->
+<script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const slides = document.querySelectorAll('.video-slide');
+            const navItems = document.querySelectorAll('nav button');
+
+            // Category chip behavior
+            navItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    navItems.forEach(nav => {
+                        nav.classList.remove('bg-primary-container', 'text-white', 'active-tab-pill');
+                        nav.classList.add('bg-surface-container', 'text-on-surface-variant');
+                    });
+                    item.classList.add('bg-primary-container', 'text-white', 'active-tab-pill');
+                    item.classList.remove('bg-surface-container', 'text-on-surface-variant');
+                });
+            });
+
+            // Simple intersection observer for fading in content on scroll
+            const observerOptions = {
+                threshold: 0.5
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    const overlay = entry.target.querySelector('.glass-panel');
+                    if (entry.isIntersecting) {
+                        overlay.style.opacity = '1';
+                        overlay.style.transform = 'translateY(0)';
+                    } else {
+                        overlay.style.opacity = '0';
+                        overlay.style.transform = 'translateY(20px)';
+                    }
+                });
+            }, observerOptions);
+
+            slides.forEach(slide => {
+                const overlay = slide.querySelector('.glass-panel');
+                overlay.style.transition = 'all 0.6s ease-out';
+                observer.observe(slide);
+            });
+        });
+    </script>
+</body></html>

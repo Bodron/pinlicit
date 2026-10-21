@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Explore Licit - Curated Auctions</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary-fixed-dim": "#c4c8bf",
+                    "primary": "#363a34",
+                    "on-surface-variant": "#454842",
+                    "secondary-fixed-dim": "#c8c7bd",
+                    "on-primary": "#ffffff",
+                    "tertiary": "#363a3a",
+                    "on-tertiary-container": "#c0c3c2",
+                    "inverse-surface": "#2f3132",
+                    "on-secondary-fixed": "#1b1c16",
+                    "on-error-container": "#93000a",
+                    "on-primary-fixed-variant": "#444841",
+                    "inverse-primary": "#c4c8bf",
+                    "surface-container-low": "#f3f3f4",
+                    "error-container": "#ffdad6",
+                    "secondary-container": "#e4e3d8",
+                    "surface": "#f9f9fa",
+                    "on-tertiary-fixed": "#181c1c",
+                    "on-primary-container": "#c0c3ba",
+                    "surface-dim": "#d9dadb",
+                    "on-secondary-fixed-variant": "#474740",
+                    "primary-container": "#4d514a",
+                    "on-tertiary-fixed-variant": "#444747",
+                    "tertiary-fixed": "#e0e3e2",
+                    "surface-variant": "#e2e2e3",
+                    "surface-container-high": "#e8e8e9",
+                    "secondary": "#5e5f57",
+                    "primary-fixed": "#e0e4da",
+                    "on-secondary-container": "#65655d",
+                    "outline": "#757872",
+                    "background": "#f9f9fa",
+                    "on-error": "#ffffff",
+                    "inverse-on-surface": "#f0f1f2",
+                    "on-surface": "#1a1c1d",
+                    "surface-tint": "#5c6058",
+                    "on-background": "#1a1c1d",
+                    "surface-container-lowest": "#ffffff",
+                    "on-primary-fixed": "#191d17",
+                    "tertiary-container": "#4d5150",
+                    "surface-container": "#eeeeef",
+                    "outline-variant": "#c5c7c0",
+                    "error": "#ba1a1a",
+                    "surface-bright": "#f9f9fa",
+                    "surface-container-highest": "#e2e2e3",
+                    "secondary-fixed": "#e4e3d8",
+                    "tertiary-fixed-dim": "#c4c7c6",
+                    "on-tertiary": "#ffffff",
+                    "on-secondary": "#ffffff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "xxl": "64px",
+                    "xs": "4px",
+                    "lg": "24px",
+                    "unit": "4px",
+                    "gutter": "24px",
+                    "sm": "8px",
+                    "xl": "40px",
+                    "md": "16px",
+                    "container-max": "1280px"
+            },
+            "fontFamily": {
+                    "body-lg": ["Montserrat"],
+                    "caption": ["Montserrat"],
+                    "body-md": ["Montserrat"],
+                    "label-md": ["Montserrat"],
+                    "headline-sm": ["Montserrat"],
+                    "display-lg-mobile": ["Montserrat"],
+                    "headline-md": ["Montserrat"],
+                    "display-lg": ["Montserrat"]
+            },
+            "fontSize": {
+                    "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "caption": ["12px", {"lineHeight": "1.4", "fontWeight": "500"}],
+                    "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "label-md": ["14px", {"lineHeight": "1.2", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "headline-sm": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                    "display-lg-mobile": ["36px", {"lineHeight": "1.2", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "headline-md": ["30px", {"lineHeight": "1.3", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #f9f9fa;
+            color: #1a1c1d;
+            font-family: 'Montserrat', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        .glass-overlay {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .scroll-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .category-card {
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .category-card:hover {
+            transform: translateY(-8px);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background min-h-screen pb-32">
+<!-- Top Navigation Anchor (Desktop/Mobile Hybrid) -->
+<header class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-md border-b border-outline-variant/30 h-16 flex items-center justify-between px-lg">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-primary text-2xl">menu</span>
+<h1 class="font-display-lg-mobile text-display-lg-mobile font-bold tracking-tighter text-primary">Licit</h1>
+</div>
+<!-- Desktop Search Bar -->
+<div class="hidden md:flex flex-1 max-w-md mx-xl relative items-center">
+<span class="material-symbols-outlined absolute left-4 text-on-surface-variant/60">search</span>
+<input class="w-full h-10 pl-12 pr-4 bg-secondary-surface rounded-full border-none focus:ring-1 focus:ring-primary text-body-md" placeholder="Search auctions, brands, or art..." type="text"/>
+</div>
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-primary text-2xl">shopping_bag</span>
+</div>
+</header>
+<!-- Mobile Search Bar (Sticky below Header) -->
+<div class="md:hidden mt-16 px-md py-sm bg-surface/80 backdrop-blur-md">
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-4 text-on-surface-variant/60">search</span>
+<input class="w-full h-12 pl-12 pr-4 bg-surface-container-low rounded-xl border-none focus:ring-1 focus:ring-primary text-body-md shadow-sm" placeholder="Search categories..." type="text"/>
+</div>
+</div>
+<main class="max-w-container-max mx-auto px-md md:px-xxl pt-8 md:pt-24">
+<!-- Hero Section -->
+<section class="mb-xl">
+<h2 class="font-headline-md text-headline-md text-primary mb-xs">Explore Curated</h2>
+<p class="font-body-md text-body-md text-on-surface-variant opacity-80">Discover exceptional pieces across our most exclusive categories.</p>
+</section>
+<!-- Category Bento Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-lg">
+<!-- Category: Watches -->
+<div class="category-card relative aspect-[4/5] rounded-xl overflow-hidden group cursor-pointer border border-outline-variant/20">
+<img class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="A high-end luxury mechanical watch with intricate silver detailing and a black leather strap, displayed on a minimalist marble pedestal. The lighting is soft and directional, highlighting the brushed metal textures and the precision of the dial. The aesthetic is clean and modern, following a light-mode gallery style with neutral tones and plenty of negative space." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBZ4INWSHHTQIrCfwRXlU1CO-cfKM8QQ_uLDNuZ6hAMLgd866_Df0w8CkxmXT3ZeNXdLHY8EROUlcZh8ko2hg0iEOHtBsnlMVPg59Bj1ln1me9ijtpPTEvxcpQmnUg52jQ6rm_x_aiVaC5Se1ZhtWhZiFQBOEGzb0uscwizad6hK_eR_Owp4jdii-_BkHUOOqCGViSXH-PXNyAbf_zUWAMLuTntrdyH9T-3CezxK4knipmy91rv2NA9GVDdql6dNSdhDHB-QNi0pA"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/60 to-transparent"></div>
+<div class="absolute bottom-6 left-6 right-6 glass-overlay p-lg rounded-xl">
+<h3 class="font-headline-sm text-headline-sm text-white mb-1">Watches</h3>
+<p class="font-label-md text-label-md text-white/80 uppercase tracking-widest">124 Active</p>
+</div>
+</div>
+<!-- Category: Art -->
+<div class="category-card relative aspect-[4/5] rounded-xl overflow-hidden group cursor-pointer border border-outline-variant/20">
+<img class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="A large-scale contemporary abstract painting featuring soft earth tones, charcoal sweeps, and subtle gold leaf accents hung in a bright, white-walled gallery. The morning light streams in from high windows, creating a serene and sophisticated atmosphere. The image emphasizes the tactile quality of the canvas and the high-end, curated nature of the collection." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDNccLadMuPmbWJPudd8_T6ZJ-tNgWN-KzmyUt87srscUxiM3FrjSeqZV1v7sgC52MQbwZn_S7sPkjtaf5DeY6GzV3Nsal_g9aLKQorrjdR1wYjvszjCr3g9Ei0H-x3h-YvYV2rWkOGNsOBmerRezRdBvwTfMcsYYOKTz2ysvK5IxMnf2GGpjtDF96Eu73m7m3n5rzqbbwuAGTLJU1kR_AvsejDTPlwZoRexAa93C_MU4EFaeeN9AfrPaGLkNOlqdrhranvmAtRGA"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/60 to-transparent"></div>
+<div class="absolute bottom-6 left-6 right-6 glass-overlay p-lg rounded-xl">
+<h3 class="font-headline-sm text-headline-sm text-white mb-1">Art</h3>
+<p class="font-label-md text-label-md text-white/80 uppercase tracking-widest">86 Active</p>
+</div>
+</div>
+<!-- Category: Fashion -->
+<div class="category-card relative aspect-[4/5] rounded-xl overflow-hidden group cursor-pointer border border-outline-variant/20">
+<img class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="A close-up shot of a high-fashion wool coat in a warm camel color, paired with a silk scarf, draped over a minimalist wooden chair. The background is a clean, neutral-toned studio setting with soft ambient lighting. The visual style is editorial and quiet luxury, focusing on the premium texture of the fabrics and the sophisticated, minimalist silhouette." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD4ZwAYt_9CDAIEVJm2loj9Erns2-sQo4VDrGY4hsnwspaIysbwywZyf7AV-OcFhFlAp5fuPYP7bYUtgguxxwJKCrXU5qgCSNQFmK0d3CcNk7t5hr228LtOmUUqrL_Mb49ItzgyJCO1M76f-G0pIg6lcLYZF9X5w6ygoeuT3o9UOE7dbn-uF_aOrf5I6_TexX4aFD9d5KVDxJTPRf-5z1HLo6u1Z-dkJzobARvz15qvaK2-7vTKe82D1ARMcm1ymbReoNoFXXV40g"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/60 to-transparent"></div>
+<div class="absolute bottom-6 left-6 right-6 glass-overlay p-lg rounded-xl">
+<h3 class="font-headline-sm text-headline-sm text-white mb-1">Fashion</h3>
+<p class="font-label-md text-label-md text-white/80 uppercase tracking-widest">241 Active</p>
+</div>
+</div>
+<!-- Category: Furniture -->
+<div class="category-card relative aspect-[4/5] rounded-xl overflow-hidden group cursor-pointer border border-outline-variant/20">
+<img class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="A mid-century modern lounge chair made of dark walnut wood and cream-colored leather, positioned in a spacious, sun-drenched room with light oak floors. The composition is clean and architectural, highlighting the organic curves of the furniture. The lighting is bright and natural, creating a warm, upscale aesthetic consistent with a premium furniture catalog." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDASv39D6iA25pboS6-zp4yuhhFrhlpH6RGc9EvESpv3eqrxHb1uesZffYRsCXSLtPkKXHc20DB49JK-XQCO-NVp9sqYDNAFLQWVgcuE8fMPaNrAeWLynhZ9hZNf9dDFAfj9JwhBZZ_Ve_N10-GQJacJYxKtA1L4oQY_4B9ePoTPJisA8rU8os37iJEe1059Ikks3SUx3FilZnueZKnIyygMK22RQcC4gY3kW7paEbyVDhiuVSWBGYC7SPr3OPpJDYEkkyF1hxlHg"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/60 to-transparent"></div>
+<div class="absolute bottom-6 left-6 right-6 glass-overlay p-lg rounded-xl">
+<h3 class="font-headline-sm text-headline-sm text-white mb-1">Furniture</h3>
+<p class="font-label-md text-label-md text-white/80 uppercase tracking-widest">42 Active</p>
+</div>
+</div>
+<!-- Category: Collectibles -->
+<div class="category-card relative aspect-[4/5] rounded-xl overflow-hidden group cursor-pointer border border-outline-variant/20">
+<img class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="A meticulously curated display of rare vintage cameras and optics arranged on a series of backlit acrylic shelves. The room is dark with focused spot lighting that creates dramatic highlights on the glass and metal surfaces. The aesthetic is museum-quality, emphasizing the rarity and historical value of the high-end collectibles in a sophisticated, minimalist manner." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCm-Wuljy1wqhuN8vnMfXDI2U9J0VmxEZABSPjJdWrEt0_Z0xN2LLEOTEEGcE065J2Iat21G4DrRDTTA23OorH9bGp3R-w_uEWJ4yH3Cp35b7Z5Cg3OXSteZGidrT05K-q1lEycP_F9tQ8_SoWSdORN4UCzYUyjn5RtQh8TRW3PHfn5-Pgtzz5HjxEUPkK7Nh1I7g613DQL9VtTALJ81LwUg8q_4I0k-b-x9DWcnEHZG2A4kKT3v1PHQCmKk2Clg9YxN-_6yESfow"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/60 to-transparent"></div>
+<div class="absolute bottom-6 left-6 right-6 glass-overlay p-lg rounded-xl">
+<h3 class="font-headline-sm text-headline-sm text-white mb-1">Collectibles</h3>
+<p class="font-label-md text-label-md text-white/80 uppercase tracking-widest">312 Active</p>
+</div>
+</div>
+<!-- Category: Electronics -->
+<div class="category-card relative aspect-[4/5] rounded-xl overflow-hidden group cursor-pointer border border-outline-variant/20">
+<img class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="An ultra-modern high-fidelity audio system featuring a sleek aluminum turntable and minimalist speakers, set against a matte gray background. The lighting is cool and clinical, emphasizing the precision engineering and industrial design of the hardware. The overall look is technologically advanced yet elegant, fitting for a curated premium electronics auction." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBUv1f2Pa4uOwqfkP8b48u7Q6_xTLV1yMNy0BJP3FVBLOG31GdLl2SSWBu1bd-ezT4j3K09i9-2GuupCkOuGYlCGXOqjQwzPXgAIuqTTAK-VWG-PQADloA5qOjhhwhajo5zXcagKwf3UpTkU3qPXpP4qF3r7BAg2E7hdP3gkBkiYc0zkRRhgONRlmdyn8_Qo-GCeo5kK-jsaFp1p_cpx4ujCNR91FXZ6MFOVCZudyXo4VsUQ2rEPf2oJjL8kvMWzhGjTBGf1LctMQ"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/60 to-transparent"></div>
+<div class="absolute bottom-6 left-6 right-6 glass-overlay p-lg rounded-xl">
+<h3 class="font-headline-sm text-headline-sm text-white mb-1">Electronics</h3>
+<p class="font-label-md text-label-md text-white/80 uppercase tracking-widest">95 Active</p>
+</div>
+</div>
+</div>
+<!-- Featured Collections Section -->
+<section class="mt-xxl mb-xl">
+<div class="flex items-center justify-between mb-lg">
+<h2 class="font-headline-sm text-headline-sm text-primary">Featured Curators</h2>
+<button class="font-label-md text-label-md text-primary-container hover:underline transition-all">View All</button>
+</div>
+<div class="flex gap-md overflow-x-auto scroll-hide pb-md">
+<div class="flex-shrink-0 w-64 p-lg bg-surface-container-low rounded-xl border border-outline-variant/20">
+<div class="w-12 h-12 bg-primary-fixed-dim rounded-full mb-md flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">auto_awesome</span>
+</div>
+<h4 class="font-label-md text-label-md text-primary mb-1">The Modernist</h4>
+<p class="font-caption text-caption text-on-surface-variant mb-4">Focusing on Bauhaus and Mid-Century aesthetics.</p>
+<button class="w-full py-2 border border-primary text-primary font-label-md rounded-lg hover:bg-primary hover:text-white transition-colors">Follow</button>
+</div>
+<div class="flex-shrink-0 w-64 p-lg bg-surface-container-low rounded-xl border border-outline-variant/20">
+<div class="w-12 h-12 bg-secondary-fixed-dim rounded-full mb-md flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">diamond</span>
+</div>
+<h4 class="font-label-md text-label-md text-primary mb-1">Heritage Vault</h4>
+<p class="font-caption text-caption text-on-surface-variant mb-4">Rare timepieces and high jewelry selections.</p>
+<button class="w-full py-2 border border-primary text-primary font-label-md rounded-lg hover:bg-primary hover:text-white transition-colors">Follow</button>
+</div>
+<div class="flex-shrink-0 w-64 p-lg bg-surface-container-low rounded-xl border border-outline-variant/20">
+<div class="w-12 h-12 bg-tertiary-fixed-dim rounded-full mb-md flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">palette</span>
+</div>
+<h4 class="font-label-md text-label-md text-primary mb-1">Canvas Select</h4>
+<p class="font-caption text-caption text-on-surface-variant mb-4">A curated eye for emerging contemporary art.</p>
+<button class="w-full py-2 border border-primary text-primary font-label-md rounded-lg hover:bg-primary hover:text-white transition-colors">Follow</button>
+</div>
+</div>
+</section>
+</main>
+<!-- Bottom Navigation Shell (Mobile/Tablet) -->
+<nav class="fixed bottom-0 w-full z-50 bg-surface dark:bg-surface-dim border-t border-outline-variant/20 pb-safe md:h-20 h-20 flex justify-around items-center px-sm">
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant opacity-60 hover:text-primary transition-colors active:scale-90 transition-transform duration-200">
+<span class="material-symbols-outlined">play_circle</span>
+<span class="font-label-md text-label-md">Feed</span>
+</button>
+<button class="flex flex-col items-center justify-center text-primary dark:text-primary-fixed bg-secondary-container/50 rounded-xl px-4 py-1 active:scale-90 transition-transform duration-200">
+<span class="material-symbols-outlined">search</span>
+<span class="font-label-md text-label-md">Explore</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant opacity-60 hover:text-primary transition-colors active:scale-90 transition-transform duration-200">
+<span class="material-symbols-outlined">add_circle</span>
+<span class="font-label-md text-label-md">Sell</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant opacity-60 hover:text-primary transition-colors active:scale-90 transition-transform duration-200">
+<span class="material-symbols-outlined">notifications</span>
+<span class="font-label-md text-label-md">Activity</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant opacity-60 hover:text-primary transition-colors active:scale-90 transition-transform duration-200">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-md text-label-md">Profile</span>
+</button>
+</nav>
+<script>
+        // Micro-interactions for category cards
+        document.querySelectorAll('.category-card').forEach(card => {
+            card.addEventListener('mousedown', () => {
+                card.style.transform = 'scale(0.98) translateY(-4px)';
+            });
+            card.addEventListener('mouseup', () => {
+                card.style.transform = 'scale(1) translateY(-8px)';
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'translateY(0)';
+            });
+        });
+
+        // Search bar interaction
+        const searchInput = document.querySelector('input');
+        searchInput.addEventListener('focus', () => {
+            searchInput.parentElement.classList.add('ring-1', 'ring-primary');
+        });
+        searchInput.addEventListener('blur', () => {
+            searchInput.parentElement.classList.remove('ring-1', 'ring-primary');
+        });
+    </script>
+</body></html>

@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Seller Area | Licit</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-tint": "#5c6058",
+                      "secondary-fixed-dim": "#c8c7bd",
+                      "on-primary": "#ffffff",
+                      "background": "#f9f9fa",
+                      "secondary-fixed": "#e4e3d8",
+                      "inverse-surface": "#2f3132",
+                      "tertiary-fixed": "#e0e3e2",
+                      "error-container": "#ffdad6",
+                      "surface-container-low": "#f3f3f4",
+                      "on-error-container": "#93000a",
+                      "on-secondary": "#ffffff",
+                      "inverse-primary": "#c4c8bf",
+                      "surface-dim": "#d9dadb",
+                      "primary-fixed": "#e0e4da",
+                      "on-secondary-fixed": "#1b1c16",
+                      "on-secondary-container": "#65655d",
+                      "primary": "#4d514a",
+                      "surface-container-high": "#e8e8e9",
+                      "outline": "#757872",
+                      "on-tertiary-fixed-variant": "#444747",
+                      "on-secondary-fixed-variant": "#474740",
+                      "primary-fixed-dim": "#c4c8bf",
+                      "secondary-container": "#e4e3d8",
+                      "secondary": "#5e5f57",
+                      "on-tertiary": "#ffffff",
+                      "on-surface": "#1a1c1d",
+                      "on-primary-fixed-variant": "#444841",
+                      "tertiary": "#363a3a",
+                      "on-tertiary-container": "#c0c3c2",
+                      "tertiary-fixed-dim": "#c4c7c6",
+                      "surface-container-lowest": "#ffffff",
+                      "on-background": "#1a1c1d",
+                      "on-primary-container": "#c0c3ba",
+                      "error": "#ba1a1a",
+                      "on-primary-fixed": "#191d17",
+                      "on-error": "#ffffff",
+                      "surface-container-highest": "#e2e2e3",
+                      "surface-container": "#eeeeef",
+                      "inverse-on-surface": "#f0f1f2",
+                      "tertiary-container": "#4d5150",
+                      "surface-variant": "#e2e2e3",
+                      "outline-variant": "#c5c7c0",
+                      "primary-container": "#4d514a",
+                      "on-surface-variant": "#454842",
+                      "on-tertiary-fixed": "#181c1c",
+                      "surface-bright": "#f9f9fa",
+                      "surface": "#f9f9fa"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "lg": "24px",
+                      "xs": "4px",
+                      "unit": "4px",
+                      "sm": "8px",
+                      "xl": "40px",
+                      "gutter": "24px",
+                      "xxl": "64px",
+                      "md": "16px",
+                      "container-max": "1280px"
+              },
+              "fontFamily": {
+                      "headline-sm": ["Montserrat"],
+                      "display-lg-mobile": ["Montserrat"],
+                      "headline-md": ["Montserrat"],
+                      "body-md": ["Montserrat"],
+                      "caption": ["Montserrat"],
+                      "display-lg": ["Montserrat"],
+                      "body-lg": ["Montserrat"],
+                      "label-md": ["Montserrat"]
+              },
+              "fontSize": {
+                      "headline-sm": ["24px", { "lineHeight": "1.4", "fontWeight": "600" }],
+                      "display-lg-mobile": ["36px", { "lineHeight": "1.2", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                      "headline-md": ["30px", { "lineHeight": "1.3", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                      "body-md": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                      "caption": ["12px", { "lineHeight": "1.4", "fontWeight": "500" }],
+                      "display-lg": ["48px", { "lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                      "body-lg": ["18px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                      "label-md": ["14px", { "lineHeight": "1.2", "letterSpacing": "0.05em", "fontWeight": "600" }]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+        body {
+            background-color: #FCFCFD;
+            font-family: 'Montserrat', sans-serif;
+            color: #4D514A;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(198, 201, 200, 0.3);
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface">
+<!-- Top Navigation Bar -->
+<header class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-md border-b border-outline-variant/30 flex items-center justify-between px-md h-16">
+<div class="flex items-center gap-md">
+<button class="material-symbols-outlined text-primary active:scale-95 transition-transform">menu</button>
+<h1 class="font-display-lg-mobile text-display-lg-mobile font-bold tracking-tighter text-primary">Licit</h1>
+</div>
+<div class="hidden md:flex gap-lg">
+<a class="font-label-md text-label-md text-on-surface-variant hover:opacity-80 transition-opacity" href="#">Marketplace</a>
+<a class="font-label-md text-label-md text-primary font-bold" href="#">Seller Dashboard</a>
+<a class="font-label-md text-label-md text-on-surface-variant hover:opacity-80 transition-opacity" href="#">Resources</a>
+</div>
+<div class="flex items-center gap-md">
+<button class="material-symbols-outlined text-primary active:scale-95 transition-transform">shopping_bag</button>
+<div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center overflow-hidden border border-outline-variant/50">
+<img alt="Profile" class="w-full h-full object-cover" data-alt="A close-up portrait of a sophisticated man with a well-groomed beard, set against a warm, neutral-toned gallery wall background. The lighting is soft and directional, characteristic of high-end editorial photography. The aesthetic is minimalist and refined, aligning with the quiet luxury brand identity of Licit." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA4-oKSRyG0gdnmg-gk4gS1k_mnHc-LGBNgrj7kyUkmmmzlvjAxjU8UV0ATtEtsV3icLJ9l-MjMe1OwpfNUz8OJP2i-A46nSbk2xCl0Fw-2E02oGPhfee8EBD_wbWdhoJlnMkZqKicNjX2-eKtW9F7XIXmFbpl1dCa0VhPELhODe_FNg37Ya1HMBR0IMww16tc8FyeVSfD_xy57hYBLAl20ox_FDn58EBqWi8GNjqdaOSIsIH3iN7BH8MCVE4Cnn5OktgDnsqLRZw"/>
+</div>
+</div>
+</header>
+<main class="pt-24 pb-32 px-md max-w-container-max mx-auto">
+<!-- Summary Dashboard -->
+<section class="mb-xxl">
+<div class="flex flex-col md:flex-row justify-between items-end mb-lg gap-md">
+<div>
+<span class="font-label-md text-label-md uppercase tracking-widest text-on-surface-variant/60">Overview</span>
+<h2 class="font-headline-md text-headline-md text-primary mt-xs">Performance</h2>
+</div>
+<div class="flex gap-sm">
+<button class="px-md py-sm bg-secondary-container/50 border border-outline-variant/30 rounded-lg font-label-md text-label-md hover:bg-secondary-container transition-colors">Last 30 Days</button>
+<button class="px-md py-sm bg-primary text-white rounded-lg font-label-md text-label-md flex items-center gap-xs active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                        New Listing
+                    </button>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+<!-- Active Card -->
+<div class="p-lg bg-surface-container-lowest border border-outline-variant/30 rounded-xl relative overflow-hidden group">
+<div class="flex justify-between items-start mb-md">
+<span class="material-symbols-outlined text-primary opacity-40">gavel</span>
+<span class="text-on-surface-variant font-caption text-caption">+12% vs last month</span>
+</div>
+<div class="font-display-lg text-display-lg text-primary">24</div>
+<div class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Active Auctions</div>
+<div class="absolute -bottom-2 -right-2 opacity-5 group-hover:scale-110 transition-transform duration-500">
+<span class="material-symbols-outlined text-[120px]">trending_up</span>
+</div>
+</div>
+<!-- Sold Card -->
+<div class="p-lg bg-surface-container-lowest border border-outline-variant/30 rounded-xl relative overflow-hidden group">
+<div class="flex justify-between items-start mb-md">
+<span class="material-symbols-outlined text-primary opacity-40">check_circle</span>
+<span class="text-on-surface-variant font-caption text-caption">+8% vs last month</span>
+</div>
+<div class="font-display-lg text-display-lg text-primary">156</div>
+<div class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Items Sold</div>
+<div class="absolute -bottom-2 -right-2 opacity-5 group-hover:scale-110 transition-transform duration-500">
+<span class="material-symbols-outlined text-[120px]">sell</span>
+</div>
+</div>
+<!-- Revenue Card -->
+<div class="p-lg bg-primary-container text-on-primary-container border border-primary/20 rounded-xl relative overflow-hidden group">
+<div class="flex justify-between items-start mb-md">
+<span class="material-symbols-outlined text-on-primary-container opacity-60">payments</span>
+<span class="text-on-primary-container/80 font-caption text-caption">+24.5%</span>
+</div>
+<div class="font-display-lg text-display-lg text-on-primary-container font-bold">$84.2k</div>
+<div class="font-label-md text-label-md text-on-primary-container/70 uppercase tracking-wider">Total Revenue</div>
+<div class="absolute -bottom-2 -right-2 opacity-10 group-hover:scale-110 transition-transform duration-500">
+<span class="material-symbols-outlined text-[120px]">show_chart</span>
+</div>
+</div>
+</div>
+</section>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-xxl">
+<!-- Active Auctions Section (Left column desktop) -->
+<section class="lg:col-span-8">
+<div class="flex items-center justify-between mb-lg">
+<h3 class="font-headline-sm text-headline-sm text-primary">Active Auctions</h3>
+<a class="font-label-md text-label-md text-primary underline underline-offset-4 hover:opacity-60 transition-opacity" href="#">View All</a>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+<!-- Product Card 1 -->
+<div class="flex flex-col group cursor-pointer">
+<div class="aspect-[4/5] bg-secondary-surface mb-md overflow-hidden rounded-lg relative">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" data-alt="A close-up shot of a luxury minimalist stainless steel watch resting on a piece of smooth, light-grey marble. The lighting is diffused and soft, highlighting the metallic textures and the clean dial design. The color palette is composed of monochromatic greys and soft white, creating an atmosphere of timeless elegance and quiet luxury." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCO2Q79m5xoBdnzFQ4WmB-s5VP_xWjgVQ_jSE0-JYTEcxHfv_8Ujvz0gYk3xDVLv1eg5-roLVQMYIziLmOcLBOLZEBqqLBZrVj5Z9w3ALoFdlCcA-Kz3lM-vshGB58q0MZQxEyv-zWK63WrrEP3N5mLgcuZQ1BqEe0-PuNHEEZ1s11cXoHLX1OaT9p-Dwmo9riT6yTuS_8RFEvHsiUu-ZOsXJX2NGYY6SR1TSZa_hpLJZ2GPAfWGsglDxX9mpTZ-CMjhZyp2bLr5A"/>
+<div class="absolute top-4 right-4 bg-surface/90 backdrop-blur-sm px-sm py-xs rounded-full flex items-center gap-xs">
+<span class="w-2 h-2 rounded-full bg-error animate-pulse"></span>
+<span class="font-caption text-caption font-bold">2d 04h</span>
+</div>
+</div>
+<div class="flex justify-between items-start">
+<div>
+<h4 class="font-body-lg text-body-lg text-primary font-semibold">Patek Philippe Calatrava</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">24 Bids • Highest $32,400</p>
+</div>
+<button class="material-symbols-outlined text-primary hover:scale-110 transition-transform">more_vert</button>
+</div>
+</div>
+<!-- Product Card 2 -->
+<div class="flex flex-col group cursor-pointer">
+<div class="aspect-[4/5] bg-secondary-surface mb-md overflow-hidden rounded-lg relative">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" data-alt="A vintage Leica film camera positioned on a minimalist white wooden desk. Soft natural daylight streams in from the side, casting gentle shadows and emphasizing the camera's mechanical details. The environment is uncluttered and serene, reflecting a gallery-style aesthetic with muted earthy tones and high visual clarity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC1p3RHU55eJng1cvWiJl5edU4C6Ttjqyy-X0xrT8BUT5bxpAEeuEjfTFC1YsXLeZkvxce3SlENrRKxcT8K5fWbwXGHslaYIe7_xODwu1UDgljIpnFXwEqyWVvWcbNdg_WhpiKRWkEX_xhReZbKmHfF2cyUiydWvltMg8j2LkgIQKAQpDgmZuLBy9-p5KFFQV9QDKy-ryVq4ftFHbqBZJ3SfqkxIJxAioueBB_BpBQT6K4Sp-6-7_oj2F0RBxFxj1y0Rld-KSpgOw"/>
+<div class="absolute top-4 right-4 bg-surface/90 backdrop-blur-sm px-sm py-xs rounded-full flex items-center gap-xs">
+<span class="w-2 h-2 rounded-full bg-error animate-pulse"></span>
+<span class="font-caption text-caption font-bold">08h 15m</span>
+</div>
+</div>
+<div class="flex justify-between items-start">
+<div>
+<h4 class="font-body-lg text-body-lg text-primary font-semibold">Vintage Leica M3 Limited</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">12 Bids • Highest $8,200</p>
+</div>
+<button class="material-symbols-outlined text-primary hover:scale-110 transition-transform">more_vert</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Sidebar Content (Right column desktop) -->
+<aside class="lg:col-span-4 space-y-xxl">
+<!-- Inventory Management -->
+<section>
+<h3 class="font-headline-sm text-headline-sm text-primary mb-lg">Inventory</h3>
+<div class="space-y-sm">
+<button class="w-full flex items-center justify-between p-md bg-surface-container border border-outline-variant/30 rounded-xl hover:bg-surface-container-high transition-colors group">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded-lg bg-surface flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">description</span>
+</div>
+<div class="text-left">
+<div class="font-label-md text-label-md text-primary">Drafts</div>
+<div class="font-caption text-caption text-on-surface-variant">4 items ready for review</div>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:translate-x-1 transition-transform">chevron_right</span>
+</button>
+<button class="w-full flex items-center justify-between p-md bg-surface-container border border-outline-variant/30 rounded-xl hover:bg-surface-container-high transition-colors group">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded-lg bg-surface flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">archive</span>
+</div>
+<div class="text-left">
+<div class="font-label-md text-label-md text-primary">Unsold Items</div>
+<div class="font-caption text-caption text-on-surface-variant">12 items expired</div>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:translate-x-1 transition-transform">chevron_right</span>
+</button>
+</div>
+</section>
+<!-- Recently Sold List -->
+<section>
+<h3 class="font-headline-sm text-headline-sm text-primary mb-lg">Recently Sold</h3>
+<div class="divide-y divide-outline-variant/20">
+<!-- Sold Item 1 -->
+<div class="py-md flex gap-md items-center">
+<div class="w-16 h-16 rounded-lg overflow-hidden bg-surface-container flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="A pair of designer sunglasses resting on a clean, ivory-colored architectural surface. The image is bathed in bright, minimalist sunlight, focusing on the luxury eyewear's sleek lines and dark lenses. The overall mood is sophisticated and airy, echoing a premium fashion gallery's visual tone." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBEhXQkA9cf72KiTk2VIS34y1fSmLvuz52V1Ku-V1nllgnXFPEons77U-Hk3ZX8cWOCY7YK9AJD0k4hvSADoL8K6KplWrEDWKjNvh8NfGWJkkwHok_ezETgdW2WvGbZ6aY8Y65W5500d7naGqU2SxB1_ftzh0-CIQsnmHunfqEntnFUEY6fqrVoDp9-GA0gri8b7Iduqgvw2HdjTe50vjjHbHgnyzlIoQE_MefJcdrXZ4HvE8YVoXNYGGNnj-80jVCN8iT8MVVgLg"/>
+</div>
+<div class="flex-grow">
+<div class="font-label-md text-label-md text-primary truncate max-w-[150px]">Luxe Tortoise Shades</div>
+<div class="font-caption text-caption text-on-surface-variant">Sold for $450</div>
+</div>
+<div class="text-right">
+<div class="font-caption text-caption text-on-surface-variant">2h ago</div>
+<div class="text-[10px] text-green-600 font-bold uppercase tracking-tighter">Paid</div>
+</div>
+</div>
+<!-- Sold Item 2 -->
+<div class="py-md flex gap-md items-center">
+<div class="w-16 h-16 rounded-lg overflow-hidden bg-surface-container flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="A minimalist cotton t-shirt presented in a professional studio setting. The lighting is uniform and soft, emphasizing the fine texture of the high-quality fabric. The background is a clean, neutral grey, maintaining the project's sophisticated and spacious catalog-like atmosphere." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA0Th1y2R8I4QZ7DfPFhnqm05HW3Zz1bOSTNBGAPCjErpGHJkuJ745R2v8hdiAGO9L7GltWJZlxC3H4XXSq3TH_l_sD8Rgs78xp3N-_QDrlNkPnDtYOrWYS8CvbmNIEpu1aQ1HDPYa2idgFl0x8VrrqsirrZPYU_AD8OCVvaxzSlKsVz5gQrE5KEE3teHp-TtrYZSSSrOxBeFcimVDWabUsrICtZwDRAzL2jUDYoWwUBjJDR29nLfvdHddsZQvopyww7Ajwxsd4-w"/>
+</div>
+<div class="flex-grow">
+<div class="font-label-md text-label-md text-primary truncate max-w-[150px]">Essential Silk Tee</div>
+<div class="font-caption text-caption text-on-surface-variant">Sold for $180</div>
+</div>
+<div class="text-right">
+<div class="font-caption text-caption text-on-surface-variant">5h ago</div>
+<div class="text-[10px] text-orange-400 font-bold uppercase tracking-tighter">Pending</div>
+</div>
+</div>
+<!-- Sold Item 3 -->
+<div class="py-md flex gap-md items-center">
+<div class="w-16 h-16 rounded-lg overflow-hidden bg-surface-container flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="Professional over-ear studio headphones resting on a minimalist concrete base. The aesthetic is industrial yet refined, featuring matte black textures against a neutral, high-key background. The lighting is precise, highlighting the sculptural form of the audio device within a contemporary gallery context." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB-MwXvRyXFLDZRSbH379c9b45-QV1_Tf2zwNUVdF2Z-494qmlwJOJKaRXcTSI3DmZ2uvr0Oyp_1zWCc2nJCttgKu6Ntu1QLVwzGdDt8lUM6EowbV5hjlfiQA1_JvLNHorXqsd4iNDIEf8O-WpYH_zEijqfYEup5SLi5lsSLWenZYGnxUPtbQYJf_tvXa5_PBAgKP10JncEjVihqtLIFrZpucDnXM65euKJN35NeQqtbmn4VrbDiwr-7ZGZIrz7iM6V09fGXdIeOg"/>
+</div>
+<div class="flex-grow">
+<div class="font-label-md text-label-md text-primary truncate max-w-[150px]">Pro Audio Monitor H1</div>
+<div class="font-caption text-caption text-on-surface-variant">Sold for $1,200</div>
+</div>
+<div class="text-right">
+<div class="font-caption text-caption text-on-surface-variant">Yesterday</div>
+<div class="text-[10px] text-green-600 font-bold uppercase tracking-tighter">Paid</div>
+</div>
+</div>
+</div>
+<button class="w-full mt-md py-sm border border-outline-variant/30 rounded-lg font-label-md text-label-md hover:bg-surface-container transition-colors">Download Sales Report</button>
+</section>
+</aside>
+</div>
+</main>
+<!-- Bottom Navigation (Mobile) -->
+<nav class="md:hidden fixed bottom-0 w-full z-50 pb-safe bg-surface border-t border-outline-variant/20 flex justify-around items-center h-20 px-sm">
+<button class="flex flex-col items-center justify-center text-on-surface-variant opacity-60">
+<span class="material-symbols-outlined">play_circle</span>
+<span class="font-label-md text-label-md mt-1">Feed</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant opacity-60">
+<span class="material-symbols-outlined">search</span>
+<span class="font-label-md text-label-md mt-1">Explore</span>
+</button>
+<button class="flex flex-col items-center justify-center text-primary bg-secondary-container/50 rounded-xl px-4 py-1">
+<span class="material-symbols-outlined">add_circle</span>
+<span class="font-label-md text-label-md mt-1">Sell</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant opacity-60">
+<span class="material-symbols-outlined">notifications</span>
+<span class="font-label-md text-label-md mt-1">Activity</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant opacity-60">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-md text-label-md mt-1">Profile</span>
+</button>
+</nav>
+<!-- Floating Action Button (Desktop Only contextually) -->
+<button class="hidden md:flex fixed bottom-8 right-8 bg-primary text-white p-lg rounded-full shadow-xl hover:shadow-2xl active:scale-95 transition-all z-40 items-center justify-center group">
+<span class="material-symbols-outlined">add</span>
+<span class="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 ease-in-out whitespace-nowrap ml-0 group-hover:ml-sm font-label-md">New Listing</span>
+</button>
+<script>
+        // Micro-interactions for numbers counting up
+        document.addEventListener('DOMContentLoaded', () => {
+            const counters = document.querySelectorAll('.font-display-lg');
+            counters.forEach(counter => {
+                const target = parseFloat(counter.innerText.replace('$', '').replace('k', ''));
+                const isCurrency = counter.innerText.includes('$');
+                const isK = counter.innerText.includes('k');
+                let count = 0;
+                const updateCount = () => {
+                    const increment = target / 50;
+                    if (count < target) {
+                        count += increment;
+                        let displayValue = count.toFixed(isK ? 1 : 0);
+                        if (isCurrency) displayValue = '$' + displayValue;
+                        if (isK) displayValue = displayValue + 'k';
+                        counter.innerText = displayValue;
+                        setTimeout(updateCount, 20);
+                    } else {
+                        counter.innerText = (isCurrency ? '$' : '') + target + (isK ? 'k' : '');
+                    }
+                };
+                updateCount();
+            });
+
+            // Intersection Observer for scroll animations
+            const observerOptions = {
+                threshold: 0.1
+            };
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('opacity-100', 'translate-y-0');
+                        entry.target.classList.remove('opacity-0', 'translate-y-10');
+                    }
+                });
+            }, observerOptions);
+
+            document.querySelectorAll('section').forEach(section => {
+                section.classList.add('transition-all', 'duration-700', 'opacity-0', 'translate-y-10');
+                observer.observe(section);
+            });
+        });
+    </script>
+</body></html>

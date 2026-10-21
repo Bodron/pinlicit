@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary": "#363a34",
+                    "primary-container": "#4d514a",
+                    "surface": "#f9f9fa",
+                    "on-tertiary-fixed-variant": "#444747",
+                    "surface-container-low": "#f3f3f4",
+                    "tertiary-fixed": "#e0e3e2",
+                    "on-error": "#ffffff",
+                    "on-secondary-fixed-variant": "#474740",
+                    "on-secondary-fixed": "#1b1c16",
+                    "on-secondary": "#ffffff",
+                    "surface-tint": "#5c6058",
+                    "outline": "#757872",
+                    "on-error-container": "#93000a",
+                    "on-background": "#1a1c1d",
+                    "on-secondary-container": "#65655d",
+                    "inverse-surface": "#2f3132",
+                    "on-tertiary-fixed": "#181c1c",
+                    "tertiary": "#363a3a",
+                    "error-container": "#ffdad6",
+                    "on-primary-fixed-variant": "#444841",
+                    "on-surface": "#1a1c1d",
+                    "surface-container": "#eeeeef",
+                    "secondary": "#5e5f57",
+                    "on-tertiary": "#ffffff",
+                    "surface-variant": "#e2e2e3",
+                    "secondary-fixed-dim": "#c8c7bd",
+                    "outline-variant": "#c5c7c0",
+                    "inverse-on-surface": "#f0f1f2",
+                    "primary-fixed": "#e0e4da",
+                    "on-tertiary-container": "#c0c3ba",
+                    "tertiary-fixed-dim": "#c4c7c6",
+                    "surface-bright": "#f9f9fa",
+                    "surface-container-lowest": "#ffffff",
+                    "on-surface-variant": "#454842",
+                    "secondary-container": "#e4e3d8",
+                    "on-primary-container": "#c0c3ba",
+                    "surface-dim": "#d9dadb",
+                    "surface-container-high": "#e8e8e9",
+                    "error": "#ba1a1a",
+                    "background": "#f9f9fa",
+                    "primary-fixed-dim": "#c4c8bf",
+                    "on-primary": "#ffffff",
+                    "on-primary-fixed": "#191d17",
+                    "secondary-fixed": "#e4e3d8",
+                    "inverse-primary": "#c4c8bf",
+                    "tertiary-container": "#4d5150",
+                    "surface-container-highest": "#e2e2e3"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "sm": "8px",
+                    "xxl": "64px",
+                    "gutter": "24px",
+                    "xs": "4px",
+                    "lg": "24px",
+                    "md": "16px",
+                    "container-max": "1280px",
+                    "xl": "40px",
+                    "unit": "4px"
+            },
+            "fontFamily": {
+                    "headline-sm": ["Montserrat"],
+                    "display-lg": ["Montserrat"],
+                    "display-lg-mobile": ["Montserrat"],
+                    "body-lg": ["Montserrat"],
+                    "body-md": ["Montserrat"],
+                    "label-md": ["Montserrat"],
+                    "headline-md": ["Montserrat"],
+                    "caption": ["Montserrat"]
+            },
+            "fontSize": {
+                    "headline-sm": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                    "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "display-lg-mobile": ["36px", {"lineHeight": "1.2", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "label-md": ["14px", {"lineHeight": "1.2", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "headline-md": ["30px", {"lineHeight": "1.3", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "caption": ["12px", {"lineHeight": "1.4", "fontWeight": "500"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #f9f9fa;
+            color: #1a1c1d;
+            font-family: 'Montserrat', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .input-focus-effect:focus-within {
+            border-color: #4d514a;
+        }
+        /* Gallery aesthetic: remove scrollbars for a cleaner look */
+        ::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="min-h-screen flex flex-col items-center justify-center bg-surface-container-lowest selection:bg-primary-fixed">
+<!-- Top AppBar Semantic Anchor (Hidden Nav for Transactional Page) -->
+<header class="fixed top-0 w-full z-50 flex items-center justify-center px-md h-20 bg-surface-container-lowest/80 backdrop-blur-md">
+<h1 class="font-display-lg-mobile text-display-lg-mobile font-bold tracking-tighter text-primary">Licit</h1>
+</header>
+<main class="w-full max-w-md px-lg pt-24 pb-xxl flex flex-col">
+<!-- Brand Narrative Header -->
+<div class="mb-xl text-center">
+<h2 class="font-headline-md text-headline-md text-primary-container mb-sm">Welcome Back</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Step into your curated experience.</p>
+</div>
+<!-- Login Form -->
+<form class="space-y-md" onsubmit="event.preventDefault();">
+<div class="space-y-xs">
+<label class="font-label-md text-label-md text-primary-container ml-1" for="email">Email Address</label>
+<div class="relative group">
+<input class="w-full h-14 bg-secondary-container border-none rounded-xl px-md font-body-md text-primary-container placeholder:text-on-surface-variant/40 focus:ring-1 focus:ring-primary-container transition-all" id="email" placeholder="name@example.com" type="email"/>
+</div>
+</div>
+<div class="space-y-xs">
+<div class="flex justify-between items-center px-1">
+<label class="font-label-md text-label-md text-primary-container" for="password">Password</label>
+<a class="font-caption text-caption text-on-surface-variant hover:text-primary transition-colors" href="#">Forgot password?</a>
+</div>
+<div class="relative group">
+<input class="w-full h-14 bg-secondary-container border-none rounded-xl px-md font-body-md text-primary-container placeholder:text-on-surface-variant/40 focus:ring-1 focus:ring-primary-container transition-all" id="password" placeholder="••••••••" type="password"/>
+</div>
+</div>
+<button class="w-full h-16 bg-primary-container text-surface-container-lowest font-label-md text-label-md rounded-xl mt-lg active:scale-[0.98] transition-all hover:shadow-lg hover:shadow-primary-container/10" type="submit">
+                SIGN IN
+            </button>
+</form>
+<!-- Divider -->
+<div class="flex items-center my-xl px-md">
+<div class="flex-grow h-px bg-outline-variant/30"></div>
+<span class="px-md font-caption text-caption text-on-surface-variant/60 uppercase tracking-widest">or continue with</span>
+<div class="flex-grow h-px bg-outline-variant/30"></div>
+</div>
+<!-- Social Logins -->
+<div class="grid grid-cols-2 gap-md">
+<button class="flex items-center justify-center gap-sm h-14 border border-outline-variant/40 rounded-xl bg-transparent hover:bg-surface-container-low transition-colors active:scale-95 group">
+<svg class="opacity-80 group-hover:opacity-100 transition-opacity" fill="none" height="20" viewbox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg">
+<path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"></path>
+<path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-1 .67-2.28 1.07-3.71 1.07-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"></path>
+<path d="M5.84 14.11c-.22-.66-.35-1.36-.35-2.11s.13-1.45.35-2.11V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l3.66-2.83z" fill="#FBBC05"></path>
+<path d="M12 5.38c1.62 0 3.06.56 4.21 1.66l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.83c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"></path>
+</svg>
+<span class="font-label-md text-label-md text-primary-container">Google</span>
+</button>
+<button class="flex items-center justify-center gap-sm h-14 border border-outline-variant/40 rounded-xl bg-transparent hover:bg-surface-container-low transition-colors active:scale-95 group">
+<svg class="text-primary-container opacity-80 group-hover:opacity-100 transition-opacity" fill="currentColor" height="20" viewbox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg">
+<path d="M17.05 20.28c-.96.02-2.13-.58-3.04-.58-.9 0-1.88.54-2.7.58-1.57.07-4.14-2.22-4.14-5.9 0-3.51 2.22-5.46 4.34-5.46 1.08 0 2.01.62 2.62.62.61 0 1.76-.75 3-.75.52 0 1.99.18 2.94 1.55-2.31 1.34-1.92 4.14.39 5.25-.86 2.11-2.24 4.67-3.41 4.69zM12.03 8.35c-.02-2.43 2.05-4.48 4.54-4.52.02 2.59-2.09 4.65-4.54 4.52z"></path>
+</svg>
+<span class="font-label-md text-label-md text-primary-container">Apple</span>
+</button>
+</div>
+<!-- Footer Action -->
+<p class="mt-xxl text-center font-body-md text-body-md text-on-surface-variant">
+            New to Licit? <a class="text-primary font-bold hover:underline underline-offset-4" href="#">Create Account</a>
+</p>
+</main>
+<!-- Decorative Background Elements (Organic Gallery Tones) -->
+<div class="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+<div class="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-tertiary-fixed/20 rounded-full blur-[120px]"></div>
+<div class="absolute bottom-[5%] -right-[5%] w-[30%] h-[30%] bg-secondary-fixed/30 rounded-full blur-[100px]"></div>
+</div>
+<script>
+        // Subtle interaction feedback
+        document.querySelectorAll('input').forEach(input => {
+            input.addEventListener('focus', () => {
+                input.parentElement.parentElement.querySelector('label').classList.add('text-primary');
+            });
+            input.addEventListener('blur', () => {
+                input.parentElement.parentElement.querySelector('label').classList.remove('text-primary');
+            });
+        });
+
+        // Form submission ripple/animation concept
+        const form = document.querySelector('form');
+        form.addEventListener('submit', (e) => {
+            const btn = form.querySelector('button[type="submit"]');
+            btn.innerText = "VERIFYING...";
+            btn.classList.add('opacity-70');
+            btn.disabled = true;
+            
+            setTimeout(() => {
+                btn.innerText = "SIGN IN";
+                btn.classList.remove('opacity-70');
+                btn.disabled = false;
+            }, 1500);
+        });
+    </script>
+</body></html>

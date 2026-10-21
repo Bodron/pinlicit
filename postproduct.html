@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<title>Create Listing | Licit</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-tint": "#5c6058",
+                    "secondary-fixed-dim": "#c8c7bd",
+                    "on-primary": "#ffffff",
+                    "background": "#f9f9fa",
+                    "secondary-fixed": "#e4e3d8",
+                    "inverse-surface": "#2f3132",
+                    "tertiary-fixed": "#e0e3e2",
+                    "error-container": "#ffdad6",
+                    "surface-container-low": "#f3f3f4",
+                    "on-error-container": "#93000a",
+                    "on-secondary": "#ffffff",
+                    "inverse-primary": "#c4c8bf",
+                    "surface-dim": "#d9dadb",
+                    "primary-fixed": "#e0e4da",
+                    "on-secondary-fixed": "#1b1c16",
+                    "on-secondary-container": "#65655d",
+                    "primary": "#363a34",
+                    "surface-container-high": "#e8e8e9",
+                    "outline": "#757872",
+                    "on-tertiary-fixed-variant": "#444747",
+                    "on-secondary-fixed-variant": "#474740",
+                    "primary-fixed-dim": "#c4c8bf",
+                    "secondary-container": "#e4e3d8",
+                    "secondary": "#5e5f57",
+                    "on-tertiary": "#ffffff",
+                    "on-surface": "#1a1c1d",
+                    "on-primary-fixed-variant": "#444841",
+                    "tertiary": "#363a3a",
+                    "on-tertiary-container": "#c0c3c2",
+                    "tertiary-fixed-dim": "#c4c7c6",
+                    "surface-container-lowest": "#ffffff",
+                    "on-background": "#1a1c1d",
+                    "on-primary-container": "#c0c3ba",
+                    "error": "#ba1a1a",
+                    "on-primary-fixed": "#191d17",
+                    "on-error": "#ffffff",
+                    "surface-container-highest": "#e2e2e3",
+                    "surface-container": "#eeeeef",
+                    "inverse-on-surface": "#f0f1f2",
+                    "tertiary-container": "#4d5150",
+                    "surface-variant": "#e2e2e3",
+                    "outline-variant": "#c5c7c0",
+                    "primary-container": "#4d514a",
+                    "on-surface-variant": "#454842",
+                    "on-tertiary-fixed": "#181c1c",
+                    "surface-bright": "#f9f9fa",
+                    "surface": "#f9f9fa"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "lg": "24px",
+                    "xs": "4px",
+                    "unit": "4px",
+                    "sm": "8px",
+                    "xl": "40px",
+                    "gutter": "24px",
+                    "xxl": "64px",
+                    "md": "16px",
+                    "container-max": "1280px"
+            },
+            "fontFamily": {
+                    "headline-sm": ["Montserrat"],
+                    "display-lg-mobile": ["Montserrat"],
+                    "headline-md": ["Montserrat"],
+                    "body-md": ["Montserrat"],
+                    "caption": ["Montserrat"],
+                    "display-lg": ["Montserrat"],
+                    "body-lg": ["Montserrat"],
+                    "label-md": ["Montserrat"]
+            },
+            "fontSize": {
+                    "headline-sm": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                    "display-lg-mobile": ["36px", {"lineHeight": "1.2", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "headline-md": ["30px", {"lineHeight": "1.3", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "caption": ["12px", {"lineHeight": "1.4", "fontWeight": "500"}],
+                    "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "label-md": ["14px", {"lineHeight": "1.2", "letterSpacing": "0.05em", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: #f9f9fa;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #c5c7c0;
+            border-radius: 10px;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="text-on-surface antialiased custom-scrollbar">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-md dark:bg-surface-dim/80 border-b border-outline-variant/30 flex items-center justify-between px-md h-16 w-full">
+<button class="text-primary hover:opacity-80 transition-opacity active:scale-95 transition-transform">
+<span class="material-symbols-outlined">close</span>
+</button>
+<h1 class="font-display-lg-mobile text-display-lg-mobile font-bold tracking-tighter text-primary dark:text-primary-fixed">Licit</h1>
+<div class="flex gap-4">
+<button class="text-on-surface-variant hover:opacity-80 transition-opacity active:scale-95 transition-transform">
+<span class="material-symbols-outlined">help_outline</span>
+</button>
+</div>
+</header>
+<main class="pt-20 pb-32 max-w-container-max mx-auto px-md md:px-xxl">
+<div class="max-w-3xl mx-auto space-y-xl">
+<!-- Page Header -->
+<section class="text-center md:text-left">
+<h2 class="font-headline-md text-headline-md text-primary">Create New Listing</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-2">Introduce your masterpiece to the global Licit audience.</p>
+</section>
+<!-- Video Upload Area -->
+<section class="relative group cursor-pointer overflow-hidden rounded-xl bg-surface-container-low border-2 border-dashed border-outline-variant/50 hover:border-primary transition-all aspect-video flex flex-col items-center justify-center space-y-sm">
+<div class="absolute inset-0 z-0">
+<img alt="Abstract art placeholder" class="w-full h-full object-cover opacity-20 grayscale" data-alt="A highly detailed cinematic shot of a modern gallery space with minimalist concrete walls and warm directional lighting. In the foreground, an empty display pedestal sits waiting for an artwork, while the background shows a blurred, sophisticated crowd admiring contemporary art pieces. The atmosphere is quiet, luxurious, and refined, using a palette of soft greys, whites, and deep earthy tones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD5-2R6YOSdI9wn1Jo1SH5c53T0ncfbbFolKO9ORbVYCw4gEHxX5JfWRfZPyikMgFoPBYTwhDgDTegtArjJteQ_C5Zlz1wB05mY_zlwq9yFD2uN6sK3D6FqNf_EIWKFgP--g5EPlkdYap6uVmivcGTFELrD9m0YlubrSZMmUyrwRpC8svIPLiC0cIF4IAHB43Def7carKCa6FMYAHbAXszwvydRG-Bxk5IViBzCzY-AgKUOvfoTMMwQj-xvW5F0LAWs2nTXe1LrHw"/>
+</div>
+<div class="z-10 flex flex-col items-center text-center px-lg">
+<div class="w-16 h-16 rounded-full bg-primary-container/10 flex items-center justify-center mb-md">
+<span class="material-symbols-outlined text-primary text-4xl">movie</span>
+</div>
+<span class="font-headline-sm text-headline-sm text-primary">Upload Exhibition Video</span>
+<p class="font-label-md text-label-md text-on-surface-variant mt-2">MP4 or MOV, max 500MB. High-quality motion reveals the true essence of your work.</p>
+</div>
+<input accept="video/*" class="absolute inset-0 opacity-0 cursor-pointer" type="file"/>
+</section>
+<!-- Listing Details Form -->
+<form class="space-y-xl" id="listingForm">
+<!-- Basic Info Card -->
+<div class="bg-surface-container-lowest p-lg md:p-xl rounded-xl border border-outline-variant/20 space-y-lg">
+<h3 class="font-label-md text-label-md uppercase tracking-widest text-on-surface-variant">Basic Information</h3>
+<div class="space-y-sm">
+<label class="font-label-md text-label-md text-on-surface-variant">Listing Title</label>
+<input class="w-full bg-surface-container border-none focus:ring-2 focus:ring-primary rounded-lg p-md font-body-md text-on-surface placeholder:text-outline-variant" placeholder="e.g. 'Ethereal Synthesis #04'" type="text"/>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-lg">
+<div class="space-y-sm">
+<label class="font-label-md text-label-md text-on-surface-variant">Category</label>
+<div class="relative">
+<select class="w-full appearance-none bg-surface-container border-none focus:ring-2 focus:ring-primary rounded-lg p-md font-body-md text-on-surface cursor-pointer">
+<option>Select Category</option>
+<option>Contemporary Painting</option>
+<option>Digital Media</option>
+<option>Sculpture</option>
+<option>Photography</option>
+<option>Textiles</option>
+</select>
+<span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant">expand_more</span>
+</div>
+</div>
+<div class="space-y-sm">
+<label class="font-label-md text-label-md text-on-surface-variant">Media/Materials</label>
+<input class="w-full bg-surface-container border-none focus:ring-2 focus:ring-primary rounded-lg p-md font-body-md text-on-surface placeholder:text-outline-variant" placeholder="e.g. Acrylic on Canvas" type="text"/>
+</div>
+</div>
+<div class="space-y-sm">
+<label class="font-label-md text-label-md text-on-surface-variant">Description</label>
+<textarea class="w-full bg-surface-container border-none focus:ring-2 focus:ring-primary rounded-lg p-md font-body-md text-on-surface placeholder:text-outline-variant custom-scrollbar" placeholder="Share the story, provenance, and soul of this piece..." rows="5"></textarea>
+</div>
+</div>
+<!-- Auction Rules Card -->
+<div class="bg-surface-container-lowest p-lg md:p-xl rounded-xl border border-outline-variant/20 space-y-lg">
+<div class="flex items-center justify-between">
+<h3 class="font-label-md text-label-md uppercase tracking-widest text-on-surface-variant">Auction Rules</h3>
+<span class="material-symbols-outlined text-on-surface-variant opacity-40">gavel</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-lg">
+<div class="space-y-sm">
+<label class="font-label-md text-label-md text-on-surface-variant">Starting Price (USD)</label>
+<div class="relative">
+<span class="absolute left-4 top-1/2 -translate-y-1/2 font-label-md text-on-surface-variant">$</span>
+<input class="w-full bg-surface-container border-none focus:ring-2 focus:ring-primary rounded-lg p-md pl-8 font-body-md text-on-surface placeholder:text-outline-variant" placeholder="0.00" type="number"/>
+</div>
+</div>
+<div class="space-y-sm">
+<label class="font-label-md text-label-md text-on-surface-variant">Min. Increment (USD)</label>
+<div class="relative">
+<span class="absolute left-4 top-1/2 -translate-y-1/2 font-label-md text-on-surface-variant">$</span>
+<input class="w-full bg-surface-container border-none focus:ring-2 focus:ring-primary rounded-lg p-md pl-8 font-body-md text-on-surface placeholder:text-outline-variant" placeholder="50.00" type="number"/>
+</div>
+</div>
+<div class="space-y-sm">
+<label class="font-label-md text-label-md text-on-surface-variant">Buy It Now (Optional)</label>
+<div class="relative">
+<span class="absolute left-4 top-1/2 -translate-y-1/2 font-label-md text-on-surface-variant">$</span>
+<input class="w-full bg-surface-container border-none focus:ring-2 focus:ring-primary rounded-lg p-md pl-8 font-body-md text-on-surface placeholder:text-outline-variant" placeholder="Set price" type="number"/>
+</div>
+</div>
+<div class="space-y-sm">
+<label class="font-label-md text-label-md text-on-surface-variant">Auction Duration</label>
+<div class="relative">
+<select class="w-full appearance-none bg-surface-container border-none focus:ring-2 focus:ring-primary rounded-lg p-md font-body-md text-on-surface cursor-pointer">
+<option>3 Days</option>
+<option>5 Days</option>
+<option selected="">7 Days</option>
+<option>14 Days</option>
+<option>30 Days</option>
+</select>
+<span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant">schedule</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Action Button -->
+<div class="pt-lg flex flex-col items-center">
+<button class="w-full md:w-auto md:min-w-[320px] bg-primary text-white font-label-md text-label-md py-md px-xxl rounded-full shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-sm" type="submit">
+                        Publish Listing
+                        <span class="material-symbols-outlined">send</span>
+</button>
+<p class="font-caption text-caption text-on-surface-variant mt-4 opacity-60">By publishing, you agree to Licit's Seller Terms &amp; Commission Policy.</p>
+</div>
+</form>
+</div>
+</main>
+<!-- BottomNavBar (Hidden on desktop, shown on mobile) -->
+<nav class="md:hidden fixed bottom-0 w-full z-50 pb-safe bg-surface dark:bg-surface-dim border-t border-outline-variant/20 flex justify-around items-center h-20 px-sm w-full">
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant opacity-60 hover:text-primary dark:hover:text-primary-fixed transition-colors active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined">play_circle</span>
+<span class="font-label-md text-label-md">Feed</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant opacity-60 hover:text-primary dark:hover:text-primary-fixed transition-colors active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined">search</span>
+<span class="font-label-md text-label-md">Explore</span>
+</a>
+<a class="flex flex-col items-center justify-center text-primary dark:text-primary-fixed bg-secondary-container/50 rounded-xl px-4 py-1 active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined">add_circle</span>
+<span class="font-label-md text-label-md">Sell</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant opacity-60 hover:text-primary dark:hover:text-primary-fixed transition-colors active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined">notifications</span>
+<span class="font-label-md text-label-md">Activity</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant opacity-60 hover:text-primary dark:hover:text-primary-fixed transition-colors active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-md text-label-md">Profile</span>
+</a>
+</nav>
+<script>
+        // Simple form handling and micro-interactions
+        document.getElementById('listingForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            // Animation for visual feedback
+            const btn = e.target.querySelector('button[type="submit"]');
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = '<span class="material-symbols-outlined animate-spin">refresh</span> Processing...';
+            btn.disabled = true;
+            
+            setTimeout(() => {
+                btn.innerHTML = '<span class="material-symbols-outlined">check_circle</span> Success!';
+                btn.classList.replace('bg-primary', 'bg-green-600');
+                
+                setTimeout(() => {
+                    btn.innerHTML = originalContent;
+                    btn.classList.replace('bg-green-600', 'bg-primary');
+                    btn.disabled = false;
+                    alert('Listing created successfully! It is now being curated.');
+                }, 2000);
+            }, 1500);
+        });
+
+        // Input focus states for accessibility/UI polish
+        const inputs = document.querySelectorAll('input, select, textarea');
+        inputs.forEach(input => {
+            input.addEventListener('focus', () => {
+                input.parentElement.classList.add('ring-offset-2');
+            });
+            input.addEventListener('blur', () => {
+                input.parentElement.classList.remove('ring-offset-2');
+            });
+        });
+    </script>
+</body></html>
