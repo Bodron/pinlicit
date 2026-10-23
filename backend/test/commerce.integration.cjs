@@ -804,6 +804,29 @@ async function main() {
       (await model("Product").findById(legacy._id)).status,
       "active",
     );
+    // Imported/broken fixtures below the card floor must fail before Stripe.
+    const tinyProduct = await model("Product").create({
+      ...productBase,
+      startingPrice: 50,
+      currentPrice: 50,
+      buyNowPrice: 100,
+    });
+    await api
+      .post(`/products/${tinyProduct._id}/buy-now`)
+      .set(auth(buyer))
+      .expect(201);
+    const tinyOrder = await orders.findOne({ product: tinyProduct._id });
+    const beforeTiny = fake.calls.payment;
+    const tinyError = await post(
+      `orders/${tinyOrder._id}/payment`,
+      buyer,
+    ).expect(400);
+    assert(tinyError.body.message.includes("minimum card payment"));
+    assert.equal(fake.calls.payment, beforeTiny);
+    assert.equal(
+      (await orders.findById(tinyOrder._id)).paymentStartedAt,
+      undefined,
+    );
     // Late onboarding: no separate Identity or Connect prerequisite for selling.
     const lateSeller = await model("User").create({
       name: "Late seller",

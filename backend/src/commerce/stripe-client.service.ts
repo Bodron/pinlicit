@@ -24,6 +24,7 @@ export class StripeClientService {
       merchantDisplayName: "Pinbind",
       guaranteeBps: 1000,
       minimumGuaranteePayment: 300,
+      minimumOrderPayment: 300,
       minimumBidMaximum: 3000,
     };
   }

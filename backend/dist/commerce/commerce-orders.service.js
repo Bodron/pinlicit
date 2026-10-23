@@ -225,6 +225,8 @@ let CommerceOrdersService = class CommerceOrdersService {
                 }, { $set: { status: product_schema_1.ProductStatus.Sold } });
                 return { status: "paid" };
             }
+            if (this.due(order) < 300)
+                throw new common_1.BadRequestException("Order amount is below the minimum card payment of 3 RON.");
             if (!order.paymentStartedAt)
                 order.paymentStartedAt = new Date();
             await order.save();

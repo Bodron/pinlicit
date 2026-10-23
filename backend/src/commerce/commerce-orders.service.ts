@@ -261,6 +261,10 @@ export class CommerceOrdersService {
         );
         return { status: "paid" };
       }
+      if (this.due(order) < 300)
+        throw new BadRequestException(
+          "Order amount is below the minimum card payment of 3 RON.",
+        );
       if (!order.paymentStartedAt) order.paymentStartedAt = new Date();
       await order.save();
       let intent: Stripe.PaymentIntent;

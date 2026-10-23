@@ -115,3 +115,17 @@ Verificări pentru acest flux: 53 teste unitare backend, 39 teste Flutter și in
 Referințe: [încasare și transferuri separate](https://docs.stripe.com/connect/separate-charges-and-transfers), [onboarding găzduit de Stripe](https://docs.stripe.com/connect/hosted-onboarding), [onboarding în browserul aplicației iOS](https://docs.stripe.com/connect/enable-payment-acceptance-guide?platform=ios&ui=payment-sheet).
 
 API-ul Stripe sandbox real a acceptat separat crearea Express RO pentru `individual` și `company`; cele două conturi tehnice temporare au fost șterse imediat. Nu au avut plăți sau documente reale.
+
+## Checkout mobil în tema Pinbind
+
+Cumpărarea deschide `/checkout/:id`, separat de istoricul `/commerce`. Linkurile vechi `/commerce?order=...` deschid același checkout. Sunt afișate fotografia și vânzătorul, prețul fixat pe comandă, garanția deja achitată, restul, termenul rezervării și un buton de plată fix jos. Verificările de identitate/încasări rămân în profil; când identitatea cumpărătorului lipsește, checkoutul oferă acces la verificare.
+
+PaymentSheet are culorile neutre Pinbind, colțuri rotunjite și buton explicit cu suma citită din PaymentIntent. Formularul oferă plata cu cardul, fără opțiunea Link. SDK-ul refuză intenții live, altă monedă sau o sumă sub politica de 300 bani. Callback-ul formularului nu confirmă singur plata: checkoutul recitește comanda din backend, afișează procesarea dacă este necesar și păstrează erorile chiar dacă intervine refreshul periodic.
+
+Backendul refuză comenzile importate sub minim înainte de a crea o intenție nouă. Publicarea normală valida deja minimul; problema mostrelor era în generatorul separat, unde 100 bani fuseseră introduși în loc de lei. Generatorul folosește acum valori explicite în bani și verifică minimul.
+
+`backend/scripts/repair-demo-prices.cjs` este limitat la cele trei ID-uri DEMO și implicit afișează numai planul. `--apply` corectează numai mostre active fără oferte/garanții și rezervarea BMW de test identificată explicit, neplătită. Refuză cheile live, plăți în procesare/încasate, alte comenzi și anunțuri reale. Salvează backup privat în directorul temporar, anulează intenția neplătită verificată în Stripe, folosește lease-urile aplicației și actualizează produsul/comanda într-o tranzacție. Noua tentativă primește un ID nou; comisionul existent este păstrat. Valorile simulate aprobate sunt BMW 125.000 RON, Audi 45.000 RON, poster 100 RON. Nu este un mecanism general de modificare a prețurilor comenzilor.
+
+Verificări: 53 teste unitare backend, 43 teste Flutter, analiză Flutter, build iOS simulator și integrare pe replica set local cu Stripe simulat. Testele checkoutului includ sumă de 1 RON refuzată înainte de formular, preț mare pe ecran de telefon, aplicarea garanției, confirmare canonică și eroare persistentă după refresh.
+
+Proba manuală în simulator a finalizat plata BMW DEMO de 125.000 RON prin PaymentSheet cu cardul public de test Stripe. Backendul public a confirmat starea `paid`, iar noul checkout a afișat confirmarea și butonul de acces la comenzi, fără o nouă opțiune de plată. Audi și posterul au rămas active pentru testele utilizatorului. Nu s-a confirmat livrarea și nu s-a făcut transfer către vânzător în această probă.

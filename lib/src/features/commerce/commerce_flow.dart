@@ -6,6 +6,7 @@ import '../../shared/models/product.dart';
 import '../../shared/state/session_controller.dart';
 import '../../shared/utils/money.dart';
 import 'stripe_payments.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
 
 String commerceError(Object error) {
   if (error is DioException) {
@@ -27,6 +28,8 @@ String commerceError(Object error) {
             'Această acțiune este disponibilă doar conturilor aprobate de vânzător.',
         'A confirmed 10% bid guarantee is required.':
             'Achită și confirmă garanția de 10% înainte de ofertă.',
+        'Order amount is below the minimum card payment of 3 RON.':
+            'Suma comenzii este sub minimul de 3 lei pentru plata cu cardul. Contactează suportul pentru corectarea rezervării de test.',
         'Order is not payable.':
             'Comanda nu mai poate fi plătită. Verifică starea și termenul ei.',
         'Maximum bid must be between 30 and 999999.99 RON.':
@@ -42,6 +45,10 @@ String commerceError(Object error) {
     }
     if (message is List) return message.join('\n');
     return 'Nu putem contacta serverul. Încearcă din nou.';
+  }
+  if (error is StripeException) {
+    return error.error.localizedMessage ??
+        'Formularul de plată nu s-a putut deschide. Verifică starea comenzii și încearcă din nou.';
   }
   if (error is StateError) return error.message;
   return 'Operația nu s-a finalizat. Verifică starea în Plăți și comenzi înainte să reîncerci.';
@@ -144,7 +151,7 @@ Future<void> openProductPayment(
   final order = await ref
       .read(apiClientProvider)
       .commercePost('products/${product.id}/order');
-  if (context.mounted) await context.push('/commerce?order=${order['id']}');
+  if (context.mounted) await context.push('/checkout/${order['id']}');
 }
 
 Future<int?> chooseBidMaximum(BuildContext context, Product product) =>

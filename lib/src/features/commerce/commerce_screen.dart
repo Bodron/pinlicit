@@ -9,7 +9,7 @@ import '../../shared/state/session_controller.dart';
 import '../../shared/utils/money.dart';
 import 'commerce_flow.dart';
 import 'commerce_models.dart';
-import 'stripe_payments.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class CommerceScreen extends ConsumerStatefulWidget {
   const CommerceScreen({super.key, this.orderId});
@@ -95,7 +95,7 @@ class _CommerceScreenState extends ConsumerState<CommerceScreen>
               (product) => product.commerceVersion != 1 && product.isActive,
             )
             .toList();
-        _error = null;
+        if (!quiet) _error = null;
       });
     } catch (error) {
       if (mounted && !quiet) setState(() => _error = commerceError(error));
@@ -138,32 +138,6 @@ class _CommerceScreenState extends ConsumerState<CommerceScreen>
     }
     if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
       throw StateError('Nu putem deschide pagina Stripe.');
-    }
-  });
-  Future<void> _pay(CommerceOrder order) => _run(() async {
-    await ref.read(stripePaymentsProvider).configure();
-    final result = await ref
-        .read(apiClientProvider)
-        .commercePost('orders/${order.id}/payment');
-    if (result['clientSecret'] is String) {
-      final completed = await ref
-          .read(stripePaymentsProvider)
-          .present(result['clientSecret'] as String);
-      if (!completed) return;
-    }
-    final fresh = CommerceOrder.fromJson(
-      await ref.read(apiClientProvider).commerceGet('orders/${order.id}'),
-    );
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            fresh.status == 'awaiting_payment'
-                ? 'Stripe procesează plata. Comanda se actualizează după confirmare.'
-                : fresh.label,
-          ),
-        ),
-      );
     }
   });
   Future<bool> _confirm(String title, String content) async =>
@@ -288,7 +262,26 @@ class _CommerceScreenState extends ConsumerState<CommerceScreen>
     final identity = (_account?['identity'] as Map?)?['status'] ?? 'unverified';
     final seller = _account?['sellerPayments'] as Map? ?? {};
     final theme = ThemeData(
-      colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xff0f766e)),
+      colorScheme: const ColorScheme.light(
+        primary: Color(0xff363a34),
+        secondary: Color(0xff0f766e),
+        surface: Colors.white,
+        onSurface: Color(0xff363a34),
+      ),
+      scaffoldBackgroundColor: const Color(0xfff9f9fa),
+      textTheme: GoogleFonts.montserratTextTheme(ThemeData.light().textTheme)
+          .apply(
+            bodyColor: const Color(0xff363a34),
+            displayColor: const Color(0xff363a34),
+          ),
+      cardTheme: CardThemeData(
+        elevation: 0,
+        color: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: Color(0xffe4e5df)),
+        ),
+      ),
       useMaterial3: true,
     );
     return Theme(
@@ -296,6 +289,8 @@ class _CommerceScreenState extends ConsumerState<CommerceScreen>
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Plăți și comenzi'),
+          backgroundColor: const Color(0xfff9f9fa),
+          surfaceTintColor: Colors.transparent,
           actions: [
             IconButton(
               onPressed: _busy ? null : _load,
@@ -504,7 +499,9 @@ class _CommerceScreenState extends ConsumerState<CommerceScreen>
                                 FilledButton(
                                   onPressed: _busy || _config?['ready'] != true
                                       ? null
-                                      : () => _pay(order),
+                                      : () => context.push(
+                                          '/checkout/${order.id}',
+                                        ),
                                   child: Text(
                                     order.amountDue == 0
                                         ? 'Confirmă plata din garanție'

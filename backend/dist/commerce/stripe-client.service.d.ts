@@ -14,6 +14,7 @@ export declare class StripeClientService {
         merchantDisplayName: string;
         guaranteeBps: number;
         minimumGuaranteePayment: number;
+        minimumOrderPayment: number;
         minimumBidMaximum: number;
     };
     assertSecureAuth(): void;

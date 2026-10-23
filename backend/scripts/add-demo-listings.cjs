@@ -16,22 +16,22 @@ const rows = [
     source: "6a3cc75db3b75c8e86525c75",
     title: "BMW — DEMO",
     category: "auto",
-    price: 50,
-    buy: 100,
+    price: 5000000,
+    buy: 12500000,
   },
   {
     source: "6a3d4f2fd66bdd2ade3d8a25",
     title: "Audi A4 — DEMO",
     category: "auto",
-    price: 60,
-    buy: 120,
+    price: 2000000,
+    buy: 4500000,
   },
   {
     source: "6a3a3eac3fd2d32e2247b5ed",
     title: "Poster Bichon — DEMO",
     category: "casa",
-    price: 30,
-    buy: 60,
+    price: 3000,
+    buy: 10000,
   },
 ];
 async function main() {
@@ -46,6 +46,7 @@ async function main() {
   const Product = mongoose.model("Product", ProductSchema);
   const prepared = [];
   for (const row of rows) {
+    if (!Number.isSafeInteger(row.buy) || row.buy < 300 || row.buy <= row.price) throw Error("Demo prices must be expressed in bani and support card payment");
     const id = new mongoose.Types.ObjectId(
       createHash("sha256")
         .update(batch + row.source)
@@ -102,7 +103,7 @@ async function main() {
       status: "active",
       startingPrice: row.price,
       currentPrice: row.price,
-      minBidIncrement: 5,
+      minBidIncrement: row.category === "auto" ? 10000 : 500,
       buyNowPrice: row.buy,
       favoriteCount: 0,
       startsAt: new Date(now.getTime() - 60000),

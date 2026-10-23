@@ -1,3 +1,4 @@
+import 'features/commerce/checkout_screen.dart';
 import 'features/commerce/payment_methods_screen.dart';
 import 'features/commerce/commerce_review_screen.dart';
 import 'features/commerce/commerce_screen.dart';
@@ -60,6 +61,11 @@ final routerProvider = Provider<GoRouter>((ref) {
     },
     routes: [
       GoRoute(
+        path: '/checkout/:id',
+        builder: (context, state) =>
+            CheckoutScreen(orderId: state.pathParameters['id']!),
+      ),
+      GoRoute(
         path: '/payment-methods',
         builder: (context, state) => const PaymentMethodsScreen(),
       ),
@@ -69,8 +75,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/commerce',
-        builder: (context, state) =>
-            CommerceScreen(orderId: state.uri.queryParameters['order']),
+        builder: (context, state) => state.uri.queryParameters['order'] != null
+            ? CheckoutScreen(orderId: state.uri.queryParameters['order']!)
+            : const CommerceScreen(),
       ),
       GoRoute(
         path: '/splash',

@@ -31,6 +31,7 @@ export declare class CommerceController {
         merchantDisplayName: string;
         guaranteeBps: number;
         minimumGuaranteePayment: number;
+        minimumOrderPayment: number;
         minimumBidMaximum: number;
     };
     depositsMine(user: any): Promise<{
