@@ -12,6 +12,21 @@ export declare class CommerceAccountsService {
     constructor(accounts: Model<CommerceAccountDocument>, stripe: StripeClientService, locks: CommerceLockService, users: Model<UserDocument>);
     ready(): Promise<void>;
     private profile;
+    refreshStatus(userId: string): Promise<{
+        identity: {
+            status: string;
+            verifiedAt: Date;
+            errorCode: string;
+        };
+        sellerPayments: {
+            connected: boolean;
+            detailsSubmitted: boolean;
+            transfersEnabled: boolean;
+            payoutsEnabled: boolean;
+        };
+        mode: string;
+        enabled: boolean;
+    }>;
     status(userId: string): Promise<{
         identity: {
             status: string;

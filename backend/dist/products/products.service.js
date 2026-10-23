@@ -200,6 +200,10 @@ let ProductsService = class ProductsService {
         if (candidate && String(candidate.seller) === String(buyerId)) {
             throw new common_1.ForbiddenException("You cannot buy your own product.");
         }
+        if (candidate &&
+            this.config?.get("STRIPE_ENABLED") === "true" &&
+            candidate.commerceVersion !== 1)
+            throw new common_1.ForbiddenException("This legacy listing must be enrolled by its seller before Stripe checkout.");
         if (candidate?.commerceVersion === 1) {
             if (!this.commerceAccounts)
                 throw new common_1.ForbiddenException("Identity verification is required.");

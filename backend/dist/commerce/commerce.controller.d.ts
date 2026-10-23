@@ -1,9 +1,10 @@
+import { BidDepositsService } from "./bid-deposits.service";
 import { ArgumentsHost, ExceptionFilter, RawBodyRequest, NestInterceptor, ExecutionContext, CallHandler } from "@nestjs/common";
 import { Request } from "express";
 import { CommerceAccountsService } from "./commerce-accounts.service";
 import { CommerceOrdersService } from "./commerce-orders.service";
 import { CommerceWorker } from "./commerce.worker";
-import { OrderIssueDto, OrderRefundDto, ShipmentDto } from "./commerce.dto";
+import { BidGuaranteeDto, OrderIssueDto, OrderRefundDto, ShipmentDto } from "./commerce.dto";
 import { StripeClientService } from "./stripe-client.service";
 export declare class StripeHttpFilter implements ExceptionFilter {
     catch(_: unknown, host: ArgumentsHost): void;
@@ -18,7 +19,66 @@ export declare class CommercePrivateHeaders implements NestInterceptor {
 export declare class CommerceController {
     private readonly accounts;
     private readonly orders;
-    constructor(accounts: CommerceAccountsService, orders: CommerceOrdersService);
+    private readonly stripe;
+    private readonly deposits;
+    constructor(accounts: CommerceAccountsService, orders: CommerceOrdersService, stripe: StripeClientService, deposits: BidDepositsService);
+    config(): {
+        enabled: boolean;
+        ready: boolean;
+        mode: string;
+        publishableKey: string;
+        merchantDisplayName: string;
+        guaranteeBps: number;
+        minimumGuaranteePayment: number;
+        minimumBidMaximum: number;
+    };
+    depositsMine(user: any): Promise<{
+        id: string;
+        productId: string;
+        amount: number;
+        maximum: number;
+        status: string;
+        credited: number;
+        refunded: number;
+    }[]>;
+    activate(id: string, user: any): Promise<{
+        activated: boolean;
+    }>;
+    cancelGuarantee(id: string, user: any): Promise<{
+        status: string;
+    }>;
+    guarantee(id: string, user: any, dto: BidGuaranteeDto): Promise<{
+        clientSecret: string;
+        amount: number;
+        required: number;
+        status: string;
+    } | {
+        status: string;
+        amount: number;
+        required: number;
+        clientSecret?: undefined;
+    }>;
+    order(id: string, user: any): Promise<{
+        id: string;
+        productId: string;
+        title: any;
+        buyerId: string;
+        sellerId: string;
+        amount: any;
+        depositCredit: any;
+        amountDue: number;
+        fee: any;
+        sellerAmount: any;
+        currency: any;
+        status: any;
+        paymentDeadline: any;
+        carrier: any;
+        trackingCode: any;
+        deliveredAt: any;
+        releaseAfter: any;
+        issueOpen: any;
+        refundedAmount: any;
+    }>;
     status(user: any): Promise<{
         identity: {
             status: string;
@@ -55,6 +115,8 @@ export declare class CommerceController {
         buyerId: string;
         sellerId: string;
         amount: any;
+        depositCredit: any;
+        amountDue: number;
         fee: any;
         sellerAmount: any;
         currency: any;
@@ -67,25 +129,7 @@ export declare class CommerceController {
         issueOpen: any;
         refundedAmount: any;
     }[]>;
-    mine(user: any): Promise<{
-        id: string;
-        productId: string;
-        title: any;
-        buyerId: string;
-        sellerId: string;
-        amount: any;
-        fee: any;
-        sellerAmount: any;
-        currency: any;
-        status: any;
-        paymentDeadline: any;
-        carrier: any;
-        trackingCode: any;
-        deliveredAt: any;
-        releaseAfter: any;
-        issueOpen: any;
-        refundedAmount: any;
-    }[]>;
+    mine(user: any): Promise<any[]>;
     create(id: string, user: any): Promise<{
         id: string;
         productId: string;
@@ -93,6 +137,8 @@ export declare class CommerceController {
         buyerId: string;
         sellerId: string;
         amount: any;
+        depositCredit: any;
+        amountDue: number;
         fee: any;
         sellerAmount: any;
         currency: any;
@@ -119,6 +165,8 @@ export declare class CommerceController {
         buyerId: string;
         sellerId: string;
         amount: any;
+        depositCredit: any;
+        amountDue: number;
         fee: any;
         sellerAmount: any;
         currency: any;
@@ -138,6 +186,8 @@ export declare class CommerceController {
         buyerId: string;
         sellerId: string;
         amount: any;
+        depositCredit: any;
+        amountDue: number;
         fee: any;
         sellerAmount: any;
         currency: any;
@@ -157,6 +207,8 @@ export declare class CommerceController {
         buyerId: string;
         sellerId: string;
         amount: any;
+        depositCredit: any;
+        amountDue: number;
         fee: any;
         sellerAmount: any;
         currency: any;
@@ -176,6 +228,8 @@ export declare class CommerceController {
         buyerId: string;
         sellerId: string;
         amount: any;
+        depositCredit: any;
+        amountDue: number;
         fee: any;
         sellerAmount: any;
         currency: any;

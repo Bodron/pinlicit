@@ -1,3 +1,5 @@
+import 'features/commerce/commerce_review_screen.dart';
+import 'features/commerce/commerce_screen.dart';
 import 'package:licit/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -27,6 +29,10 @@ final routerProvider = Provider<GoRouter>((ref) {
     initialLocation: '/',
     refreshListenable: session,
     redirect: (context, state) {
+      if (state.uri.scheme == 'pinbind') {
+        // Stripe handles 3DS; a redirect alone never changes a payment state.
+        return '/commerce';
+      }
       final restoring = !session.hasFinishedRestore;
       final onSplash = state.matchedLocation == '/splash';
       final loggingIn =
@@ -50,6 +56,15 @@ final routerProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
+      GoRoute(
+        path: '/commerce-review',
+        builder: (context, state) => const CommerceReviewScreen(),
+      ),
+      GoRoute(
+        path: '/commerce',
+        builder: (context, state) =>
+            CommerceScreen(orderId: state.uri.queryParameters['order']),
+      ),
       GoRoute(
         path: '/splash',
         builder: (context, state) => const SplashScreen(),

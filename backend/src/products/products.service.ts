@@ -236,6 +236,14 @@ export class ProductsService {
     if (candidate && String(candidate.seller) === String(buyerId)) {
       throw new ForbiddenException("You cannot buy your own product.");
     }
+    if (
+      candidate &&
+      this.config?.get<string>("STRIPE_ENABLED") === "true" &&
+      candidate.commerceVersion !== 1
+    )
+      throw new ForbiddenException(
+        "This legacy listing must be enrolled by its seller before Stripe checkout.",
+      );
     if (candidate?.commerceVersion === 1) {
       if (!this.commerceAccounts)
         throw new ForbiddenException("Identity verification is required.");

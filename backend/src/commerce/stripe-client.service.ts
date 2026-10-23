@@ -13,6 +13,19 @@ export class StripeClientService {
   get enabled() {
     return this.config.get<string>("STRIPE_ENABLED") === "true";
   }
+  mobileConfig() {
+    const key = this.config.get<string>("STRIPE_PUBLISHABLE_KEY") || "";
+    return {
+      enabled: this.enabled,
+      ready: this.enabled && /^pk_test_/.test(key),
+      mode: "test",
+      publishableKey: /^pk_test_/.test(key) ? key : null,
+      merchantDisplayName: "Pinbind",
+      guaranteeBps: 1000,
+      minimumGuaranteePayment: 300,
+      minimumBidMaximum: 3000,
+    };
+  }
   assertSecureAuth() {
     const secret = this.config.get<string>("JWT_SECRET") || "";
     if (secret.length < 32 || secret === "dev-secret") {

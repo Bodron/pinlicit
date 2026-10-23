@@ -2,7 +2,7 @@
 
 ## Decizia de produs
 
-Model confirmat: cumpărătorul plătește, vânzătorul primește suma după livrare, Pinbind reține comisionul. Implementarea din această etapă este backend pentru sandbox, dezactivată implicit. Rulează cu MongoDB-ul configurat în `MONGODB_URI`, inclusiv cloud Atlas; baza locală este necesară doar testelor automate de integrare. Ghidul de server este în [backend-server-stripe.md](backend-server-stripe.md). Aplicația Flutter și site-ul nu au încă ecranele Stripe, iar cheile live sunt refuzate explicit. Anunțurile existente nu sunt migrate automat. Pregătirea cloud adaugă numai colecțiile și indexurile commerce.
+Model confirmat: cumpărătorul plătește, vânzătorul primește suma după livrare, Pinbind reține comisionul. Implementarea din această etapă este backend pentru sandbox, dezactivată implicit. Rulează cu MongoDB-ul configurat în `MONGODB_URI`, inclusiv cloud Atlas; baza locală este necesară doar testelor automate de integrare. Ghidul de server este în [backend-server-stripe.md](backend-server-stripe.md). Aplicația Flutter are acum PaymentSheet, verificare Identity, onboarding Connect și ecrane de comenzi; vezi [ghidul mobil](stripe-mobile-testing.md). Site-ul nu are încă formularul Stripe. Cheile live sunt refuzate explicit. Anunțurile existente nu sunt migrate automat. Pregătirea cloud adaugă numai colecțiile și indexurile commerce.
 
 ```mermaid
 flowchart LR
@@ -29,7 +29,7 @@ Transferul în contul Stripe al vânzătorului și plata din acel cont în banc�
 
 [Stripe Connect separă încasarea platformei de transferurile către vânzători](https://docs.stripe.com/connect/separate-charges-and-transfers). Acest flux se potrivește cu deblocarea după livrare. Costurile procesării, refund-urile și riscul de chargeback ale acestui model trebuie bugetate de platformă și reflectate în contractele comerciale.
 
-Un hold pe card pe întreaga durată a licitației nu este baza sistemului: [autorizările au termene de expirare variabile](https://docs.stripe.com/payments/place-a-hold-on-a-payment-method). Prima versiune solicită plata cu participarea cumpărătorului după rezervare/câștigare. Nu debitează automat participanții și nu confundă salvarea unui card cu garantarea plății.
+Un hold pe card pe întreaga durată a licitației nu este baza sistemului: [autorizările au termene de expirare variabile](https://docs.stripe.com/payments/place-a-hold-on-a-payment-method). Versiunea mobilă solicită explicit garanția rambursabilă de 10% înainte de ofertă și plata restului după rezervare/câștigare. Nu debitează automat carduri fără participarea utilizatorului. Garanția se restituie celor care pierd și se scade din prețul câștigătorului, conform ghidului mobil.
 
 [Stripe precizează că nu oferă servicii de escrow](https://docs.stripe.com/connect/manual-payouts). Produsul va descrie corect transferurile amânate. Tipul entității Pinbind, țările acceptate și termenii marketplace-ului trebuie să fie compatibili cu configurația aprobată de Stripe.
 
@@ -130,12 +130,12 @@ Pentru separate charges and transfers trebuie configurată și disponibilitatea 
 
 Evenimente pentru webhook-ul platformei: `identity.verification_session.processing`, `.verified`, `.requires_input`, `.canceled`, `.redacted`; `payment_intent.succeeded`, `.processing`, `.payment_failed`, `.canceled`; `charge.refunded`, `charge.dispute.created`, `.updated`, `.closed`; `transfer.created`, `.updated`, `.reversed`. Evenimentul Identity `redacted` trebuie selectat explicit. Pentru Connect: `account.updated`. Folosește versiunea de API compatibilă cu SDK-ul fixat în lockfile.
 
-## Integrarea următoare în Flutter și Next.js
+## Integrarea Flutter și pașii următori pentru Next.js
 
 - Identitate: lansarea paginii Stripe, revenire în aplicație și citirea statusului real din `/commerce/me`; fără upload de buletin către API-ul nostru.
 - Seller onboarding: link găzduit de Stripe, apoi status curent; IBAN-ul nu este introdus într-un formular propriu.
 - Plata comenzii: Stripe PaymentSheet pe mobil / Elements pe web, folosind secretul propriei plăți. Nu afișa „plătit” doar pentru că dialogul sau redirectul s-a închis.
-- Activitate: câștigătorul și obligația de plată vin din comandă, nu din comparația `maxAmount >= currentPrice` folosită încă de unele ecrane vechi.
+- Activitate Flutter: câștigătorul pentru anunțurile financiare vine din comenzile serverului; comparația `maxAmount >= currentPrice` rămâne doar pentru afișajul legacy.
 - Vânzări: diferențiază plătit, în curs de livrare, transferat în Connect și ajuns în bancă. UI-ul vechi de „venit total” nu este un extras de cont.
 - Livrare, probleme și suport: acțiuni explicite, istoric și stări de revizuire. Nu genera confirmări fictive pentru funcții de curier/payout care lipsesc.
 - Înainte de live: legătura verificată dintre identitatea persoanei/reprezentantului și beneficiarul Connect (două flag-uri verificate nu demonstrează singure această legătură), contabilitate/reconciliere completă, reversări și dispute, evenimente payout, monitorizare/alerte, securizarea administrării, audit de dependențe, test de crash/replay, politici de livrare/retur/biometrie și verificarea configurației cu Stripe.

@@ -31,6 +31,16 @@ export class CommerceAccountsService {
       { upsert: true, new: true },
     );
   }
+  async refreshStatus(userId: string) {
+    if (this.stripe.enabled) {
+      const profile = await this.accounts.findOne({ user: userId });
+      if (profile?.verificationSessionId)
+        await this.refreshIdentity(profile.verificationSessionId);
+      if (profile?.connectedAccountId)
+        await this.refreshConnect(profile.connectedAccountId);
+    }
+    return this.status(userId);
+  }
   async status(userId: string) {
     const profile = await this.accounts.findOne({ user: userId }).lean();
     return {

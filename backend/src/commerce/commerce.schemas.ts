@@ -88,6 +88,11 @@ export class CommerceOrder {
   @Prop() issueCode?: string;
   @Prop() reviewCode?: string;
   @Prop() refundReason?: string;
+  @Prop() refundStartedAt?: Date;
+  @Prop({ default: false }) depositAllocated: boolean;
+  @Prop({ default: 0 }) depositCredit: number;
+  @Prop({ type: [Object], default: [] }) depositParts: any[];
+  @Prop({ type: [Object], default: [] }) payoutParts: any[];
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: "User" })
   refundRequestedBy?: Types.ObjectId;
 }
@@ -101,6 +106,38 @@ CommerceOrderSchema.index(
   { paymentIntentId: 1 },
   { unique: true, sparse: true },
 );
+
+// One immutable installment per guarantee top-up. No reusable internal wallet.
+@Schema({ timestamps: true })
+export class BidDeposit {
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: "Product", required: true })
+  product: Types.ObjectId;
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: "User", required: true })
+  buyer: Types.ObjectId;
+  @Prop({ required: true }) amount: number;
+  @Prop({ required: true }) maximum: number;
+  @Prop({ required: true, unique: true }) attempt: string;
+  @Prop({ required: true }) startedAt: Date;
+  @Prop() paymentIntentId?: string;
+  @Prop() chargeId?: string;
+  @Prop({ default: "pending" }) status: string;
+  @Prop({ default: 0 }) creditAmount: number;
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: "CommerceOrder" })
+  order?: Types.ObjectId;
+  @Prop({ default: 0 }) refundedAmount: number;
+  @Prop({ default: 0 }) refundTarget: number;
+  @Prop() refundStartedAt?: Date;
+  @Prop() refundRequestedTotal?: number;
+  @Prop() refundRequestAmount?: number;
+  @Prop() refundId?: string;
+  @Prop() reviewCode?: string;
+  @Prop({ default: () => new Date() }) nextCheckAt: Date;
+}
+export type BidDepositDocument = HydratedDocument<BidDeposit>;
+export const BidDepositSchema = SchemaFactory.createForClass(BidDeposit);
+BidDepositSchema.index({ product: 1, buyer: 1 });
+BidDepositSchema.index({ status: 1, nextCheckAt: 1 });
+BidDepositSchema.index({ paymentIntentId: 1 }, { unique: true, sparse: true });
 
 // Persist only routing identifiers, never the raw Stripe event/identity payload.
 @Schema({ timestamps: true })

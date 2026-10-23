@@ -49,7 +49,7 @@ export class CreateProductDto {
 
   @Type(() => Number)
   @IsInt()
-  @Min(1)
+  @Min(300)
   buyNowPrice: number;
 
   @IsDateString()

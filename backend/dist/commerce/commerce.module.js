@@ -7,6 +7,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CommerceModule = void 0;
+const bid_deposits_service_1 = require("./bid-deposits.service");
 const commerce_return_controller_1 = require("./commerce-return.controller");
 const common_1 = require("@nestjs/common");
 const mongoose_1 = require("@nestjs/mongoose");
@@ -28,6 +29,7 @@ exports.CommerceModule = CommerceModule = __decorate([
     (0, common_1.Module)({
         imports: [
             mongoose_1.MongooseModule.forFeature([
+                { name: commerce_schemas_1.BidDeposit.name, schema: commerce_schemas_1.BidDepositSchema },
                 { name: user_schema_1.User.name, schema: user_schema_1.UserSchema },
                 { name: product_schema_1.Product.name, schema: product_schema_1.ProductSchema },
                 { name: bid_schema_1.Bid.name, schema: bid_schema_1.BidSchema },
@@ -38,6 +40,7 @@ exports.CommerceModule = CommerceModule = __decorate([
             ]),
         ],
         providers: [
+            bid_deposits_service_1.BidDepositsService,
             stripe_client_service_1.StripeClientService,
             commerce_lock_service_1.CommerceLockService,
             commerce_accounts_service_1.CommerceAccountsService,
@@ -53,6 +56,7 @@ exports.CommerceModule = CommerceModule = __decorate([
         exports: [
             commerce_accounts_service_1.CommerceAccountsService,
             commerce_orders_service_1.CommerceOrdersService,
+            bid_deposits_service_1.BidDepositsService,
             stripe_client_service_1.StripeClientService,
         ],
     })

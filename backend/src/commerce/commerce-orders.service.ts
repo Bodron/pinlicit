@@ -1,3 +1,4 @@
+import { BidDepositsService } from "./bid-deposits.service";
 import {
   BadRequestException,
   ConflictException,
@@ -30,6 +31,7 @@ export class CommerceOrdersService {
     private readonly stripe: StripeClientService,
     private readonly accounts: CommerceAccountsService,
     private readonly locks: CommerceLockService,
+    private readonly deposits: BidDepositsService,
   ) {}
   async ready() {
     await this.orders.init();
@@ -100,14 +102,50 @@ export class CommerceOrdersService {
       refundReason: order.refundReason,
     }));
   }
+  async details(id: string, userId: string) {
+    return this.locks.run(`order:${id}`, async () => {
+      let order: CommerceOrderDocument = await this.requireOrder(id);
+      if (![String(order.buyer), String(order.seller)].includes(userId))
+        throw new ForbiddenException();
+      if (order.status === "awaiting_payment")
+        order = await this.deposits.allocate(order);
+      if (order.paymentIntentId)
+        await this.syncPayment(
+          await this.stripe.sdk.paymentIntents.retrieve(order.paymentIntentId),
+        );
+      if (order.status === "refund_pending")
+        await this.deposits.reconcileOrder(order);
+      order = await this.requireOrder(id);
+      return publicOrder(order);
+    });
+  }
+  private due(order: CommerceOrderDocument) {
+    return order.amount - (order.depositCredit || 0);
+  }
   async mine(userId: string) {
-    return (
-      await this.orders
-        .find({ $or: [{ buyer: userId }, { seller: userId }] })
-        .sort({ createdAt: -1 })
-        .limit(50)
-        .lean()
-    ).map(publicOrder);
+    const rows = await this.orders
+      .find({ $or: [{ buyer: userId }, { seller: userId }] })
+      .sort({ createdAt: -1 })
+      .limit(50);
+    const result = [];
+    for (const row of rows) {
+      if (row.status === "awaiting_payment" && !row.depositAllocated) {
+        try {
+          result.push(
+            await this.locks.run(`order:${row._id}`, async () =>
+              publicOrder(
+                await this.deposits.allocate(
+                  await this.requireOrder(String(row._id)),
+                ),
+              ),
+            ),
+          );
+        } catch {
+          result.push({ ...publicOrder(row), settlementPending: true });
+        }
+      } else result.push(publicOrder(row));
+    }
+    return result;
   }
   private async requireOrder(id: string) {
     const order = await this.orders.findById(id);
@@ -118,7 +156,7 @@ export class CommerceOrdersService {
     const sdk = this.stripe.sdk;
     this.stripe.setting("STRIPE_MAX_FULFILLMENT_DAYS", 1, 60);
     return this.locks.run(`order:${id}`, async () => {
-      const order = await this.requireOrder(id);
+      let order: CommerceOrderDocument = await this.requireOrder(id);
       assertBuyer(order, buyerId);
       if (
         order.status !== "awaiting_payment" ||
@@ -129,7 +167,27 @@ export class CommerceOrdersService {
       const destination = await this.accounts.requireSeller(
         String(order.seller),
       );
+      order = await this.deposits.allocate(order);
+      await this.validateCreditCharges(order);
       order.connectedAccountId = destination;
+      if (this.due(order) === 0) {
+        order.status = "paid";
+        order.fundsReviewAt = new Date(
+          Date.now() +
+            this.stripe.setting("STRIPE_MAX_FULFILLMENT_DAYS", 1, 60) *
+              86400000,
+        );
+        await order.save();
+        await this.products.updateOne(
+          {
+            _id: order.product,
+            status: ProductStatus.Reserved,
+            reservedBy: order.buyer,
+          },
+          { $set: { status: ProductStatus.Sold } },
+        );
+        return { status: "paid" };
+      }
       if (!order.paymentStartedAt) order.paymentStartedAt = new Date();
       await order.save();
       let intent: Stripe.PaymentIntent;
@@ -153,7 +211,7 @@ export class CommerceOrdersService {
         }
         intent = await sdk.paymentIntents.create(
           {
-            amount: order.amount,
+            amount: this.due(order),
             currency: order.currency,
             allowed_payment_method_types: ["card"],
             capture_method: "automatic",
@@ -185,7 +243,7 @@ export class CommerceOrdersService {
   ) {
     if (
       intent.livemode ||
-      intent.amount !== order.amount ||
+      intent.amount !== this.due(order) ||
       intent.currency !== order.currency ||
       intent.metadata.orderId !== String(order._id) ||
       intent.metadata.attempt !== order.paymentAttempt ||
@@ -213,6 +271,7 @@ export class CommerceOrdersService {
       },
     );
     if (intent.status === "succeeded") {
+      await this.validateCreditCharges(order);
       const maxDays = this.stripe.setting("STRIPE_MAX_FULFILLMENT_DAYS", 1, 60);
       // Also catches a payment whose success webhook arrived after expiration.
       await this.orders.updateOne(
@@ -288,20 +347,31 @@ export class CommerceOrdersService {
         !["paid", "shipped", "delivered", "refund_pending"].includes(
           order.status,
         ) ||
-        !order.paymentIntentId ||
+        (!order.paymentIntentId && !order.depositCredit) ||
         order.transferId
       )
         throw new ConflictException(
           "Refund requires manual review for this state.",
         );
+      if (
+        order.refundStartedAt &&
+        Date.now() - order.refundStartedAt.getTime() >= 20 * 3600000
+      )
+        throw new ConflictException(
+          "Refund requires reconciliation before retry.",
+        );
+      order.refundStartedAt ||= new Date();
       order.status = "refund_pending";
       order.refundReason = reason;
       order.refundRequestedBy = adminId as any;
       await order.save();
-      await this.stripe.sdk.refunds.create(
-        { payment_intent: order.paymentIntentId },
-        { idempotencyKey: `refund:${order._id}` },
-      );
+      if (order.paymentIntentId)
+        await this.stripe.sdk.refunds.create(
+          { payment_intent: order.paymentIntentId },
+          { idempotencyKey: `refund:${order._id}` },
+        );
+      // Guarantee installments are refunded by the durable deposit worker.
+      // Marking the order pending before external calls makes retries resumable.
       // Final state comes from Stripe, never from the return screen.
       return publicOrder(order);
     });
@@ -315,8 +385,17 @@ export class CommerceOrdersService {
         : charge.payment_intent?.id;
     const order = await this.orders.findOne({ paymentIntentId: intentId });
     if (!order) return;
-    if (charge.amount !== order.amount || charge.currency !== order.currency)
+    if (charge.amount !== this.due(order) || charge.currency !== order.currency)
       throw new ConflictException("Charge amount mismatch.");
+    if (
+      order.depositCredit > 0 &&
+      charge.amount_refunded > 0 &&
+      !charge.disputed &&
+      order.status === "refund_pending"
+    ) {
+      await this.deposits.reconcileOrder(order);
+      return;
+    }
     if (charge.disputed || charge.amount_refunded > 0) {
       // Post-transfer refunds/disputes freeze the order for support. No automated
       // assumption that a transfer reversal returns money to the buyer.
@@ -354,6 +433,7 @@ export class CommerceOrdersService {
             issueOpen: false,
           },
           { status: "transfer_pending" },
+          { status: "refund_pending" },
           {
             status: { $in: ["paid", "shipped", "delivered"] },
             fundsReviewAt: { $lte: new Date() },
@@ -380,6 +460,26 @@ export class CommerceOrdersService {
   private async maintainOrder(id: string) {
     const order = await this.requireOrder(id);
     const sdk = this.stripe.sdk;
+    if (order.status === "refund_pending") {
+      if (
+        !order.refundStartedAt ||
+        Date.now() - order.refundStartedAt.getTime() >= 20 * 3600000
+      ) {
+        order.status = "review_required";
+        order.reviewCode = "refund_reconciliation_needed";
+        await order.save();
+        return;
+      }
+      if (order.paymentIntentId)
+        await sdk.refunds.create(
+          { payment_intent: order.paymentIntentId },
+          { idempotencyKey: `refund:${order._id}` },
+        );
+      if (order.depositCredit > 0) await this.deposits.reconcileOrder(order);
+      else if (order.chargeId)
+        await this.syncCharge(await sdk.charges.retrieve(order.chargeId));
+      return;
+    }
     if (order.status === "awaiting_payment") {
       if (order.paymentIntentId) {
         let intent = await sdk.paymentIntents.retrieve(order.paymentIntentId);
@@ -442,6 +542,10 @@ export class CommerceOrdersService {
       order.releaseAfter.getTime() > Date.now()
     )
       return;
+    if (order.depositCredit > 0) {
+      await this.transferInstallments(order);
+      return;
+    }
     if (!order.paymentIntentId) throw new ConflictException();
     const intent = await sdk.paymentIntents.retrieve(order.paymentIntentId);
     this.assertIntent(order, intent);
@@ -498,6 +602,10 @@ export class CommerceOrdersService {
   }
   async refreshPayment(id: string) {
     const intent = await this.stripe.sdk.paymentIntents.retrieve(id);
+    if (intent.metadata?.depositId) {
+      await this.deposits.syncIntent(intent);
+      return;
+    }
     if (!intent.metadata?.orderId || !intent.metadata?.attempt) return;
     return this.locks.run(`order:${intent.metadata.orderId}`, async () => {
       await this.syncPayment(await this.stripe.sdk.paymentIntents.retrieve(id));
@@ -511,7 +619,10 @@ export class CommerceOrdersService {
         : charge.payment_intent?.id;
     if (!intentId) return;
     const order = await this.orders.findOne({ paymentIntentId: intentId });
-    if (!order) return;
+    if (!order) {
+      await this.deposits.syncCharge(charge);
+      return;
+    }
     return this.locks.run(`order:${order._id}`, async () => {
       await this.syncCharge(await this.stripe.sdk.charges.retrieve(id));
     });
@@ -530,6 +641,10 @@ export class CommerceOrdersService {
       paymentAttempt: transfer.metadata.attempt,
     });
     if (!order) return;
+    if (order.depositCredit > 0) {
+      await this.syncInstallmentTransfer(order, transfer);
+      return;
+    }
     const destination =
       typeof transfer.destination === "string"
         ? transfer.destination
@@ -564,5 +679,130 @@ export class CommerceOrdersService {
         },
       },
     );
+  }
+  private async validateCreditCharges(order: CommerceOrderDocument) {
+    for (const part of order.depositParts) {
+      const intent = await this.stripe.sdk.paymentIntents.retrieve(
+        part.paymentIntentId,
+      );
+      const charge = await this.stripe.sdk.charges.retrieve(part.chargeId);
+      if (
+        intent.livemode ||
+        intent.status !== "succeeded" ||
+        intent.metadata.depositId !== part.depositId ||
+        charge.livemode ||
+        charge.currency !== order.currency ||
+        charge.disputed ||
+        charge.amount - charge.amount_refunded < part.amount
+      )
+        throw new ConflictException("Guarantee funds are unavailable.");
+    }
+  }
+  private async transferInstallments(order: CommerceOrderDocument) {
+    await this.validateCreditCharges(order);
+    const sources = [...order.depositParts];
+    if (order.paymentIntentId) {
+      const intent = await this.stripe.sdk.paymentIntents.retrieve(
+        order.paymentIntentId,
+      );
+      this.assertIntent(order, intent);
+      const chargeId =
+        typeof intent.latest_charge === "string"
+          ? intent.latest_charge
+          : intent.latest_charge?.id;
+      if (intent.status !== "succeeded" || !chargeId)
+        throw new ConflictException();
+      const charge = await this.stripe.sdk.charges.retrieve(chargeId);
+      if (charge.disputed || charge.amount_refunded) {
+        await this.syncCharge(charge);
+        return;
+      }
+      sources.push({ chargeId, amount: this.due(order) });
+    }
+    const destination = await this.accounts.requireSeller(String(order.seller));
+    if (order.connectedAccountId && order.connectedAccountId !== destination)
+      throw new ConflictException("Destination changed.");
+    order.connectedAccountId = destination;
+    if (!order.payoutParts.length) {
+      let remaining = order.sellerAmount;
+      order.payoutParts = sources.flatMap((source) => {
+        const amount = Math.min(remaining, source.amount);
+        remaining -= amount;
+        return amount ? [{ amount, chargeId: source.chargeId }] : [];
+      });
+      if (remaining) throw new ConflictException("Insufficient order funds.");
+      order.status = "transfer_pending";
+      order.transferStartedAt = new Date();
+      await order.save();
+    }
+    if (
+      !order.transferStartedAt ||
+      Date.now() - order.transferStartedAt.getTime() >= 20 * 3600000
+    ) {
+      order.status = "review_required";
+      order.reviewCode = "installment_transfer_reconciliation_needed";
+      await order.save();
+      return;
+    }
+    for (let index = 0; index < order.payoutParts.length; index++) {
+      const part = order.payoutParts[index];
+      if (part.transferId) continue;
+      const transfer = await this.stripe.sdk.transfers.create(
+        {
+          amount: part.amount,
+          currency: order.currency,
+          destination,
+          source_transaction: part.chargeId,
+          transfer_group: `order_${order._id}`,
+          metadata: {
+            orderId: String(order._id),
+            attempt: order.paymentAttempt,
+            part: String(index),
+          },
+        },
+        { idempotencyKey: `transfer:${order._id}:part:${index}` },
+      );
+      await this.syncInstallmentTransfer(order, transfer);
+    }
+  }
+  private async syncInstallmentTransfer(
+    order: CommerceOrderDocument,
+    transfer: Stripe.Transfer,
+  ) {
+    const index = Number(transfer.metadata.part);
+    const part = order.payoutParts[index];
+    const destination =
+      typeof transfer.destination === "string"
+        ? transfer.destination
+        : transfer.destination?.id;
+    if (
+      !Number.isInteger(index) ||
+      !part ||
+      transfer.livemode ||
+      transfer.metadata.attempt !== order.paymentAttempt ||
+      transfer.amount !== part.amount ||
+      transfer.source_transaction !== part.chargeId ||
+      transfer.currency !== order.currency ||
+      transfer.transfer_group !== `order_${order._id}` ||
+      destination !== order.connectedAccountId ||
+      (part.transferId && part.transferId !== transfer.id)
+    )
+      throw new ConflictException("Installment transfer mismatch.");
+    part.transferId = transfer.id;
+    order.markModified("payoutParts");
+    order.transferId ||= transfer.id;
+    if (
+      transfer.reversed ||
+      transfer.amount_reversed ||
+      order.issueOpen ||
+      ["review_required", "disputed", "refund_pending", "refunded"].includes(
+        order.status,
+      )
+    ) {
+      order.status = "review_required";
+      order.issueOpen = true;
+    } else if (order.payoutParts.every((item) => item.transferId))
+      order.status = "completed";
+    await order.save();
   }
 }

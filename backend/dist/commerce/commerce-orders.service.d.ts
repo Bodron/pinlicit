@@ -1,3 +1,4 @@
+import { BidDepositsService } from "./bid-deposits.service";
 import { Model } from "mongoose";
 import Stripe = require("stripe");
 import { ProductDocument } from "../products/schemas/product.schema";
@@ -11,7 +12,8 @@ export declare class CommerceOrdersService {
     private readonly stripe;
     private readonly accounts;
     private readonly locks;
-    constructor(orders: Model<CommerceOrderDocument>, products: Model<ProductDocument>, stripe: StripeClientService, accounts: CommerceAccountsService, locks: CommerceLockService);
+    private readonly deposits;
+    constructor(orders: Model<CommerceOrderDocument>, products: Model<ProductDocument>, stripe: StripeClientService, accounts: CommerceAccountsService, locks: CommerceLockService, deposits: BidDepositsService);
     ready(): Promise<void>;
     create(productId: string, buyerId: string): Promise<{
         id: string;
@@ -20,6 +22,8 @@ export declare class CommerceOrdersService {
         buyerId: string;
         sellerId: string;
         amount: any;
+        depositCredit: any;
+        amountDue: number;
         fee: any;
         sellerAmount: any;
         currency: any;
@@ -42,6 +46,8 @@ export declare class CommerceOrdersService {
         buyerId: string;
         sellerId: string;
         amount: any;
+        depositCredit: any;
+        amountDue: number;
         fee: any;
         sellerAmount: any;
         currency: any;
@@ -54,13 +60,15 @@ export declare class CommerceOrdersService {
         issueOpen: any;
         refundedAmount: any;
     }[]>;
-    mine(userId: string): Promise<{
+    details(id: string, userId: string): Promise<{
         id: string;
         productId: string;
         title: any;
         buyerId: string;
         sellerId: string;
         amount: any;
+        depositCredit: any;
+        amountDue: number;
         fee: any;
         sellerAmount: any;
         currency: any;
@@ -72,7 +80,9 @@ export declare class CommerceOrdersService {
         releaseAfter: any;
         issueOpen: any;
         refundedAmount: any;
-    }[]>;
+    }>;
+    private due;
+    mine(userId: string): Promise<any[]>;
     private requireOrder;
     payment(id: string, buyerId: string): Promise<{
         status: string;
@@ -90,6 +100,8 @@ export declare class CommerceOrdersService {
         buyerId: string;
         sellerId: string;
         amount: any;
+        depositCredit: any;
+        amountDue: number;
         fee: any;
         sellerAmount: any;
         currency: any;
@@ -109,6 +121,8 @@ export declare class CommerceOrdersService {
         buyerId: string;
         sellerId: string;
         amount: any;
+        depositCredit: any;
+        amountDue: number;
         fee: any;
         sellerAmount: any;
         currency: any;
@@ -128,6 +142,8 @@ export declare class CommerceOrdersService {
         buyerId: string;
         sellerId: string;
         amount: any;
+        depositCredit: any;
+        amountDue: number;
         fee: any;
         sellerAmount: any;
         currency: any;
@@ -147,6 +163,8 @@ export declare class CommerceOrdersService {
         buyerId: string;
         sellerId: string;
         amount: any;
+        depositCredit: any;
+        amountDue: number;
         fee: any;
         sellerAmount: any;
         currency: any;
@@ -166,4 +184,7 @@ export declare class CommerceOrdersService {
     refreshCharge(id: string): Promise<void>;
     refreshTransfer(id: string): Promise<void>;
     syncTransfer(transfer: Stripe.Transfer): Promise<void>;
+    private validateCreditCharges;
+    private transferInstallments;
+    private syncInstallmentTransfer;
 }

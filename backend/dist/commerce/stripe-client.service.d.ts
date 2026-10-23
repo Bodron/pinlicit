@@ -5,6 +5,16 @@ export declare class StripeClientService {
     private client?;
     constructor(config: ConfigService);
     get enabled(): boolean;
+    mobileConfig(): {
+        enabled: boolean;
+        ready: boolean;
+        mode: string;
+        publishableKey: string;
+        merchantDisplayName: string;
+        guaranteeBps: number;
+        minimumGuaranteePayment: number;
+        minimumBidMaximum: number;
+    };
     assertSecureAuth(): void;
     get transfersEnabled(): boolean;
     get sdk(): Stripe;

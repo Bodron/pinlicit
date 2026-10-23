@@ -40,6 +40,8 @@ function validateEnvironment(values) {
     if (stripe.enabled) {
         stripe.assertSecureAuth();
         stripe.sdk;
+        if (!stripe.mobileConfig().ready)
+            throw new Error("A sandbox STRIPE_PUBLISHABLE_KEY is required.");
         for (const key of [
             "STRIPE_WEBHOOK_SECRET",
             "STRIPE_CONNECT_WEBHOOK_SECRET",

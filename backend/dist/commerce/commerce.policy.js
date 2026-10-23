@@ -28,6 +28,8 @@ function publicOrder(order) {
         buyerId: String(order.buyer),
         sellerId: String(order.seller),
         amount: order.amount,
+        depositCredit: order.depositCredit || 0,
+        amountDue: order.amount - (order.depositCredit || 0),
         fee: order.fee,
         sellerAmount: order.sellerAmount,
         currency: order.currency,

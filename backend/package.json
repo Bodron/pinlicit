@@ -14,7 +14,9 @@
     "start:prod": "node dist/main.js",
     "check:env": "npm run build && node scripts/check-env.cjs",
     "db:prepare:commerce": "npm run build && node scripts/prepare-commerce-db.cjs",
-    "test:integration:images": "npm run build && node test/images.integration.cjs"
+    "test:integration:images": "npm run build && node test/images.integration.cjs",
+    "check:stripe:mobile": "node scripts/check-stripe-mobile.cjs",
+    "test:stripe:sandbox": "node scripts/test-stripe-sandbox-payments.cjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.758.0",

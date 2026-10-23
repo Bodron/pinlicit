@@ -15,6 +15,8 @@ export declare function publicOrder(order: any): {
     buyerId: string;
     sellerId: string;
     amount: any;
+    depositCredit: any;
+    amountDue: number;
     fee: any;
     sellerAmount: any;
     currency: any;

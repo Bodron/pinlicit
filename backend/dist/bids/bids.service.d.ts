@@ -1,3 +1,4 @@
+import { BidDepositsService } from "../commerce/bid-deposits.service";
 import { ConfigService } from "@nestjs/config";
 import { CommerceAccountsService } from "../commerce/commerce-accounts.service";
 import { Model, Types } from "mongoose";
@@ -10,7 +11,8 @@ export declare class BidsService {
     private readonly config;
     private readonly auctionsGateway;
     private readonly commerceAccounts?;
-    constructor(bidModel: Model<BidDocument>, productsService: ProductsService, config: ConfigService, auctionsGateway: AuctionsGateway, commerceAccounts?: CommerceAccountsService);
+    private readonly deposits?;
+    constructor(bidModel: Model<BidDocument>, productsService: ProductsService, config: ConfigService, auctionsGateway: AuctionsGateway, commerceAccounts?: CommerceAccountsService, deposits?: BidDepositsService);
     private validateBid;
     placeBid(productId: string, bidderId: string, maxAmount: number): Promise<{
         product: import("mongoose").Document<unknown, {}, import("mongoose").Document<unknown, {}, import("../products/schemas/product.schema").Product, {}, {}> & import("../products/schemas/product.schema").Product & {

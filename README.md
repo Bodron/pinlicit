@@ -120,3 +120,7 @@ npm test
 Fotografiile trec prin `POST /uploads/images` ca multipart: backend-ul validează octeții, optimizează cu Sharp/libvips și salvează numai variante WebP în S3. Aplicația, administratorul și site-ul folosesc manifestul pentru miniaturi, feed și detalii. Sunt acceptate JPG/JPEG, PNG și WebP statice de maximum 10 MB/40 MP. Originalele nu sunt păstrate în S3.
 
 [Flux, cache, CloudFront, limite, curățare și măsurători](docs/image-optimization.md). Pentru eliminarea referințelor video vechi consultă [migrarea imaginilor](docs/images-only.md).
+
+## Plăți Stripe în aplicația mobilă
+
+Profil → **Plăți și comenzi** deschide verificarea identității, configurarea încasărilor și comenzile. Licitarea pe anunțurile Stripe cere o garanție rambursabilă de 10% din maximul ales. Plata produsului folosește PaymentSheet în aplicație, cu garanția scăzută din preț. Implementarea este exclusiv sandbox; instrucțiunile și limitele sunt în [ghidul de testare mobilă](docs/stripe-mobile-testing.md).

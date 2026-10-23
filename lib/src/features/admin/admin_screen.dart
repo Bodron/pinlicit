@@ -1,3 +1,4 @@
+import 'package:go_router/go_router.dart';
 import 'package:licit/l10n/l10n.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -51,6 +52,11 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            FilledButton.icon(
+              onPressed: () => context.push('/commerce-review'),
+              icon: const Icon(Icons.payments_outlined),
+              label: const Text('Suport comenzi și rambursări Stripe'),
+            ),
             Text(
               context.l10n.sellerApplications,
               style: Theme.of(

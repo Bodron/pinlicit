@@ -1,3 +1,4 @@
+import { BidDepositsService } from "./bid-deposits.service";
 import {
   ArgumentsHost,
   Body,
@@ -28,7 +29,12 @@ import { UserRole } from "../users/schemas/user.schema";
 import { CommerceAccountsService } from "./commerce-accounts.service";
 import { CommerceOrdersService } from "./commerce-orders.service";
 import { CommerceWorker } from "./commerce.worker";
-import { OrderIssueDto, OrderRefundDto, ShipmentDto } from "./commerce.dto";
+import {
+  BidGuaranteeDto,
+  OrderIssueDto,
+  OrderRefundDto,
+  ShipmentDto,
+} from "./commerce.dto";
 import { StripeClientService } from "./stripe-client.service";
 
 @Catch(Stripe.errors.StripeError)
@@ -73,9 +79,42 @@ export class CommerceController {
   constructor(
     private readonly accounts: CommerceAccountsService,
     private readonly orders: CommerceOrdersService,
+    private readonly stripe: StripeClientService,
+    private readonly deposits: BidDepositsService,
   ) {}
+  @Get("config") config() {
+    return this.stripe.mobileConfig();
+  }
+  @Get("deposits") depositsMine(@CurrentUser() user: any) {
+    return this.deposits.mine(String(user._id));
+  }
+  @Post("products/:id/activate") activate(
+    @Param("id", CommerceIdPipe) id: string,
+    @CurrentUser() user: any,
+  ) {
+    return this.deposits.activate(id, String(user._id));
+  }
+  @Post("products/:id/guarantee/cancel") cancelGuarantee(
+    @Param("id", CommerceIdPipe) id: string,
+    @CurrentUser() user: any,
+  ) {
+    return this.deposits.cancelPending(id, String(user._id));
+  }
+  @Post("products/:id/guarantee") guarantee(
+    @Param("id", CommerceIdPipe) id: string,
+    @CurrentUser() user: any,
+    @Body() dto: BidGuaranteeDto,
+  ) {
+    return this.deposits.payment(id, String(user._id), dto.maximum);
+  }
+  @Get("orders/:id") order(
+    @Param("id", CommerceIdPipe) id: string,
+    @CurrentUser() user: any,
+  ) {
+    return this.orders.details(id, String(user._id));
+  }
   @Get("me") status(@CurrentUser() user: any) {
-    return this.accounts.status(String(user._id));
+    return this.accounts.refreshStatus(String(user._id));
   }
   @Post("identity/session") identity(@CurrentUser() user: any) {
     return this.accounts.startIdentity(String(user._id));

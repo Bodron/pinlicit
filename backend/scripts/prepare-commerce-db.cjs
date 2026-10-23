@@ -16,6 +16,7 @@ async function main() {
       "MongoDB must support transactions (replica set or sharded cluster)",
     );
   for (const name of [
+    "BidDeposit",
     "CommerceAccount",
     "CommerceOrder",
     "StripeInbox",

@@ -1,9 +1,9 @@
+import '../../commerce/commerce_flow.dart';
 import '../../../shared/images/product_image.dart';
 import 'package:licit/l10n/l10n.dart';
 import 'dart:async';
 import 'dart:ui';
 
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
@@ -290,8 +290,15 @@ class _AuctionImageCardState extends ConsumerState<AuctionImageCard>
     }
   }
 
+  bool _commerceBusy = false;
   Future<void> _placeBid(int amount) async {
+    if (_commerceBusy) return;
+    _commerceBusy = true;
     try {
+      if (!await ensureBidGuarantee(context, ref, _product, amount) ||
+          !mounted) {
+        return;
+      }
       final product = await ref
           .read(apiClientProvider)
           .placeBid(_product.id, amount);
@@ -300,28 +307,45 @@ class _AuctionImageCardState extends ConsumerState<AuctionImageCard>
         _product = product.copyWith(isFavorite: _product.isFavorite);
         _message = context.l10n.bidSubmitted;
       });
-    } on DioException catch (error) {
-      if (!mounted) return;
-      setState(() => _message = _messageFrom(error));
+    } catch (error) {
+      if (mounted) setState(() => _message = commerceError(error));
+    } finally {
+      _commerceBusy = false;
     }
   }
 
   Future<void> _buyNow() async {
+    if (_commerceBusy) return;
     final userId = ref.read(sessionControllerProvider).user?.id;
     if (userId != null && _product.seller?.id == userId) {
       setState(() => _message = context.l10n.ownProductBuy);
       return;
     }
     try {
+      _commerceBusy = true;
+      if (_product.commerceVersion != 1) {
+        throw StateError(
+          'Vânzătorul trebuie să activeze plata Stripe pentru acest anunț vechi.',
+        );
+      }
+      if (_product.commerceVersion == 1 &&
+          !await ensureCommerceIdentity(context, ref)) {
+        return;
+      }
       final product = await ref.read(apiClientProvider).buyNow(_product.id);
       if (!mounted) return;
       setState(() {
         _product = product.copyWith(isFavorite: _product.isFavorite);
-        _message = context.l10n.productReservedContact;
+        _message = product.commerceVersion == 1
+            ? 'Produs rezervat. Finalizează plata în Plăți și comenzi.'
+            : context.l10n.productReservedContact;
       });
-    } on DioException catch (error) {
+      if (mounted) await openProductPayment(context, ref, product);
+    } catch (error) {
       if (!mounted) return;
-      setState(() => _message = _messageFrom(error));
+      setState(() => _message = commerceError(error));
+    } finally {
+      _commerceBusy = false;
     }
   }
 
@@ -397,9 +421,6 @@ class _AuctionImageCardState extends ConsumerState<AuctionImageCard>
         : value.toStringAsFixed(1);
     return '${text.replaceAll('.0', '')}k';
   }
-
-  String _messageFrom(DioException error) =>
-      localizedError(error, context.l10n);
 }
 
 class _ImageGradient extends StatelessWidget {

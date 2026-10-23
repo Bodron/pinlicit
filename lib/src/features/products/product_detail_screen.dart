@@ -1,9 +1,9 @@
+import '../commerce/commerce_flow.dart';
 import '../../shared/images/product_image.dart';
 import 'package:intl/intl.dart';
 import 'package:licit/l10n/l10n.dart';
 import 'dart:async';
 
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -104,25 +104,37 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
     }
   }
 
+  bool _commerceBusy = false;
   Future<void> _placeBid() async {
+    if (_commerceBusy) return;
     final product = _product;
     if (product == null) return;
+    _commerceBusy = true;
     try {
+      final maximum = await chooseBidMaximum(context, product);
+      if (maximum == null || !mounted) return;
+      if (!await ensureBidGuarantee(context, ref, product, maximum) ||
+          !mounted) {
+        return;
+      }
       final updated = await ref
           .read(apiClientProvider)
-          .placeBid(product.id, product.nextBid);
+          .placeBid(product.id, maximum);
       if (mounted) {
         setState(() {
           _product = updated;
           _message = context.l10n.bidSubmitted;
         });
       }
-    } on DioException catch (error) {
-      if (mounted) setState(() => _message = _messageFrom(error));
+    } catch (error) {
+      if (mounted) setState(() => _message = commerceError(error));
+    } finally {
+      _commerceBusy = false;
     }
   }
 
   Future<void> _buyNow() async {
+    if (_commerceBusy) return;
     final product = _product;
     if (product == null) return;
     final userId = ref.read(sessionControllerProvider).user?.id;
@@ -130,21 +142,33 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
       setState(() => _message = context.l10n.ownProductBuy);
       return;
     }
+    _commerceBusy = true;
     try {
+      if (product.commerceVersion != 1) {
+        throw StateError(
+          'Vânzătorul trebuie să activeze plata Stripe pentru acest anunț vechi.',
+        );
+      }
+      if (product.commerceVersion == 1 &&
+          !await ensureCommerceIdentity(context, ref)) {
+        return;
+      }
       final updated = await ref.read(apiClientProvider).buyNow(product.id);
       if (mounted) {
         setState(() {
           _product = updated;
-          _message = context.l10n.productReserved;
+          _message = updated.commerceVersion == 1
+              ? 'Produs rezervat. Finalizează plata în Plăți și comenzi.'
+              : context.l10n.productReserved;
         });
       }
-    } on DioException catch (error) {
-      if (mounted) setState(() => _message = _messageFrom(error));
+      if (mounted) await openProductPayment(context, ref, updated);
+    } catch (error) {
+      if (mounted) setState(() => _message = commerceError(error));
+    } finally {
+      _commerceBusy = false;
     }
   }
-
-  String _messageFrom(DioException error) =>
-      localizedError(error, context.l10n);
 }
 
 class _ProductDetailsBody extends StatelessWidget {

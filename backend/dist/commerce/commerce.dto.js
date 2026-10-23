@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.OrderRefundDto = exports.OrderIssueDto = exports.ShipmentDto = void 0;
+exports.BidGuaranteeDto = exports.OrderRefundDto = exports.OrderIssueDto = exports.ShipmentDto = void 0;
 const class_validator_1 = require("class-validator");
 class ShipmentDto {
 }
@@ -42,4 +42,13 @@ __decorate([
     (0, class_validator_1.MaxLength)(200),
     __metadata("design:type", String)
 ], OrderRefundDto.prototype, "reason", void 0);
+class BidGuaranteeDto {
+}
+exports.BidGuaranteeDto = BidGuaranteeDto;
+__decorate([
+    (0, class_validator_1.IsInt)(),
+    (0, class_validator_1.Min)(3000),
+    (0, class_validator_1.Max)(99999999),
+    __metadata("design:type", Number)
+], BidGuaranteeDto.prototype, "maximum", void 0);
 //# sourceMappingURL=commerce.dto.js.map

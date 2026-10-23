@@ -90,3 +90,7 @@ După modificarea `.env`, aplică setările cu `docker compose up -d --force-rec
 6. După confirmarea Stripe: vânzătorul trimite expedierea, cumpărătorul confirmă primirea, apoi verifică transferul după intervalul configurat. Rulează separat reclamație, refund și expirare. Consultă rutele și body-urile în [documentația API](stripe-marketplace.md#api).
 
 Worker-ul procesează la aproximativ 15 secunde. Ecranele Flutter/Next.js pentru plata cardului, verificare și comenzi rămân de implementat; backend-ul poate fi configurat și testat prin API acum, dar testul interactiv complet al cumpărării necesită clientul Stripe. Această versiune acceptă numai chei test și nu este activare cu bani reali.
+
+## Actualizare mobilă: garanții și PaymentSheet
+
+Vezi [stripe-mobile-testing.md](stripe-mobile-testing.md). Backendul cere acum și `STRIPE_PUBLISHABLE_KEY=pk_test_...` din același sandbox. Rulează din nou pregătirea colecțiilor pentru `biddeposits`. Cele două webhook-uri existente procesează atât garanțiile cât și comenzile; nu se adaugă o destinație nouă. Codul Flutter și backendul trebuie publicate împreună.

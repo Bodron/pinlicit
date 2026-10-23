@@ -1,3 +1,4 @@
+import { BidDepositsService } from "../commerce/bid-deposits.service";
 import {
   BadRequestException,
   ForbiddenException,
@@ -24,6 +25,7 @@ export class BidsService {
     @Inject(forwardRef(() => AuctionsGateway))
     private readonly auctionsGateway: AuctionsGateway,
     @Optional() private readonly commerceAccounts?: CommerceAccountsService,
+    @Optional() private readonly deposits?: BidDepositsService,
   ) {}
 
   private validateBid(product: any, bidderId: string, maxAmount: number) {
@@ -51,6 +53,13 @@ export class BidsService {
     const model = this.productsService.getModel();
     const initial = await model.findById(productId);
     this.validateBid(initial, bidderId, maxAmount);
+    if (
+      this.config.get<string>("STRIPE_ENABLED") === "true" &&
+      initial.commerceVersion !== 1
+    )
+      throw new ForbiddenException(
+        "This legacy listing must be enrolled by its seller before accepting paid bids.",
+      );
     if (initial.commerceVersion === 1) {
       if (!this.commerceAccounts)
         throw new ForbiddenException("Identity verification is required.");
@@ -62,6 +71,11 @@ export class BidsService {
     const result = await model.db.transaction(async (session) => {
       const product = await model.findById(productId).session(session);
       this.validateBid(product, bidderId, maxAmount);
+      if (product.commerceVersion === 1) {
+        if (!this.deposits)
+          throw new ForbiddenException("Guarantee processing unavailable.");
+        await this.deposits.require(productId, bidderId, maxAmount, session);
+      }
       const now = new Date();
       const window =
         (this.config.get<number>("ANTI_SNIPE_WINDOW_SECONDS") || 60) * 1000;

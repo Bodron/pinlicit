@@ -1,3 +1,4 @@
+import { BidDepositsService } from "./bid-deposits.service";
 import { CommerceReturnController } from "./commerce-return.controller";
 import { Global, Module } from "@nestjs/common";
 import { MongooseModule } from "@nestjs/mongoose";
@@ -5,6 +6,8 @@ import { User, UserSchema } from "../users/schemas/user.schema";
 import { Product, ProductSchema } from "../products/schemas/product.schema";
 import { Bid, BidSchema } from "../bids/schemas/bid.schema";
 import {
+  BidDeposit,
+  BidDepositSchema,
   CommerceAccount,
   CommerceAccountSchema,
   CommerceOrder,
@@ -28,6 +31,7 @@ import { CommerceWorker } from "./commerce.worker";
 @Module({
   imports: [
     MongooseModule.forFeature([
+      { name: BidDeposit.name, schema: BidDepositSchema },
       { name: User.name, schema: UserSchema },
       { name: Product.name, schema: ProductSchema },
       { name: Bid.name, schema: BidSchema },
@@ -38,6 +42,7 @@ import { CommerceWorker } from "./commerce.worker";
     ]),
   ],
   providers: [
+    BidDepositsService,
     StripeClientService,
     CommerceLockService,
     CommerceAccountsService,
@@ -53,6 +58,7 @@ import { CommerceWorker } from "./commerce.worker";
   exports: [
     CommerceAccountsService,
     CommerceOrdersService,
+    BidDepositsService,
     StripeClientService,
   ],
 })

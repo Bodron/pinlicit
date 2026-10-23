@@ -13,6 +13,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CommerceWorker = void 0;
+const bid_deposits_service_1 = require("./bid-deposits.service");
 const common_1 = require("@nestjs/common");
 const mongoose_1 = require("@nestjs/mongoose");
 const mongoose_2 = require("mongoose");
@@ -45,7 +46,7 @@ const supported = new Set([
     "transfer.reversed",
 ]);
 let CommerceWorker = class CommerceWorker {
-    constructor(inbox, products, bids, orders, stripe, accounts, payments, locks) {
+    constructor(inbox, products, bids, orders, stripe, accounts, payments, locks, deposits) {
         this.inbox = inbox;
         this.products = products;
         this.bids = bids;
@@ -54,6 +55,7 @@ let CommerceWorker = class CommerceWorker {
         this.accounts = accounts;
         this.payments = payments;
         this.locks = locks;
+        this.deposits = deposits;
         this.running = false;
     }
     async onModuleInit() {
@@ -73,6 +75,7 @@ let CommerceWorker = class CommerceWorker {
             this.stripe.returnUrl(name);
         await Promise.all([
             this.inbox.init(),
+            this.deposits.ready(),
             this.locks.ready(),
             this.accounts.ready(),
             this.payments.ready(),
@@ -115,6 +118,7 @@ let CommerceWorker = class CommerceWorker {
             await this.processInbox();
             await this.finalizeAuctions();
             await this.payments.maintain();
+            await this.deposits.maintain();
         }
         catch {
         }
@@ -202,6 +206,16 @@ let CommerceWorker = class CommerceWorker {
                         await product.save({ session });
                         return;
                     }
+                    try {
+                        await this.deposits.require(String(product._id), String(bid.bidder), bid.maxAmount, session);
+                    }
+                    catch (error) {
+                        if (error.status !== 403)
+                            throw error;
+                        product.status = product_schema_1.ProductStatus.Hidden;
+                        await product.save({ session });
+                        return;
+                    }
                     const policy = (0, commerce_policy_1.priceSnapshot)(product.currentPrice, this.stripe.setting("STRIPE_PLATFORM_FEE_BPS", 0, 5000));
                     const hours = this.stripe.setting("STRIPE_PAYMENT_WINDOW_HOURS", 1, 168);
                     product.status = product_schema_1.ProductStatus.Reserved;
@@ -240,6 +254,7 @@ exports.CommerceWorker = CommerceWorker = __decorate([
         stripe_client_service_1.StripeClientService,
         commerce_accounts_service_1.CommerceAccountsService,
         commerce_orders_service_1.CommerceOrdersService,
-        commerce_lock_service_1.CommerceLockService])
+        commerce_lock_service_1.CommerceLockService,
+        bid_deposits_service_1.BidDepositsService])
 ], CommerceWorker);
 //# sourceMappingURL=commerce.worker.js.map

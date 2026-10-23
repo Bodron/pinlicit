@@ -8,3 +8,6 @@ export declare class OrderIssueDto {
 export declare class OrderRefundDto {
     reason: string;
 }
+export declare class BidGuaranteeDto {
+    maximum: number;
+}

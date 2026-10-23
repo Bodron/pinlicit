@@ -1,3 +1,4 @@
+import { BidDepositsService } from "./bid-deposits.service";
 import { OnModuleDestroy, OnModuleInit } from "@nestjs/common";
 import { Model } from "mongoose";
 import Stripe = require("stripe");
@@ -17,9 +18,10 @@ export declare class CommerceWorker implements OnModuleInit, OnModuleDestroy {
     private readonly accounts;
     private readonly payments;
     private readonly locks;
+    private readonly deposits;
     private timer?;
     private running;
-    constructor(inbox: Model<StripeInbox>, products: Model<ProductDocument>, bids: Model<BidDocument>, orders: Model<CommerceOrderDocument>, stripe: StripeClientService, accounts: CommerceAccountsService, payments: CommerceOrdersService, locks: CommerceLockService);
+    constructor(inbox: Model<StripeInbox>, products: Model<ProductDocument>, bids: Model<BidDocument>, orders: Model<CommerceOrderDocument>, stripe: StripeClientService, accounts: CommerceAccountsService, payments: CommerceOrdersService, locks: CommerceLockService, deposits: BidDepositsService);
     onModuleInit(): Promise<void>;
     onModuleDestroy(): void;
     enqueue(event: Stripe.Event): Promise<{

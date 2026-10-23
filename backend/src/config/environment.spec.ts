@@ -9,6 +9,7 @@ const server = {
 const sandbox = {
   ...server,
   STRIPE_ENABLED: "true",
+  STRIPE_PUBLISHABLE_KEY: "pk_test_fixture",
   STRIPE_SECRET_KEY: "sk_test_fixture",
   STRIPE_WEBHOOK_SECRET: "whsec_platform",
   STRIPE_CONNECT_WEBHOOK_SECRET: "whsec_connect",
@@ -41,6 +42,8 @@ describe("Server environment", () => {
     { STRIPE_WEBHOOK_SECRET: "" },
     { STRIPE_CONNECT_WEBHOOK_SECRET: "whsec_platform" },
     { STRIPE_SECRET_KEY: "sk_live_fixture" },
+    { STRIPE_PUBLISHABLE_KEY: "" },
+    { STRIPE_PUBLISHABLE_KEY: "pk_live_fixture" },
     { STRIPE_PLATFORM_FEE_BPS: "" },
     { STRIPE_CONNECT_RETURN_URL: "http://public.example/return" },
   ])("rejects incomplete or live Stripe configuration %p", (override) => {

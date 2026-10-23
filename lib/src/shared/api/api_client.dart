@@ -137,6 +137,28 @@ class ApiClient {
     return Product.fromJson(response.data!['product'] as Map<String, dynamic>);
   }
 
+  Future<Map<String, dynamic>> commerceGet(String path) async {
+    final response = await dio.get<Map<String, dynamic>>('/commerce/$path');
+    return response.data!;
+  }
+
+  Future<Map<String, dynamic>> commercePost(
+    String path, [
+    Map<String, dynamic>? data,
+  ]) async {
+    final response = await dio.post<Map<String, dynamic>>(
+      '/commerce/$path',
+      data: data,
+      options: Options(receiveTimeout: const Duration(seconds: 60)),
+    );
+    return response.data!;
+  }
+
+  Future<List<Map<String, dynamic>>> commerceList(String path) async {
+    final response = await dio.get<List<dynamic>>('/commerce/$path');
+    return response.data!.whereType<Map<String, dynamic>>().toList();
+  }
+
   Future<Product> buyNow(String productId) async {
     final response = await dio.post<Map<String, dynamic>>(
       '/products/$productId/buy-now',

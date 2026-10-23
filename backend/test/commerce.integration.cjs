@@ -29,6 +29,7 @@ const { AuthModule } = require("../dist/auth/auth.module");
 
 const values = {
   STRIPE_ENABLED: "true",
+  STRIPE_PUBLISHABLE_KEY: "pk_test_local_fixture",
   STRIPE_SECRET_KEY: "sk_test_local_fixture",
   STRIPE_WEBHOOK_SECRET: "whsec_local_fixture",
   STRIPE_CONNECT_WEBHOOK_SECRET: "whsec_local_connected_fixture",
@@ -150,8 +151,9 @@ function fakeStripe() {
         create("refund", options.idempotencyKey, (n) => {
           const intent = intents.get(params.payment_intent),
             charge = charges.get(intent.latest_charge);
-          charge.amount_refunded = charge.amount;
-          charge.refunded = true;
+          charge.amount_refunded += params.amount || charge.amount;
+          assert(charge.amount_refunded <= charge.amount);
+          charge.refunded = charge.amount_refunded === charge.amount;
           return { id: `re_${n}`, status: "succeeded" };
         }),
     },
@@ -213,7 +215,7 @@ async function main() {
     .useValue(driver)
     .compile();
   const app = module.createNestApplication({ rawBody: true });
-  app.useLogger(false);
+  app.useLogger(process.env.DEBUG_COMMERCE_TEST ? ["error"] : false);
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -229,6 +231,7 @@ async function main() {
       "User",
       "Product",
       "Bid",
+      "BidDeposit",
       "CommerceAccount",
       "CommerceOrder",
       "CommerceLock",
@@ -540,11 +543,66 @@ async function main() {
       (await orders.findById(uncertain._id)).status,
       "review_required",
     );
+    const {
+      BidDepositsService,
+    } = require("../dist/commerce/bid-deposits.service");
+    const guarantees = module.get(BidDepositsService);
+    async function guarantee(product, user, maximum) {
+      const quote = await post(`products/${product._id}/guarantee`, user, {
+        maximum,
+      }).expect(201);
+      if (quote.body.clientSecret) {
+        const intentId = quote.body.clientSecret.split("_private_secret")[0];
+        fake.paid(intentId);
+        await webhook("payment_intent.succeeded", intentId);
+      }
+      return (
+        await post(`products/${product._id}/guarantee`, user, {
+          maximum,
+        }).expect(201)
+      ).body;
+    }
+    const publicConfig = await api
+      .get("/commerce/config")
+      .set(auth(buyer))
+      .expect(200);
+    assert.equal(
+      publicConfig.body.publishableKey,
+      values.STRIPE_PUBLISHABLE_KEY,
+    );
+    assert.equal(publicConfig.body.guaranteeBps, 1000);
+    assert.equal(publicConfig.body.secretKey, undefined);
     // Concurrent proxy bids commit without orphan bids or a wrong winner.
     const auction = await model("Product").create({
       ...productBase,
       reservePrice: 6000,
     });
+    await api
+      .post(`/products/${auction._id}/bids`)
+      .set(auth(buyer))
+      .send({ amount: 10000 })
+      .expect(403);
+    await post(`products/${auction._id}/guarantee`, seller, {
+      maximum: 10000,
+    }).expect(409);
+    const unpaidGuarantee = await post(
+      `products/${auction._id}/guarantee`,
+      buyer2,
+      { maximum: 9000 },
+    ).expect(201);
+    await post(`products/${auction._id}/guarantee/cancel`, buyer2).expect(201);
+    assert.equal(
+      fake.intents.get(
+        unpaidGuarantee.body.clientSecret.split("_private_secret")[0],
+      ).status,
+      "canceled",
+    );
+    assert.equal((await guarantee(auction, buyer, 10000)).status, "covered");
+    assert.equal((await guarantee(auction, buyer, 15000)).status, "covered");
+    assert.equal((await guarantee(auction, buyer2, 12000)).status, "covered");
+    const beforeDuplicate = fake.calls.payment;
+    await guarantee(auction, buyer, 10000);
+    assert.equal(fake.calls.payment, beforeDuplicate);
     const results = await Promise.all([
       api
         .post(`/products/${auction._id}/bids`)
@@ -571,6 +629,107 @@ async function main() {
     assert.equal(String(winningOrder.buyer), String(buyer2._id));
     assert.equal(winningOrder.amount, 10500);
     assert.equal(await orders.countDocuments({ product: auction._id }), 1);
+    // Losing guarantee refunded; winner credit reduces the final card payment.
+    await guarantees.maintain();
+    const deposits = model("BidDeposit");
+    const losing = await deposits.findOne({
+      product: auction._id,
+      buyer: buyer._id,
+    });
+    assert.equal(
+      (await deposits.find({ product: auction._id, buyer: buyer._id })).reduce(
+        (sum, row) => sum + row.refundedAmount,
+        0,
+      ),
+      1500,
+    );
+    await post(`orders/${winningOrder._id}/payment`, buyer2).expect(201);
+    let winning = await orders.findById(winningOrder._id);
+    assert.equal(winning.depositCredit, 1200);
+    assert.equal(fake.intents.get(winning.paymentIntentId).amount, 9300);
+    fake.paid(winning.paymentIntentId);
+    await webhook("payment_intent.succeeded", winning.paymentIntentId);
+    await post(`orders/${winning._id}/shipment`, seller, {
+      carrier: "Test",
+      trackingCode: "LOCAL-123",
+    }).expect(201);
+    await post(`orders/${winning._id}/receipt`, buyer2).expect(201);
+    await orders.updateOne(
+      { _id: winning._id },
+      { $set: { releaseAfter: new Date(0), nextCheckAt: new Date(0) } },
+    );
+    const transferCount = fake.calls.transfer;
+    fake.loseResponse("transfer");
+    await paymentService.maintain();
+    assert.equal(
+      (await orders.findById(winning._id)).status,
+      "transfer_pending",
+    );
+    await orders.updateOne(
+      { _id: winning._id },
+      { $set: { nextCheckAt: new Date(0) } },
+    );
+    await paymentService.maintain();
+    assert.equal(fake.calls.transfer, transferCount + 2);
+    winning = await orders.findById(winning._id);
+    assert.equal(winning.status, "completed");
+    assert.equal(
+      winning.payoutParts.reduce((sum, part) => sum + part.amount, 0),
+      winning.sellerAmount,
+    );
+    assert.equal(winning.payoutParts.length, 2);
+    // A maximum can exceed the final price: credit never exceeds the price and excess is refunded.
+    const surplusLot = await model("Product").create(productBase);
+    await guarantee(surplusLot, buyer, 300000);
+    await api
+      .post(`/products/${surplusLot._id}/buy-now`)
+      .set(auth(buyer))
+      .expect(201);
+    const surplusOrder = await orders.findOne({ product: surplusLot._id });
+    const fullyCovered = await post(
+      `orders/${surplusOrder._id}/payment`,
+      buyer,
+    ).expect(201);
+    assert.equal(fullyCovered.body.status, "paid");
+    const surplus = await orders.findById(surplusOrder._id);
+    assert.equal(surplus.depositCredit, surplus.amount);
+    assert.equal(surplus.paymentIntentId, undefined);
+    await deposits.updateMany(
+      { product: surplusLot._id },
+      { $set: { nextCheckAt: new Date(0) } },
+    );
+    await guarantees.maintain();
+    assert.equal(
+      (await deposits.findOne({ product: surplusLot._id })).refundedAmount,
+      10000,
+    );
+    // Full administrative refund returns both the credit and any remaining payment.
+    await post(`orders/${surplus._id}/refund`, admin, {
+      reason: "Test refund",
+    }).expect(201);
+    await deposits.updateMany(
+      { product: surplusLot._id },
+      { $set: { nextCheckAt: new Date(0) } },
+    );
+    await guarantees.maintain();
+    assert.equal((await orders.findById(surplus._id)).status, "refunded");
+    assert.equal(
+      (await deposits.findOne({ product: surplusLot._id })).refundedAmount,
+      30000,
+    );
+    // No bid after paying still results in a refund when the auction expires.
+    const unused = await model("Product").create(productBase);
+    await guarantee(unused, buyer, 10000);
+    await model("Product").updateOne(
+      { _id: unused._id },
+      { $set: { endsAt: new Date(0) } },
+    );
+    await worker.finalizeAuctions();
+    await guarantees.maintain();
+    assert.equal(
+      (await deposits.findOne({ product: unused._id })).status,
+      "refunded",
+    );
     const noBid = await model("Product").create({
       ...productBase,
       endsAt: new Date(0),
@@ -580,6 +739,52 @@ async function main() {
       (await model("Product").findById(noBid._id)).status,
       "expired",
     );
+    // A winner who never opens checkout still gets the guarantee back on expiry.
+    const abandoned = await model("Product").create(productBase);
+    await guarantee(abandoned, buyer, 10000);
+    await api
+      .post(`/products/${abandoned._id}/bids`)
+      .set(auth(buyer))
+      .send({ amount: 10000 })
+      .expect(201);
+    await model("Product").updateOne(
+      { _id: abandoned._id },
+      { $set: { endsAt: new Date(0) } },
+    );
+    await worker.finalizeAuctions();
+    const abandonedOrder = await orders.findOne({ product: abandoned._id });
+    await orders.updateOne(
+      { _id: abandonedOrder._id },
+      { $set: { paymentDeadline: new Date(0), nextCheckAt: new Date(0) } },
+    );
+    await paymentService.maintain();
+    await guarantees.maintain();
+    assert.equal(
+      (await deposits.findOne({ product: abandoned._id })).status,
+      "refunded",
+    );
+    // Explicit seller enrollment preserves old listings and rejects existing bids.
+    const enroll = await model("Product").create({
+      ...productBase,
+      commerceVersion: undefined,
+    });
+    await post(`products/${enroll._id}/activate`, buyer).expect(403);
+    await post(`products/${enroll._id}/activate`, seller).expect(201);
+    assert.equal(
+      (await model("Product").findById(enroll._id)).commerceVersion,
+      1,
+    );
+    const oldBidLot = await model("Product").create({
+      ...productBase,
+      commerceVersion: undefined,
+    });
+    await model("Bid").create({
+      product: oldBidLot._id,
+      bidder: buyer._id,
+      amount: 5500,
+      maxAmount: 10000,
+    });
+    await post(`products/${oldBidLot._id}/activate`, seller).expect(409);
     // Existing listings are not silently enrolled into the financial system.
     const legacy = await model("Product").create({
       ...productBase,
@@ -592,7 +797,7 @@ async function main() {
       "active",
     );
     console.log(
-      "PASS: local commerce integration — auth, identity, Connect, payment idempotency, signed/deduplicated webhooks, delivery/issue/refund, delayed transfer, disputes, expiry, concurrent bids, settlement, legacy isolation",
+      "PASS: local commerce integration — auth, identity, Connect, payment idempotency, signed/deduplicated webhooks, delivery/issue/refund, delayed transfer, disputes, expiry, concurrent bids, settlement, 10% guarantees, loser refunds, winner credit, split transfers, excess refunds, legacy isolation",
     );
   } finally {
     assert(dbName.startsWith("pinbind_commerce_test_"));

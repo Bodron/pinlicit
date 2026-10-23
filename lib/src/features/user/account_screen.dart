@@ -20,6 +20,7 @@ class AccountScreen extends ConsumerStatefulWidget {
 
 class _AccountScreenState extends ConsumerState<AccountScreen> {
   List<Bid> _bids = [];
+  Set<String> _wonProductIds = {};
   bool _loading = true;
   String? _message;
 
@@ -130,15 +131,17 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
     );
   }
 
-  int get _wonItemsCount {
-    return _bids
+  int get _wonItemsCount => {
+    ..._wonProductIds,
+    ..._bids
         .where(
           (bid) =>
+              bid.product?.commerceVersion != 1 &&
               bid.product?.reservedBy?.id ==
-              ref.read(sessionControllerProvider).user?.id,
+                  ref.read(sessionControllerProvider).user?.id,
         )
-        .length;
-  }
+        .map((bid) => bid.product!.id),
+  }.length;
 
   Future<void> _load() async {
     setState(() {
@@ -146,9 +149,18 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
       _message = null;
     });
     try {
-      final bids = await ref.read(apiClientProvider).myBids();
+      final api = ref.read(apiClientProvider);
+      final bids = await api.myBids();
+      final orders = await api.commerceList('orders');
       if (!mounted) return;
-      setState(() => _bids = bids);
+      setState(() {
+        _bids = bids;
+        final userId = ref.read(sessionControllerProvider).user?.id;
+        _wonProductIds = orders
+            .where((order) => order['buyerId'] == userId)
+            .map((order) => order['productId'] as String)
+            .toSet();
+      });
     } catch (error) {
       if (!mounted) return;
       setState(() => _message = localizedError(error, context.l10n));
@@ -306,8 +318,8 @@ class _ProfileColumn extends StatelessWidget {
         const SizedBox(height: 28),
         _QuickLink(
           icon: Icons.payments_outlined,
-          label: context.l10n.paymentMethods,
-          onTap: () => _showComingSoon(context, context.l10n.paymentMethods),
+          label: 'Plăți și comenzi',
+          onTap: () => context.push('/commerce'),
         ),
         _QuickLink(
           icon: Icons.settings_outlined,

@@ -13,6 +13,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BidsService = void 0;
+const bid_deposits_service_1 = require("../commerce/bid-deposits.service");
 const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
 const mongoose_1 = require("@nestjs/mongoose");
@@ -23,12 +24,13 @@ const product_schema_1 = require("../products/schemas/product.schema");
 const products_service_1 = require("../products/products.service");
 const bid_schema_1 = require("./schemas/bid.schema");
 let BidsService = class BidsService {
-    constructor(bidModel, productsService, config, auctionsGateway, commerceAccounts) {
+    constructor(bidModel, productsService, config, auctionsGateway, commerceAccounts, deposits) {
         this.bidModel = bidModel;
         this.productsService = productsService;
         this.config = config;
         this.auctionsGateway = auctionsGateway;
         this.commerceAccounts = commerceAccounts;
+        this.deposits = deposits;
     }
     validateBid(product, bidderId, maxAmount) {
         if (!product)
@@ -50,6 +52,9 @@ let BidsService = class BidsService {
         const model = this.productsService.getModel();
         const initial = await model.findById(productId);
         this.validateBid(initial, bidderId, maxAmount);
+        if (this.config.get("STRIPE_ENABLED") === "true" &&
+            initial.commerceVersion !== 1)
+            throw new common_1.ForbiddenException("This legacy listing must be enrolled by its seller before accepting paid bids.");
         if (initial.commerceVersion === 1) {
             if (!this.commerceAccounts)
                 throw new common_1.ForbiddenException("Identity verification is required.");
@@ -58,6 +63,11 @@ let BidsService = class BidsService {
         const result = await model.db.transaction(async (session) => {
             const product = await model.findById(productId).session(session);
             this.validateBid(product, bidderId, maxAmount);
+            if (product.commerceVersion === 1) {
+                if (!this.deposits)
+                    throw new common_1.ForbiddenException("Guarantee processing unavailable.");
+                await this.deposits.require(productId, bidderId, maxAmount, session);
+            }
             const now = new Date();
             const window = (this.config.get("ANTI_SNIPE_WINDOW_SECONDS") || 60) * 1000;
             const extension = (this.config.get("ANTI_SNIPE_EXTENSION_SECONDS") || 60) * 1000;
@@ -145,10 +155,12 @@ exports.BidsService = BidsService = __decorate([
     __param(0, (0, mongoose_1.InjectModel)(bid_schema_1.Bid.name)),
     __param(3, (0, common_1.Inject)((0, common_1.forwardRef)(() => auctions_gateway_1.AuctionsGateway))),
     __param(4, (0, common_1.Optional)()),
+    __param(5, (0, common_1.Optional)()),
     __metadata("design:paramtypes", [mongoose_2.Model,
         products_service_1.ProductsService,
         config_1.ConfigService,
         auctions_gateway_1.AuctionsGateway,
-        commerce_accounts_service_1.CommerceAccountsService])
+        commerce_accounts_service_1.CommerceAccountsService,
+        bid_deposits_service_1.BidDepositsService])
 ], BidsService);
 //# sourceMappingURL=bids.service.js.map

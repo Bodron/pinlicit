@@ -13,6 +13,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CommerceWebhooksController = exports.CommerceController = exports.CommercePrivateHeaders = exports.CommerceIdPipe = exports.StripeHttpFilter = void 0;
+const bid_deposits_service_1 = require("./bid-deposits.service");
 const common_1 = require("@nestjs/common");
 const Stripe = require("stripe");
 const jwt_auth_guard_1 = require("../auth/jwt-auth.guard");
@@ -68,12 +69,32 @@ exports.CommercePrivateHeaders = CommercePrivateHeaders = __decorate([
     (0, common_2.Injectable)()
 ], CommercePrivateHeaders);
 let CommerceController = class CommerceController {
-    constructor(accounts, orders) {
+    constructor(accounts, orders, stripe, deposits) {
         this.accounts = accounts;
         this.orders = orders;
+        this.stripe = stripe;
+        this.deposits = deposits;
+    }
+    config() {
+        return this.stripe.mobileConfig();
+    }
+    depositsMine(user) {
+        return this.deposits.mine(String(user._id));
+    }
+    activate(id, user) {
+        return this.deposits.activate(id, String(user._id));
+    }
+    cancelGuarantee(id, user) {
+        return this.deposits.cancelPending(id, String(user._id));
+    }
+    guarantee(id, user, dto) {
+        return this.deposits.payment(id, String(user._id), dto.maximum);
+    }
+    order(id, user) {
+        return this.orders.details(id, String(user._id));
     }
     status(user) {
-        return this.accounts.status(String(user._id));
+        return this.accounts.refreshStatus(String(user._id));
     }
     identity(user) {
         return this.accounts.startIdentity(String(user._id));
@@ -107,6 +128,52 @@ let CommerceController = class CommerceController {
     }
 };
 exports.CommerceController = CommerceController;
+__decorate([
+    (0, common_1.Get)("config"),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], CommerceController.prototype, "config", null);
+__decorate([
+    (0, common_1.Get)("deposits"),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], CommerceController.prototype, "depositsMine", null);
+__decorate([
+    (0, common_1.Post)("products/:id/activate"),
+    __param(0, (0, common_1.Param)("id", CommerceIdPipe)),
+    __param(1, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], CommerceController.prototype, "activate", null);
+__decorate([
+    (0, common_1.Post)("products/:id/guarantee/cancel"),
+    __param(0, (0, common_1.Param)("id", CommerceIdPipe)),
+    __param(1, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], CommerceController.prototype, "cancelGuarantee", null);
+__decorate([
+    (0, common_1.Post)("products/:id/guarantee"),
+    __param(0, (0, common_1.Param)("id", CommerceIdPipe)),
+    __param(1, (0, current_user_decorator_1.CurrentUser)()),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, commerce_dto_1.BidGuaranteeDto]),
+    __metadata("design:returntype", void 0)
+], CommerceController.prototype, "guarantee", null);
+__decorate([
+    (0, common_1.Get)("orders/:id"),
+    __param(0, (0, common_1.Param)("id", CommerceIdPipe)),
+    __param(1, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], CommerceController.prototype, "order", null);
 __decorate([
     (0, common_1.Get)("me"),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
@@ -202,7 +269,9 @@ exports.CommerceController = CommerceController = __decorate([
     (0, common_1.UseFilters)(StripeHttpFilter),
     (0, common_1.Controller)("commerce"),
     __metadata("design:paramtypes", [commerce_accounts_service_1.CommerceAccountsService,
-        commerce_orders_service_1.CommerceOrdersService])
+        commerce_orders_service_1.CommerceOrdersService,
+        stripe_client_service_1.StripeClientService,
+        bid_deposits_service_1.BidDepositsService])
 ], CommerceController);
 let CommerceWebhooksController = class CommerceWebhooksController {
     constructor(stripe, worker) {

@@ -1,3 +1,4 @@
+import { BidDepositsService } from "./bid-deposits.service";
 import { Injectable, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model, Types } from "mongoose";
@@ -54,6 +55,7 @@ export class CommerceWorker implements OnModuleInit, OnModuleDestroy {
     private readonly accounts: CommerceAccountsService,
     private readonly payments: CommerceOrdersService,
     private readonly locks: CommerceLockService,
+    private readonly deposits: BidDepositsService,
   ) {}
   async onModuleInit() {
     if (!this.stripe.enabled) return;
@@ -71,6 +73,7 @@ export class CommerceWorker implements OnModuleInit, OnModuleDestroy {
       this.stripe.returnUrl(name);
     await Promise.all([
       this.inbox.init(),
+      this.deposits.ready(),
       this.locks.ready(),
       this.accounts.ready(),
       this.payments.ready(),
@@ -113,6 +116,7 @@ export class CommerceWorker implements OnModuleInit, OnModuleDestroy {
       await this.processInbox();
       await this.finalizeAuctions();
       await this.payments.maintain();
+      await this.deposits.maintain();
     } catch {
       /* persisted work is retried; no raw financial/identity payload logs */
     } finally {
@@ -207,6 +211,20 @@ export class CommerceWorker implements OnModuleInit, OnModuleDestroy {
             String(bid.bidder) === String(product.seller)
           ) {
             product.status = ProductStatus.Expired;
+            await product.save({ session });
+            return;
+          }
+          try {
+            await this.deposits.require(
+              String(product._id),
+              String(bid.bidder),
+              bid.maxAmount,
+              session,
+            );
+          } catch (error) {
+            if (error.status !== 403) throw error;
+            // Do not charge an unfunded/disputed winner or silently promote another bidder.
+            product.status = ProductStatus.Hidden;
             await product.save({ session });
             return;
           }

@@ -26,6 +26,7 @@ class Product {
     required this.imageUrl,
     required this.imageKey,
     this.imageVariants = const [],
+    this.commerceVersion = 0,
     required this.status,
     required this.startingPrice,
     this.reservePrice,
@@ -61,6 +62,7 @@ class Product {
     return variants.last.url;
   }
 
+  final int commerceVersion;
   final String status;
   final int startingPrice;
   final int? reservePrice;
@@ -97,6 +99,7 @@ class Product {
       imageUrl: imageUrl,
       imageKey: imageKey,
       imageVariants: imageVariants,
+      commerceVersion: commerceVersion,
       status: status ?? this.status,
       startingPrice: startingPrice,
       reservePrice: reservePrice ?? this.reservePrice,
@@ -124,6 +127,7 @@ class Product {
           .whereType<Map<String, dynamic>>()
           .map(ProductImageVariant.fromJson)
           .toList(),
+      commerceVersion: _asInt(json['commerceVersion']),
       status: (json['status'] ?? 'active').toString(),
       startingPrice: _asInt(json['startingPrice']),
       reservePrice: json['reservePrice'] == null

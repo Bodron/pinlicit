@@ -24,6 +24,7 @@ class ActivityScreen extends ConsumerStatefulWidget {
 
 class _ActivityScreenState extends ConsumerState<ActivityScreen> {
   List<Bid> _bids = [];
+  Set<String> _wonProductIds = {};
   List<Product> _favorites = [];
   _ActivityFilter _filter = _ActivityFilter.all;
   bool _loading = true;
@@ -108,6 +109,11 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                 ),
               ),
             ),
+            TextButton.icon(
+              onPressed: () => context.push('/commerce'),
+              icon: const Icon(Icons.payments_outlined),
+              label: const Text('Plăți, comenzi și garanții'),
+            ),
             Expanded(
               child: IndexedStack(
                 index: widget.showSales ? 1 : 0,
@@ -182,7 +188,8 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
         padding: const EdgeInsets.fromLTRB(16, 18, 16, 28),
         itemCount: items.length,
         separatorBuilder: (_, _) => const SizedBox(height: 12),
-        itemBuilder: (context, index) => _ActivityCard(bid: items[index]),
+        itemBuilder: (context, index) =>
+            _ActivityCard(bid: items[index], won: _isWin(items[index])),
       ),
     );
   }
@@ -190,6 +197,9 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
   bool _isWin(Bid bid) {
     final product = bid.product;
     if (product == null) return false;
+    if (product.commerceVersion == 1) {
+      return _wonProductIds.contains(product.id);
+    }
     return (product.status == 'reserved' || product.status == 'sold') &&
         bid.maxAmount >= product.currentPrice;
   }
@@ -202,11 +212,20 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
     });
     try {
       final api = ref.read(apiClientProvider);
-      final results = await Future.wait([api.myBids(), api.myFavorites()]);
+      final results = await Future.wait([
+        api.myBids(),
+        api.myFavorites(),
+        api.commerceList('orders'),
+      ]);
       if (mounted) {
         setState(() {
           _bids = results[0] as List<Bid>;
           _favorites = results[1] as List<Product>;
+          final userId = ref.read(sessionControllerProvider).user?.id;
+          _wonProductIds = (results[2] as List<Map<String, dynamic>>)
+              .where((order) => order['buyerId'] == userId)
+              .map((order) => order['productId'] as String)
+              .toSet();
         });
       }
     } catch (_) {
@@ -304,16 +323,13 @@ class _Tab extends StatelessWidget {
 }
 
 class _ActivityCard extends StatelessWidget {
-  const _ActivityCard({required this.bid});
+  const _ActivityCard({required this.bid, required this.won});
   final Bid bid;
+  final bool won;
 
   @override
   Widget build(BuildContext context) {
     final product = bid.product;
-    final won =
-        product != null &&
-        (product.status == 'reserved' || product.status == 'sold') &&
-        bid.maxAmount >= product.currentPrice;
     final outbid =
         product != null &&
         product.isActive &&

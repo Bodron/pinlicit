@@ -91,6 +91,16 @@ class _CreateProductScreenState extends ConsumerState<CreateProductScreen> {
                                       CrossAxisAlignment.stretch,
                                   children: [
                                     const _PageHeader(),
+                                    TextButton.icon(
+                                      onPressed: () =>
+                                          context.push('/commerce'),
+                                      icon: const Icon(
+                                        Icons.account_balance_outlined,
+                                      ),
+                                      label: const Text(
+                                        'Verifică identitatea și configurează încasările Stripe',
+                                      ),
+                                    ),
                                     const SizedBox(height: 40),
                                     _ImageUploadPanel(
                                       image: _image,

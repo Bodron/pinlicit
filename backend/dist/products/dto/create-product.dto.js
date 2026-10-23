@@ -61,7 +61,7 @@ __decorate([
 __decorate([
     (0, class_transformer_1.Type)(() => Number),
     (0, class_validator_1.IsInt)(),
-    (0, class_validator_1.Min)(1),
+    (0, class_validator_1.Min)(300),
     __metadata("design:type", Number)
 ], CreateProductDto.prototype, "buyNowPrice", void 0);
 __decorate([

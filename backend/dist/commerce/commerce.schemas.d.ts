@@ -56,6 +56,11 @@ export declare class CommerceOrder {
     issueCode?: string;
     reviewCode?: string;
     refundReason?: string;
+    refundStartedAt?: Date;
+    depositAllocated: boolean;
+    depositCredit: number;
+    depositParts: any[];
+    payoutParts: any[];
     refundRequestedBy?: Types.ObjectId;
 }
 export type CommerceOrderDocument = HydratedDocument<CommerceOrder>;
@@ -64,6 +69,37 @@ export declare const CommerceOrderSchema: MongooseSchema<CommerceOrder, import("
 } & {
     __v: number;
 }, any>, {}, {}, {}, {}, import("mongoose").DefaultSchemaOptions, CommerceOrder, import("mongoose").Document<unknown, {}, import("mongoose").FlatRecord<CommerceOrder>, {}, import("mongoose").DefaultSchemaOptions> & import("mongoose").FlatRecord<CommerceOrder> & {
+    _id: Types.ObjectId;
+} & {
+    __v: number;
+}>;
+export declare class BidDeposit {
+    product: Types.ObjectId;
+    buyer: Types.ObjectId;
+    amount: number;
+    maximum: number;
+    attempt: string;
+    startedAt: Date;
+    paymentIntentId?: string;
+    chargeId?: string;
+    status: string;
+    creditAmount: number;
+    order?: Types.ObjectId;
+    refundedAmount: number;
+    refundTarget: number;
+    refundStartedAt?: Date;
+    refundRequestedTotal?: number;
+    refundRequestAmount?: number;
+    refundId?: string;
+    reviewCode?: string;
+    nextCheckAt: Date;
+}
+export type BidDepositDocument = HydratedDocument<BidDeposit>;
+export declare const BidDepositSchema: MongooseSchema<BidDeposit, import("mongoose").Model<BidDeposit, any, any, any, import("mongoose").Document<unknown, any, BidDeposit, any, {}> & BidDeposit & {
+    _id: Types.ObjectId;
+} & {
+    __v: number;
+}, any>, {}, {}, {}, {}, import("mongoose").DefaultSchemaOptions, BidDeposit, import("mongoose").Document<unknown, {}, import("mongoose").FlatRecord<BidDeposit>, {}, import("mongoose").DefaultSchemaOptions> & import("mongoose").FlatRecord<BidDeposit> & {
     _id: Types.ObjectId;
 } & {
     __v: number;

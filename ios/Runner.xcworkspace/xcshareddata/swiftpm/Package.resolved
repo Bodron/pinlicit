@@ -37,6 +37,15 @@
       }
     },
     {
+      "identity" : "stripe-ios-spm",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/stripe/stripe-ios-spm",
+      "state" : {
+        "revision" : "938bad5c435cba09690e6a097c3d7354f89eebf3",
+        "version" : "26.13.0"
+      }
+    },
+    {
       "identity" : "swiftygif",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/kirualex/SwiftyGif.git",
