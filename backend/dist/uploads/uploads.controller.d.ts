@@ -1,12 +1,19 @@
-import { CreateVideoUploadDto } from "./dto/create-video-upload.dto";
 import { UploadsService } from "./uploads.service";
 export declare class UploadsController {
     private readonly uploadsService;
     constructor(uploadsService: UploadsService);
-    createVideoUrl(dto: CreateVideoUploadDto): Promise<{
-        key: string;
-        uploadUrl: string;
-        videoUrl: string;
-        contentType: string;
+    upload(user: any, image: Express.Multer.File): Promise<{
+        imageKey: string;
+        imageUrl: string;
+        variants: {
+            url: string;
+            key: string;
+            width: number;
+            height: number;
+            bytes: number;
+            contentType: "image/webp";
+        }[];
+        sourceBytes: number;
+        totalBytes: number;
     }>;
 }

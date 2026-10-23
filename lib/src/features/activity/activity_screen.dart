@@ -1,3 +1,4 @@
+import '../../shared/images/product_image.dart';
 import 'package:licit/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -344,7 +345,9 @@ class _ActivityCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _ProductActivityImage(
-            imageUrl: product?.thumbnailUrl,
+            imageUrl: product?.imageForWidth(
+              72 * MediaQuery.devicePixelRatioOf(context),
+            ),
             icon: icon,
             accent: accent,
           ),
@@ -472,7 +475,9 @@ class _FavoriteActivityCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _ProductActivityImage(
-            imageUrl: product.thumbnailUrl,
+            imageUrl: product.imageForWidth(
+              72 * MediaQuery.devicePixelRatioOf(context),
+            ),
             icon: Icons.favorite,
             accent: accent,
           ),
@@ -579,8 +584,8 @@ class _ProductActivityImage extends StatelessWidget {
         width: 72,
         height: 72,
         child: hasImage
-            ? Image.network(
-                imageUrl!,
+            ? ProductImage(
+                url: imageUrl!,
                 fit: BoxFit.cover,
                 errorBuilder: (_, _, _) => _fallback(),
               )

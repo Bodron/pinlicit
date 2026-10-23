@@ -1,3 +1,4 @@
+import '../../shared/images/product_image.dart';
 import 'package:licit/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -737,7 +738,7 @@ class _BidArtwork extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final thumbnail = product?.thumbnailUrl;
+    final thumbnail = product?.imageForWidth(240);
     final title = product?.title ?? context.l10n.auctionEnglish;
 
     return ClipRRect(
@@ -760,8 +761,8 @@ class _BidArtwork extends StatelessWidget {
                     ),
                   ),
                 )
-              : Image.network(
-                  thumbnail,
+              : ProductImage(
+                  url: thumbnail,
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) => const Center(
                     child: Icon(Icons.image_not_supported_outlined),

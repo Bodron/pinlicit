@@ -13,7 +13,7 @@ function load(relative,overrides={}) {
  return module.exports;
 }
 const aggregation=load('lib/account-positions.ts');
-const product={_id:'p1',title:'Produs',status:'active',currentPrice:200,startingPrice:100,minBidIncrement:10,highestBid:'b1',seller:{name:'Vânzător',email:'private@example.invalid'},reservedBy:{email:'buyer@example.invalid'},videoKey:'private-key'};
+const product={_id:'p1',title:'Produs',status:'active',currentPrice:200,startingPrice:100,minBidIncrement:10,highestBid:'b1',seller:{name:'Vânzător',email:'private@example.invalid'},reservedBy:{email:'buyer@example.invalid'},imageKey:'private-key'};
 test('multiple bids produce one position with greatest maximum; leadership uses highestBid, not the latest bid',()=> {
  const positions=aggregation.positionsFromBids([{_id:'b1',product,amount:150,maxAmount:500,createdAt:'2026-01-01'},{_id:'b2',product,amount:200,maxAmount:400,createdAt:'2026-01-02'}]);
  assert.equal(positions.length,1);assert.equal(positions[0].maxAmount,500);assert.equal(positions[0].leading,true);assert.equal(positions[0].lastBidAt,'2026-01-02');
@@ -23,7 +23,7 @@ test('deleted and hidden products do not become account positions; outbid remain
  assert.equal(positions.length,1);assert.equal(positions[0].leading,false);assert.equal(positions[0].maxAmount,120);
 });
 test('product projection excludes other users contacts, reservation identity and storage keys',()=> {
- const p=aggregation.accountProduct(product);assert.equal(p.seller.name,'Vânzător');assert.equal(p.seller.email,undefined);assert.equal(p.reservedBy,undefined);assert.equal(p.videoKey,undefined);assert.equal(p.highestBid,undefined);
+ const p=aggregation.accountProduct(product);assert.equal(p.seller.name,'Vânzător');assert.equal(p.seller.email,undefined);assert.equal(p.reservedBy,undefined);assert.equal(p.imageKey,undefined);assert.equal(p.highestBid,undefined);
 });
 const {sameOrigin}=load('lib/session-server.ts',{'server-only':{},'next/headers':{}});
 const privateHeaders={'Cache-Control':'private, no-store',Vary:'Cookie'};

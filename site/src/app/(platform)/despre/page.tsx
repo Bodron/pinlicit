@@ -3,9 +3,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { Icon, type IconName } from "@/components/icon";
 export const metadata = {
-  title: "Despre Pinbind — Licitații în era video",
+  title: "Despre Pinbind — Licitații în era fotografiei",
   description:
-    "Descoperă Pinbind: o platformă de licitații în care produsele sunt prezentate prin video. Află cum explorezi, urmărești și publici anunțuri.",
+    "Descoperă Pinbind: o platformă de licitații în care produsele sunt prezentate prin fotografii. Află cum explorezi, urmărești și publici anunțuri.",
 };
 const pillars: {
   number: string;
@@ -17,9 +17,9 @@ const pillars: {
 }[] = [
   {
     number: "01",
-    icon: "video",
-    title: "Produse în mișcare",
-    text: "Prezentările video îți oferă o perspectivă mai apropiată asupra produsului. Urmărește detaliile, forma și felul în care arată în utilizare.",
+    icon: "image",
+    title: "Produse în detaliu",
+    text: "Fotografiile îți oferă o perspectivă mai apropiată asupra produsului. Urmărește detaliile, forma și felul în care arată în utilizare.",
     link: "Descoperă prezentările",
     href: "/explore",
   },
@@ -64,7 +64,7 @@ const audiences = [
     tag: "Alegeri • Perspective",
     title: "Pentru cumpărători",
     label: "Mai mult context înainte de ofertă",
-    text: "Vezi produsul în mișcare, compară anunțurile și urmărește licitațiile care te interesează. Verifică detaliile și discută cu vânzătorul în aplicație.",
+    text: "Vezi fotografia produsului, compară anunțurile și urmărește licitațiile care te interesează. Verifică detaliile și discută cu vânzătorul în aplicație.",
     note: "Urmărește ofertele din cont",
     icon: "gavel" as const,
     href: "/cont",
@@ -74,9 +74,9 @@ const audiences = [
     tag: "Prezentare • Poveste",
     title: "Pentru vânzători",
     label: "Arată ce face produsul special",
-    text: "O prezentare video pune detaliile în prim-plan. Publică anunțul din aplicația Pinbind, după aprobarea contului de vânzător, și fă-l vizibil în catalog.",
+    text: "O fotografia produsului pune detaliile în prim-plan. Publică anunțul din aplicația Pinbind, după aprobarea contului de vânzător, și fă-l vizibil în catalog.",
     note: "Gestionează anunțurile tale",
-    icon: "video" as const,
+    icon: "image" as const,
     href: "/cont",
   },
 ];
@@ -105,7 +105,7 @@ function StatsGrid({
     },
     {
       label: "În centrul experienței",
-      value: "Video",
+      value: "Fotografii",
       text: "Prezentări ale produselor care adaugă context descrierii vânzătorului.",
     },
   ];
@@ -164,25 +164,25 @@ export default function AboutPage() {
           <div className="about-hero-heading">
             <div>
               <span className="eyebrow">
-                Produse cu poveste, prezentate prin video
+                Produse cu poveste, prezentate prin fotografii
               </span>
               <h1>
                 O altă perspectivă asupra licitațiilor.
                 <br />
-                În era video.
+                În era fotografiei.
               </h1>
             </div>
             <p>
               Credem că o alegere bună începe cu o privire mai atentă. Pinbind
-              aduce produsele în mișcare, ofertele și oamenii care le prezintă
-              în același loc.
+              aduce fotografiile produselor, ofertele și oamenii care le
+              prezintă în același loc.
             </p>
           </div>
           <div className="about-mosaic">
             <Link
               href="/explore"
               className="about-motion-study"
-              aria-label="Descoperă anunțurile video din catalog"
+              aria-label="Descoperă anunțurile cu fotografii din catalog"
             >
               <Image
                 src="/about/watch-detail.jpg"
@@ -202,16 +202,16 @@ export default function AboutPage() {
             <div className="about-mosaic-notes">
               <article>
                 <div>
-                  <span>De ce video?</span>
+                  <span>De ce fotografii?</span>
                   <span>001 / Perspectivă</span>
                 </div>
                 <p>
-                  O fotografie surprinde un moment. Un videoclip adaugă mișcare,
-                  unghiuri și context. Împreună cu descrierea și răspunsurile
-                  vânzătorului, te ajută să înțelegi mai bine produsul.
+                  O fotografie clară arată forma, starea și detaliile
+                  produsului. Împreună cu descrierea și răspunsurile
+                  vânzătorului, te ajută să alegi în cunoștință de cauză.
                 </p>
                 <span>
-                  <Icon name="video" size={21} />
+                  <Icon name="image" size={21} />
                   Mai aproape de ceea ce alegi
                 </span>
               </article>
@@ -234,8 +234,8 @@ export default function AboutPage() {
               <h2>Patru repere pentru următoarea descoperire.</h2>
             </div>
             <p>
-              O platformă construită în jurul prezentărilor video, informațiilor
-              despre licitații și alegerilor personale.
+              O platformă construită în jurul prezentărilor fotografii,
+              informațiilor despre licitații și alegerilor personale.
             </p>
           </div>
           <div className="about-pillar-grid">
@@ -316,7 +316,7 @@ export default function AboutPage() {
           <div className="about-platform-banner">
             <div>
               <span>
-                <Icon name="video" size={28} />
+                <Icon name="image" size={28} />
               </span>
               <div>
                 <h3>Din catalog, mai aproape de produs.</h3>
@@ -343,7 +343,7 @@ export default function AboutPage() {
       <section className="about-container about-cta">
         <div>
           <span className="about-cta-icon">
-            <Icon name="video" size={24} />
+            <Icon name="image" size={24} />
           </span>
           <h2>
             Următoarea ta descoperire
@@ -351,8 +351,8 @@ export default function AboutPage() {
             poate fi deja aici.
           </h2>
           <p>
-            Explorează anunțurile video, găsește ceea ce te inspiră și continuă
-            în aplicația Pinbind când ești pregătit să faci o ofertă.
+            Explorează anunțurile fotografii, găsește ceea ce te inspiră și
+            continuă în aplicația Pinbind când ești pregătit să faci o ofertă.
           </p>
           <div className="about-cta-actions">
             <Link href="/explore?stage=live" className="button">
@@ -366,8 +366,8 @@ export default function AboutPage() {
           </div>
           <div className="about-cta-notes">
             <span>
-              <Icon name="video" size={16} />
-              Prezentări video
+              <Icon name="image" size={16} />
+              Fotografii ale produselor
             </span>
             <span>
               <Icon name="gavel" size={16} />

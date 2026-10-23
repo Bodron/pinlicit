@@ -13,6 +13,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ProductsService = void 0;
+const uploads_service_1 = require("../uploads/uploads.service");
 const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
 const commerce_accounts_service_1 = require("../commerce/commerce-accounts.service");
@@ -21,10 +22,11 @@ const mongoose_2 = require("mongoose");
 const user_schema_1 = require("../users/schemas/user.schema");
 const product_schema_1 = require("./schemas/product.schema");
 let ProductsService = class ProductsService {
-    constructor(productModel, config, commerceAccounts) {
+    constructor(productModel, config, commerceAccounts, uploads) {
         this.productModel = productModel;
         this.config = config;
         this.commerceAccounts = commerceAccounts;
+        this.uploads = uploads;
     }
     async create(seller, dto) {
         if (seller.role !== user_schema_1.UserRole.Seller && seller.role !== user_schema_1.UserRole.Admin) {
@@ -45,15 +47,18 @@ let ProductsService = class ProductsService {
         const commerce = this.config?.get("STRIPE_ENABLED") === "true";
         if (commerce)
             await this.commerceAccounts.requireSeller(String(seller._id));
+        if (!this.uploads)
+            throw new common_1.ServiceUnavailableException("Image processing is unavailable.");
+        const image = await this.uploads.requireImage(dto.imageKey, String(seller._id));
         return this.productModel.create({
             ...(commerce ? { commerceVersion: 1 } : {}),
             seller: seller._id,
             category: new mongoose_2.Types.ObjectId(dto.categoryId),
             title: dto.title,
             description: dto.description,
-            videoKey: dto.videoKey,
-            videoUrl: dto.videoUrl,
-            thumbnailUrl: dto.thumbnailUrl,
+            imageKey: dto.imageKey,
+            imageUrl: image.imageUrl,
+            imageVariants: image.variants,
             startingPrice: dto.startingPrice,
             reservePrice: dto.reservePrice,
             currentPrice: dto.startingPrice,
@@ -149,7 +154,14 @@ let ProductsService = class ProductsService {
             }),
         ]);
         return {
-            items,
+            items: items.map((item) => {
+                const result = {
+                    ...item,
+                    imageUrl: item.imageUrl || item.thumbnailUrl || "",
+                };
+                delete result.thumbnailUrl;
+                return result;
+            }),
             total,
             page: query.page,
             pageSize: query.limit,
@@ -184,7 +196,10 @@ let ProductsService = class ProductsService {
     async reserveByBuyNow(productId, buyerId) {
         const candidate = await this.productModel
             .findById(productId)
-            .select("commerceVersion");
+            .select("commerceVersion seller");
+        if (candidate && String(candidate.seller) === String(buyerId)) {
+            throw new common_1.ForbiddenException("You cannot buy your own product.");
+        }
         if (candidate?.commerceVersion === 1) {
             if (!this.commerceAccounts)
                 throw new common_1.ForbiddenException("Identity verification is required.");
@@ -233,8 +248,10 @@ exports.ProductsService = ProductsService = __decorate([
     __param(0, (0, mongoose_1.InjectModel)(product_schema_1.Product.name)),
     __param(1, (0, common_1.Optional)()),
     __param(2, (0, common_1.Optional)()),
+    __param(3, (0, common_1.Optional)()),
     __metadata("design:paramtypes", [mongoose_2.Model,
         config_1.ConfigService,
-        commerce_accounts_service_1.CommerceAccountsService])
+        commerce_accounts_service_1.CommerceAccountsService,
+        uploads_service_1.UploadsService])
 ], ProductsService);
 //# sourceMappingURL=products.service.js.map

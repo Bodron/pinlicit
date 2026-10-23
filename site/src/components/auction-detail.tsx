@@ -1,5 +1,5 @@
 "use client";
-import Image from "next/image";
+import { ProductImage } from "./product-image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { type Product, categoryName, money, reserveMet } from "@/lib/catalog";
@@ -18,8 +18,7 @@ export function AuctionDetail({
   const [product, setProduct] = useState(initialProduct);
   const [now, setNow] = useState(initialNow);
   const [tab, setTab] = useState("description");
-  const [media, setMedia] = useState("video");
-  const [videoFailed, setVideoFailed] = useState(false);
+  const [imageFailed, setImageFailed] = useState(false);
   const [refreshError, setRefreshError] = useState("");
   const [unavailable, setUnavailable] = useState(false);
   const [info, setInfo] = useState(false);
@@ -144,64 +143,40 @@ export function AuctionDetail({
         >
           <div className="auction-theater" id="prezentare">
             <div className="auction-media-toolbar">
-              <div role="group" aria-label="Alege prezentarea">
-                <button
-                  aria-pressed={media === "video"}
-                  onClick={() => setMedia("video")}
-                >
-                  <Icon name="video" size={17} />
-                  Prezentare video
-                </button>
-                {product.thumbnailUrl && (
-                  <button
-                    aria-pressed={media === "image"}
-                    onClick={() => setMedia("image")}
-                  >
-                    <Icon name="grid" size={17} />
-                    Fotografie
-                  </button>
-                )}
-              </div>
-              <span>Pinbind / Video</span>
+              <span>Fotografia produsului</span>
+              <span>Pinbind</span>
             </div>
             <div className="auction-stage">
-              {media === "image" && product.thumbnailUrl ? (
-                <Image
-                  src={product.thumbnailUrl}
+              {product.imageUrl && !imageFailed ? (
+                <ProductImage
+                  preload
+                  key={product.imageUrl}
+                  product={product}
                   alt={product.title}
                   fill
-                  unoptimized
                   sizes="(max-width: 900px) 100vw, 60vw"
+                  onError={() => setImageFailed(true)}
                 />
-              ) : videoFailed || !product.videoUrl ? (
-                <div className="auction-media-error">
-                  <Icon name="video" size={44} />
-                  <p>Videoclipul nu poate fi redat momentan.</p>
-                  <button
-                    className="button button-primary"
-                    onClick={() => setVideoFailed(false)}
-                  >
-                    Încearcă din nou
-                  </button>
-                </div>
               ) : (
-                <video
-                  key={product.videoUrl}
-                  src={`${product.videoUrl.split("#")[0]}#t=0.1`}
-                  poster={product.thumbnailUrl}
-                  controls
-                  playsInline
-                  preload="metadata"
-                  onError={() => setVideoFailed(true)}
-                  aria-label={`Prezentare video pentru ${product.title}`}
-                />
+                <div className="auction-media-error">
+                  <Icon name="image" size={44} />
+                  <p>Fotografia nu este disponibilă momentan.</p>
+                  {product.imageUrl && (
+                    <button
+                      className="button button-primary"
+                      onClick={() => setImageFailed(false)}
+                    >
+                      Încearcă din nou
+                    </button>
+                  )}
+                </div>
               )}
             </div>
             <div className="auction-media-caption">
-              <Icon name="video" size={17} />
+              <Icon name="image" size={17} />
               <span>
-                Vezi produsul în mișcare. Folosește comenzile playerului pentru
-                sunet și ecran complet.
+                Fotografia este furnizată de vânzător. Citește descrierea și
+                verifică detaliile produsului înainte de a licita.
               </span>
             </div>
           </div>
@@ -280,9 +255,9 @@ export function AuctionDetail({
                     {product.description}
                   </p>
                   <div className="auction-detail-note">
-                    <Icon name="video" />
+                    <Icon name="image" />
                     <p>
-                      Descrierea și videoclipul sunt furnizate de vânzător.
+                      Descrierea și fotografia sunt furnizate de vânzător.
                       Urmărește prezentarea și verifică detaliile înainte să
                       licitezi.
                     </p>
@@ -448,7 +423,7 @@ export function AuctionDetail({
               Înainte să licitezi
             </h2>
             <p>
-              <Icon name="video" size={18} />
+              <Icon name="image" size={18} />
               <span>
                 <strong>Vezi prezentarea.</strong> Urmărește produsul și citește
                 descrierea completă.

@@ -30,8 +30,20 @@ export async function getPublicProduct(
             }
           : null,
         seller: p.seller ? { name: p.seller.name } : null,
-        videoUrl: p.videoUrl,
-        thumbnailUrl: p.thumbnailUrl,
+        imageUrl: p.imageUrl,
+        imageVariants: p.imageVariants?.map(
+          (variant: {
+            url: string;
+            width: number;
+            height: number;
+            bytes: number;
+          }) => ({
+            url: variant.url,
+            width: variant.width,
+            height: variant.height,
+            bytes: variant.bytes,
+          }),
+        ),
         status: p.status,
         currentPrice: p.currentPrice,
         startingPrice: p.startingPrice,

@@ -11,9 +11,10 @@ export declare class FavoritesController {
         category: import("mongoose").Types.ObjectId;
         title: string;
         description: string;
-        videoKey: string;
-        videoUrl: string;
+        imageKey?: string;
+        imageUrl?: string;
         thumbnailUrl?: string;
+        imageVariants: import("../uploads/image-policy").ImageVariant[];
         status: import("../products/schemas/product.schema").ProductStatus;
         startingPrice: number;
         reservePrice?: number;
@@ -36,9 +37,10 @@ export declare class FavoritesController {
         category: import("mongoose").Types.ObjectId;
         title: string;
         description: string;
-        videoKey: string;
-        videoUrl: string;
+        imageKey?: string;
+        imageUrl?: string;
         thumbnailUrl?: string;
+        imageVariants: import("../uploads/image-policy").ImageVariant[];
         status: import("../products/schemas/product.schema").ProductStatus;
         startingPrice: number;
         reservePrice?: number;

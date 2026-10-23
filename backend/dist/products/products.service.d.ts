@@ -1,3 +1,4 @@
+import { UploadsService } from "../uploads/uploads.service";
 import { ConfigService } from "@nestjs/config";
 import { CommerceAccountsService } from "../commerce/commerce-accounts.service";
 import { Model, Types } from "mongoose";
@@ -9,7 +10,8 @@ export declare class ProductsService {
     private readonly productModel;
     private readonly config?;
     private readonly commerceAccounts?;
-    constructor(productModel: Model<ProductDocument>, config?: ConfigService, commerceAccounts?: CommerceAccountsService);
+    private readonly uploads?;
+    constructor(productModel: Model<ProductDocument>, config?: ConfigService, commerceAccounts?: CommerceAccountsService, uploads?: UploadsService);
     create(seller: any, dto: CreateProductDto): Promise<import("mongoose").Document<unknown, {}, import("mongoose").Document<unknown, {}, Product, {}, {}> & Product & {
         _id: Types.ObjectId;
     } & {
@@ -33,13 +35,7 @@ export declare class ProductsService {
         _id: Types.ObjectId;
     }>)[]>;
     catalog(query: CatalogQueryDto): Promise<{
-        items: (import("mongoose").FlattenMaps<import("mongoose").Document<unknown, {}, Product, {}, {}> & Product & {
-            _id: Types.ObjectId;
-        } & {
-            __v: number;
-        }> & Required<{
-            _id: Types.ObjectId;
-        }>)[];
+        items: Record<string, any>[];
         total: number;
         page: number;
         pageSize: number;

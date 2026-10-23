@@ -1,5 +1,5 @@
 "use client";
-import Image from "next/image";
+import { ProductImage } from "./product-image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -10,11 +10,11 @@ import {
   reserveMet,
   remaining,
 } from "@/lib/catalog";
-import { roomSelection } from "@/lib/video-room";
+import { roomSelection } from "@/lib/image-room";
 import { useAccount } from "./account-workspace";
 import { Icon } from "./icon";
 import { Countdown } from "./countdown";
-function RoomPlayer({
+function RoomImage({
   product,
   compact = false,
 }: {
@@ -23,37 +23,35 @@ function RoomPlayer({
 }) {
   const [failed, setFailed] = useState(false);
   return (
-    <div className={`room-player ${compact ? "is-compact" : ""}`}>
-      <div className="room-player-label">
-        <Icon name="video" size={14} />
-        <span>{compact ? product.title : "Prezentare video"}</span>
+    <div className={`room-photo ${compact ? "is-compact" : ""}`}>
+      <div className="room-photo-label">
+        <Icon name="image" size={14} />
+        <span>{compact ? product.title : "Fotografia produsului"}</span>
       </div>
-      {failed || !product.videoUrl ? (
+      {failed || !product.imageUrl ? (
         <div className="room-media-error">
-          <Icon name="video" size={42} />
-          <p>Videoclipul nu poate fi redat momentan.</p>
-          <button onClick={() => setFailed(false)}>Încearcă din nou</button>
+          <Icon name="image" size={42} />
+          <p>Fotografia nu este disponibilă momentan.</p>
+          {product.imageUrl && (
+            <button onClick={() => setFailed(false)}>Încearcă din nou</button>
+          )}
           <Link href={`/anunturi/${product._id}`}>
             Vezi detaliile anunțului
           </Link>
         </div>
       ) : (
-        <video
-          key={product.videoUrl}
-          src={`${product.videoUrl.split("#")[0]}#t=0.1`}
-          poster={product.thumbnailUrl}
-          controls
-          playsInline
-          preload="metadata"
-          muted={compact}
+        <ProductImage
+          product={product}
+          alt={product.title}
+          fill
+          sizes={compact ? "33vw" : "(max-width: 900px) 100vw, 60vw"}
           onError={() => setFailed(true)}
-          aria-label={`Videoclip ${product.title}`}
         />
       )}
     </div>
   );
 }
-export function VideoRoom() {
+export function ImageRoom() {
   const {
     data,
     now,
@@ -80,7 +78,9 @@ export function VideoRoom() {
       .then(async (response) => {
         const result = await response.json();
         if (!response.ok)
-          throw new Error(result.error ?? "Nu putem încărca anunțurile video.");
+          throw new Error(
+            result.error ?? "Nu putem încărca anunțurile cu fotografii.",
+          );
         if (!controller.signal.aborted) {
           setCatalog(result);
           if (page > Math.max(1, result.pages))
@@ -111,29 +111,22 @@ export function VideoRoom() {
     setView("stage");
     stage.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
-  function singleAudio(event: React.SyntheticEvent<HTMLDivElement>) {
-    const video = event.target;
-    if (!(video instanceof HTMLVideoElement) || video.muted) return;
-    stage.current?.querySelectorAll("video").forEach((other) => {
-      if (other !== video) other.muted = true;
-    });
-  }
   return (
     <>
-      <section className="video-room-heading">
+      <section className="image-room-heading">
         <div>
           <span className="eyebrow">
             <span className="status-dot" />
             Produsele în prim-plan
           </span>
-          <h1>Prezentări video active</h1>
+          <h1>Fotografii ale produselor active</h1>
           <p>
-            Privește produsele în mișcare și comută între licitațiile
-            disponibile. Videoclipurile sunt prezentări încărcate de vânzători.
+            Privește fotografiile produselor și comută între licitațiile
+            disponibile. Fotografiile sunt prezentări încărcate de vânzători.
           </p>
         </div>
         <div
-          className="video-room-modes"
+          className="image-room-modes"
           role="group"
           aria-label="Mod de vizionare"
         >
@@ -142,8 +135,8 @@ export function VideoRoom() {
             aria-pressed={view === "stage"}
             onClick={() => setView("stage")}
           >
-            <Icon name="video" size={17} />
-            Player principal
+            <Icon name="image" size={17} />
+            Produs principal
           </button>
           <button
             className={view === "grid" ? "selected" : ""}
@@ -154,8 +147,8 @@ export function VideoRoom() {
             Grilă 2×2
           </button>
           <span>
-            <Icon name="video" size={15} />
-            {available.length} videoclipuri în selecție
+            <Icon name="image" size={15} />
+            {available.length} fotografii în selecție
           </span>
         </div>
       </section>
@@ -174,7 +167,7 @@ export function VideoRoom() {
       )}
       {!selected ? (
         <div className="account-empty" aria-busy={loading}>
-          <Icon name="video" size={38} />
+          <Icon name="image" size={38} />
           <h2>
             {loading
               ? "Se încarcă prezentările…"
@@ -198,34 +191,32 @@ export function VideoRoom() {
         </div>
       ) : (
         <>
-          <div className="video-room-workspace">
+          <div className="image-room-workspace">
             <section
-              className="video-room-stage"
-              aria-label="Playerul și prețul produsului"
+              className="image-room-stage"
+              aria-label="Fotografia și prețul produsului"
             >
               <div
                 ref={stage}
                 className={
                   view === "grid" ? "room-stage-grid" : "room-stage-single"
                 }
-                onVolumeChangeCapture={singleAudio}
-                onPlayCapture={singleAudio}
               >
                 {view === "grid" ? (
                   available.map((product) => (
                     <div className="room-grid-tile" key={product._id}>
-                      <RoomPlayer product={product} compact />
+                      <RoomImage product={product} compact />
                       <div>
                         <span>{money(product.currentPrice)}</span>
                         <button onClick={() => select(product._id)}>
-                          Afișează în player
+                          Afișează în prim-plan
                           <Icon name="arrow" size={14} />
                         </button>
                       </div>
                     </div>
                   ))
                 ) : (
-                  <RoomPlayer key={selected._id} product={selected} />
+                  <RoomImage key={selected._id} product={selected} />
                 )}
               </div>
               <div
@@ -240,7 +231,7 @@ export function VideoRoom() {
                     aria-pressed={selected._id === product._id}
                     onClick={() => select(product._id)}
                   >
-                    <Icon name="video" size={14} />
+                    <Icon name="image" size={14} />
                     {product.title}
                   </button>
                 ))}
@@ -301,7 +292,7 @@ export function VideoRoom() {
                 </div>
                 <div className="room-description-box">
                   <span>
-                    <Icon name="video" size={15} />
+                    <Icon name="image" size={15} />
                     Descrierea vânzătorului
                   </span>
                   <h2>{selected.title}</h2>
@@ -358,11 +349,10 @@ export function VideoRoom() {
                 </div>
               </section>
               <div className="room-controls-note">
-                <Icon name="video" size={19} />
+                <Icon name="image" size={19} />
                 <p>
-                  Folosește comenzile playerului pentru sunet și ecran complet.
-                  În grilă, videoclipurile pornesc fără sunet; poți activa
-                  sunetul pentru unul singur.
+                  Compară fotografiile produselor și verifică descrierile și
+                  prețurile înainte de a licita.
                 </p>
               </div>
             </aside>
@@ -370,7 +360,7 @@ export function VideoRoom() {
           <section className="room-secondary">
             <div className="room-secondary-heading">
               <div>
-                <Icon name="video" size={23} />
+                <Icon name="image" size={23} />
                 <h2>
                   {view === "grid"
                     ? "Alege produsul principal"
@@ -378,7 +368,7 @@ export function VideoRoom() {
                 </h2>
                 <span>{others.length}</span>
               </div>
-              <span>Comută în player fără să părăsești pagina</span>
+              <span>Comută în prim-plan fără să părăsești pagina</span>
             </div>
             <div className="room-secondary-grid">
               {others.map((product) => (
@@ -386,18 +376,17 @@ export function VideoRoom() {
                   <button
                     className="room-preview"
                     onClick={() => select(product._id)}
-                    aria-label={`Vezi videoclipul pentru ${product.title}`}
+                    aria-label={`Vezi fotografia pentru ${product.title}`}
                   >
-                    {product.thumbnailUrl ? (
-                      <Image
-                        src={product.thumbnailUrl}
+                    {product.imageUrl ? (
+                      <ProductImage
+                        product={product}
                         alt=""
                         fill
-                        unoptimized
                         sizes="(max-width:760px) 100vw, 33vw"
                       />
                     ) : (
-                      <Icon name="video" size={48} />
+                      <Icon name="image" size={48} />
                     )}
                     <span>
                       <span className="status-dot" />
@@ -406,8 +395,8 @@ export function VideoRoom() {
                     <span className="room-preview-time">
                       {remaining(product.endsAt, now)}
                     </span>
-                    <span className="room-preview-play">
-                      <Icon name="play" size={40} />
+                    <span className="room-preview-image">
+                      <Icon name="image" size={40} />
                     </span>
                   </button>
                   <div className="room-preview-copy">
@@ -420,7 +409,7 @@ export function VideoRoom() {
                         <strong>{money(product.currentPrice)}</strong>
                       </div>
                       <button onClick={() => select(product._id)}>
-                        Afișează în player
+                        Afișează în prim-plan
                         <Icon name="arrow" size={14} />
                       </button>
                     </div>

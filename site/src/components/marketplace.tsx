@@ -1,4 +1,5 @@
 "use client";
+import { ProductImage } from "./product-image";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -23,10 +24,10 @@ const categoryImages: Record<string, string> = {
 const steps = [
   {
     number: "01",
-    title: "Descoperă prin video",
-    text: "Vezi produsul în mișcare, urmărește detaliile și citește descrierea vânzătorului. O perspectivă mai apropiată asupra fiecărui anunț.",
-    icon: "video" as const,
-    note: "Prezentări video ale produselor",
+    title: "Descoperă prin fotografii",
+    text: "Vezi fotografia produsului, urmărește detaliile și citește descrierea vânzătorului. O perspectivă mai apropiată asupra fiecărui anunț.",
+    icon: "image" as const,
+    note: "Fotografii ale produselor ale produselor",
   },
   {
     number: "02",
@@ -63,7 +64,7 @@ export function Marketplace({
   const [featuredError, setFeaturedError] = useState("");
   const [notice, setNotice] = useState("");
   const [info, setInfo] = useState(false);
-  const [failedVideoUrl, setFailedVideoUrl] = useState("");
+  const [failedImageUrl, setFailedImageUrl] = useState("");
   const saved = useBookmarks();
   const key = `${category}:${page}:${revision}`;
   const loading = key !== loadedKey;
@@ -155,15 +156,17 @@ export function Marketplace({
       <div className="marketplace-ticker">
         <div>
           <span className="status-dot" />
-          DESCOPERĂ PRIN VIDEO<span className="ticker-separator">/</span>
+          DESCOPERĂ PRIN FOTOGRAFII<span className="ticker-separator">/</span>
           <span className="ticker-product">
             {featured?.title ?? "Obiecte cu poveste, pe Pinbind"}
           </span>
         </div>
         <span>
-          <Icon name="video" size={15} />
-          Anunțuri video <span className="ticker-separator">•</span> Prețuri în
-          RON
+          <Icon name="image" size={15} />
+          Anunțuri cu fotografii <span className="ticker-separator">
+            •
+          </span>{" "}
+          Prețuri în RON
         </span>
       </div>
       <section
@@ -189,7 +192,8 @@ export function Marketplace({
               : "Următoarea descoperire începe aici"}
           </span>
           <h1>
-            {featured?.title ?? "Obiecte cu poveste. Descoperă-le prin video."}
+            {featured?.title ??
+              "Obiecte cu poveste. Descoperă-le prin fotografii."}
           </h1>
           <p>
             {featured?.description ??
@@ -255,41 +259,40 @@ export function Marketplace({
           )}
           <div className="marketplace-seller">
             <span>
-              <Icon name={featured ? "user" : "video"} size={21} />
+              <Icon name={featured ? "user" : "image"} size={21} />
             </span>
             <div>
               <strong>
                 {featured?.seller?.name
                   ? `Publicat de ${featured.seller.name}`
-                  : "O platformă construită în jurul videoclipurilor"}
+                  : "O platformă construită în jurul fotografiilor"}
               </strong>
               <p>
                 {featured
-                  ? `${categoryName(featured.category?.name)} · Prezentare video a vânzătorului`
+                  ? `${categoryName(featured.category?.name)} · Fotografia produsului a vânzătorului`
                   : "Descoperă. Privește. Alege."}
               </p>
             </div>
           </div>
         </div>
         <div className="marketplace-hero-media">
-          <div className="marketplace-player">
-            {featured?.videoUrl && failedVideoUrl !== featured.videoUrl ? (
-              <video
-                key={featured.videoUrl}
-                src={`${featured.videoUrl.split("#")[0]}#t=0.1`}
-                poster={featured.thumbnailUrl}
-                controls
-                playsInline
-                preload="metadata"
-                onError={() => setFailedVideoUrl(featured.videoUrl)}
-                aria-label={`Prezentarea produsului ${featured.title}`}
+          <div className="marketplace-photo">
+            {featured?.imageUrl && failedImageUrl !== featured.imageUrl ? (
+              <ProductImage
+                preload
+                key={featured.imageUrl}
+                product={featured}
+                alt={featured.title}
+                fill
+                sizes="(max-width: 900px) 100vw, 50vw"
+                onError={() => setFailedImageUrl(featured.imageUrl)}
               />
             ) : (
-              <div className="marketplace-video-empty">
-                <Icon name="video" size={64} />
+              <div className="marketplace-image-empty">
+                <Icon name="image" size={64} />
                 <p>
-                  {failedVideoUrl
-                    ? "Videoclipul nu poate fi redat momentan."
+                  {failedImageUrl
+                    ? "Fotografia nu poate fi încărcată momentan."
                     : "Mai aproape de fiecare detaliu."}
                 </p>
                 {featured && (
@@ -300,14 +303,14 @@ export function Marketplace({
                 )}
               </div>
             )}
-            <span className="marketplace-player-label">
-              <Icon name="video" size={15} />
-              Prezentare video
+            <span className="marketplace-photo-label">
+              <Icon name="image" size={15} />
+              Fotografia produsului
             </span>
           </div>
           <div className="marketplace-media-footnote">
-            <Icon name="play" size={18} />
-            <span>Vezi produsul în mișcare, în ritmul tău.</span>
+            <Icon name="image" size={18} />
+            <span>Vezi fotografia produsului, în ritmul tău.</span>
           </div>
         </div>
       </section>
@@ -373,7 +376,7 @@ export function Marketplace({
                   ) : (
                     <div className="marketplace-category-art">
                       <Icon
-                        name={item.slug.includes("electro") ? "video" : "gavel"}
+                        name={item.slug.includes("electro") ? "image" : "gavel"}
                         size={80}
                       />
                     </div>
@@ -403,7 +406,9 @@ export function Marketplace({
       >
         <div className="marketplace-section-heading">
           <div>
-            <span className="eyebrow">Anunțuri video, oferte reale</span>
+            <span className="eyebrow">
+              Anunțuri cu fotografii, oferte reale
+            </span>
             <h2>Licitații de descoperit</h2>
           </div>
           <div className="marketplace-pagination">
@@ -485,7 +490,7 @@ export function Marketplace({
             <span className="eyebrow">Mai mult decât o fotografie</span>
             <h2>O altă perspectivă asupra licitațiilor.</h2>
             <p>
-              Pe Pinbind, produsele își spun povestea prin video. Descoperă
+              Pe Pinbind, produsele își spun povestea prin fotografii. Descoperă
               detaliile, urmărește ofertele și alege în cunoștință de cauză.
             </p>
           </div>
@@ -525,11 +530,11 @@ export function Marketplace({
         </div>
         <div className="marketplace-trust-cards">
           <article>
-            <Icon name="video" size={28} />
+            <Icon name="image" size={28} />
             <h3>Privește dincolo de imagine.</h3>
             <p>
-              Urmărește videoclipul, citește descrierea și verifică detaliile
-              care contează pentru tine.
+              Privește fotografia, citește descrierea și verifică detaliile care
+              contează pentru tine.
             </p>
             <Link href="/explore">
               Descoperă produsele
@@ -556,7 +561,7 @@ export function Marketplace({
           <h2>
             Produsul tău are o poveste.
             <br />
-            Arată-o prin video.
+            Arată-o prin fotografii.
           </h2>
           <p>
             Prezintă detaliile care îl fac special. Publică anunțul din
@@ -573,7 +578,7 @@ export function Marketplace({
             </Link>
           </div>
         </div>
-        <Icon name="video" size={180} />
+        <Icon name="image" size={180} />
       </section>
       {notice && (
         <div className="toast" role="status">
@@ -584,11 +589,11 @@ export function Marketplace({
       {info && (
         <Dialog title="Vinde pe Pinbind" onClose={() => setInfo(false)}>
           <div className="info-content">
-            <Icon name="video" size={38} />
+            <Icon name="image" size={38} />
             <p>
               Deschide aplicația Pinbind și intră în secțiunea Vinde. După
-              aprobarea contului de vânzător, poți publica un anunț video care
-              va apărea și în catalogul web.
+              aprobarea contului de vânzător, poți publica un anunț cu
+              fotografie care va apărea și în catalogul web.
             </p>
             <button
               className="button button-primary"

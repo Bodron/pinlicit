@@ -2,9 +2,8 @@ export declare class CreateProductDto {
     title: string;
     description: string;
     categoryId: string;
-    videoKey: string;
-    videoUrl: string;
-    thumbnailUrl?: string;
+    imageKey: string;
+    imageUrl: string;
     startingPrice: number;
     reservePrice?: number;
     minBidIncrement: number;

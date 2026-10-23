@@ -7,6 +7,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ProductsModule = void 0;
+const uploads_module_1 = require("../uploads/uploads.module");
 const common_1 = require("@nestjs/common");
 const mongoose_1 = require("@nestjs/mongoose");
 const auctions_module_1 = require("../auctions/auctions.module");
@@ -24,6 +25,7 @@ exports.ProductsModule = ProductsModule = __decorate([
     (0, common_1.Module)({
         imports: [
             users_module_1.UsersModule,
+            uploads_module_1.UploadsModule,
             categories_module_1.CategoriesModule,
             (0, common_1.forwardRef)(() => auctions_module_1.AuctionsModule),
             (0, common_1.forwardRef)(() => bids_module_1.BidsModule),

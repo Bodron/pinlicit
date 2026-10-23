@@ -34,11 +34,11 @@ type AuthSession = {
   user: ApiUser;
 };
 
-type VideoUploadTicket = {
-  key: string;
-  uploadUrl: string;
-  videoUrl: string;
-  contentType: string;
+type OptimizedImage = {
+  imageKey: string;
+  imageUrl: string;
+  sourceBytes: number;
+  totalBytes: number;
 };
 
 type ViewMode = "approvals" | "listing";
@@ -68,8 +68,7 @@ export default function SuperAdminPage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [categoryId, setCategoryId] = useState("");
-  const [videoFile, setVideoFile] = useState<File | null>(null);
-  const [devVideoUrl, setDevVideoUrl] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [startingPrice, setStartingPrice] = useState("50");
   const [reservePrice, setReservePrice] = useState("200");
   const [minIncrement, setMinIncrement] = useState("5");
@@ -219,41 +218,34 @@ export default function SuperAdminPage() {
       if (!categoryId) {
         throw new Error("Alege o categorie.");
       }
-      if (!videoFile && !devVideoUrl.trim()) {
-        throw new Error("Alege un video sau pune un URL video de dezvoltare.");
-      }
-
-      let videoKey = `dev/${Date.now()}.mp4`;
-      let videoUrl = devVideoUrl.trim();
-
-      if (videoFile) {
-        const ticketResponse = await fetch(`${apiBaseUrl}/uploads/video-url`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            fileName: videoFile.name,
-            contentType: videoFile.type || "video/mp4",
-          }),
-        });
-        const ticket = (await readJson(ticketResponse)) as VideoUploadTicket;
-
-        const uploadResponse = await fetch(ticket.uploadUrl, {
-          method: "PUT",
-          headers: { "Content-Type": ticket.contentType },
-          body: videoFile,
-        });
-        if (!uploadResponse.ok) {
-          throw new Error(
-            "Upload-ul video a esuat. Verifica CORS-ul bucketului S3.",
-          );
-        }
-
-        videoKey = ticket.key;
-        videoUrl = ticket.videoUrl;
-      }
+      if (!imageFile) throw new Error("Alege o fotografie pentru anunț.");
+      const extension = imageFile.name.split(".").pop()?.toLowerCase() ?? "";
+      const contentType = (
+        {
+          jpg: "image/jpeg",
+          jpeg: "image/jpeg",
+          png: "image/png",
+          webp: "image/webp",
+        } as Record<string, string>
+      )[extension];
+      if (
+        !contentType ||
+        imageFile.size < 1 ||
+        imageFile.size > 10 * 1024 * 1024
+      )
+        throw new Error(
+          "Folosește o fotografie JPG, PNG sau WebP de maximum 10 MB.",
+        );
+      const form = new FormData();
+      form.append("image", imageFile);
+      const uploadResponse = await fetch(`${apiBaseUrl}/uploads/images`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: form,
+      });
+      const optimized = (await readJson(uploadResponse)) as OptimizedImage;
+      const imageKey = optimized.imageKey;
+      const imageUrl = optimized.imageUrl;
 
       const now = new Date();
       const endsAt = new Date(
@@ -270,8 +262,8 @@ export default function SuperAdminPage() {
           title: title.trim(),
           description: description.trim(),
           categoryId,
-          videoKey,
-          videoUrl,
+          imageKey,
+          imageUrl,
           startingPrice: ronToBani(startingPrice),
           reservePrice: ronToBani(reservePrice),
           minBidIncrement: ronToBani(minIncrement),
@@ -284,8 +276,7 @@ export default function SuperAdminPage() {
 
       setTitle("");
       setDescription("");
-      setVideoFile(null);
-      setDevVideoUrl("");
+      setImageFile(null);
       setStartingPrice("50");
       setReservePrice("200");
       setMinIncrement("5");
@@ -311,7 +302,8 @@ export default function SuperAdminPage() {
 
   const subtitle = useMemo(() => {
     if (!hasSession) return "Login cu admin sau seller pentru access.";
-    if (mode === "listing") return "Listeaza rapid un produs video in Licit.";
+    if (mode === "listing")
+      return "Listeaza rapid un produs cu fotografie in Licit.";
     if (pendingCount === 0) return "Nu exista cereri seller in asteptare.";
     return `${pendingCount} cereri seller asteapta review.`;
   }, [hasSession, mode, pendingCount]);
@@ -372,25 +364,23 @@ export default function SuperAdminPage() {
           categories={categories}
           categoryId={categoryId}
           description={description}
-          devVideoUrl={devVideoUrl}
           durationDays={durationDays}
           minIncrement={minIncrement}
           onBuyNowPriceChange={setBuyNowPrice}
           onCategoryChange={setCategoryId}
           onDescriptionChange={setDescription}
-          onDevVideoUrlChange={setDevVideoUrl}
           onDurationDaysChange={setDurationDays}
           onMinIncrementChange={setMinIncrement}
           onReservePriceChange={setReservePrice}
           onStartingPriceChange={setStartingPrice}
           onSubmit={createListing}
           onTitleChange={setTitle}
-          onVideoFileChange={setVideoFile}
+          onImageFileChange={setImageFile}
           saving={savingListing}
           reservePrice={reservePrice}
           startingPrice={startingPrice}
           title={title}
-          videoFile={videoFile}
+          imageFile={imageFile}
         />
       ) : (
         <ApprovalsPanel
@@ -423,7 +413,9 @@ function LoginPanel({
   return (
     <section className="panel login-panel">
       <h2>Portal login</h2>
-      <p className="muted">Adminul aproba selleri. Sellerul poate lista produse.</p>
+      <p className="muted">
+        Adminul aproba selleri. Sellerul poate lista produse.
+      </p>
       <form onSubmit={onSubmit}>
         <label>
           Email
@@ -488,7 +480,8 @@ function ApprovalsPanel({
       ) : (
         <div className="request-list">
           {applications.map((application) => {
-            const id = application.id ?? application._id ?? application.displayName;
+            const id =
+              application.id ?? application._id ?? application.displayName;
             const sellerUser = application.user;
             const isBusy = busyId === (application.id ?? application._id);
 
@@ -508,7 +501,8 @@ function ApprovalsPanel({
                       {sellerUser?.email ?? "No email"}
                     </p>
                     <p className="muted">
-                      Contact: {application.contactPhone || sellerUser?.phone || "-"}
+                      Contact:{" "}
+                      {application.contactPhone || sellerUser?.phone || "-"}
                     </p>
                     {application.notes ? (
                       <p className="notes">{application.notes}</p>
@@ -549,50 +543,46 @@ function ListingPanel({
   categories,
   categoryId,
   description,
-  devVideoUrl,
   durationDays,
   minIncrement,
   onBuyNowPriceChange,
   onCategoryChange,
   onDescriptionChange,
-  onDevVideoUrlChange,
   onDurationDaysChange,
   onMinIncrementChange,
   onReservePriceChange,
   onStartingPriceChange,
   onSubmit,
   onTitleChange,
-  onVideoFileChange,
+  onImageFileChange,
   saving,
   reservePrice,
   startingPrice,
   title,
-  videoFile,
+  imageFile,
 }: {
   buyNowPrice: string;
   canCreateListing: boolean;
   categories: Category[];
   categoryId: string;
   description: string;
-  devVideoUrl: string;
   durationDays: string;
   minIncrement: string;
   onBuyNowPriceChange: (value: string) => void;
   onCategoryChange: (value: string) => void;
   onDescriptionChange: (value: string) => void;
-  onDevVideoUrlChange: (value: string) => void;
   onDurationDaysChange: (value: string) => void;
   onMinIncrementChange: (value: string) => void;
   onReservePriceChange: (value: string) => void;
   onStartingPriceChange: (value: string) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onTitleChange: (value: string) => void;
-  onVideoFileChange: (value: File | null) => void;
+  onImageFileChange: (value: File | null) => void;
   saving: boolean;
   reservePrice: string;
   startingPrice: string;
   title: string;
-  videoFile: File | null;
+  imageFile: File | null;
 }) {
   if (!canCreateListing) {
     return (
@@ -611,29 +601,25 @@ function ListingPanel({
       <div className="panel-header">
         <div>
           <h2>Create product listing</h2>
-          <p>Adauga produsul, video-ul de prezentare si regulile licitatiei.</p>
+          <p>
+            Adauga produsul, fotografia de prezentare si regulile licitatiei.
+          </p>
         </div>
       </div>
 
       <form className="listing-form" onSubmit={onSubmit}>
         <label className="upload-box">
           <input
-            accept="video/*"
-            onChange={(event) => onVideoFileChange(event.target.files?.[0] ?? null)}
+            accept="image/jpeg,image/png,image/webp"
+            onChange={(event) =>
+              onImageFileChange(event.target.files?.[0] ?? null)
+            }
             type="file"
           />
-          <strong>{videoFile ? videoFile.name : "Upload product video"}</strong>
-          <span>MP4/MOV recomandat. Pentru dev poti folosi URL video.</span>
-        </label>
-
-        <label>
-          Video URL pentru dev, optional
-          <input
-            onChange={(event) => onDevVideoUrlChange(event.target.value)}
-            placeholder="https://example.com/video.mp4"
-            type="url"
-            value={devVideoUrl}
-          />
+          <strong>
+            {imageFile ? imageFile.name : "Încarcă fotografia produsului"}
+          </strong>
+          <span>JPG, PNG sau WebP, maximum 10 MB.</span>
         </label>
 
         <div className="form-grid">
@@ -656,7 +642,10 @@ function ListingPanel({
             >
               <option value="">Alege categoria</option>
               {categories.map((category) => (
-                <option key={categoryIdFrom(category)} value={categoryIdFrom(category)}>
+                <option
+                  key={categoryIdFrom(category)}
+                  value={categoryIdFrom(category)}
+                >
                   {category.name}
                 </option>
               ))}
@@ -669,7 +658,7 @@ function ListingPanel({
           <textarea
             minLength={10}
             onChange={(event) => onDescriptionChange(event.target.value)}
-            placeholder="Descrie produsul, starea, provenienta si ce vede cumparatorul in video."
+            placeholder="Descrie produsul, starea, provenienta si ce vede cumparatorul în fotografie."
             required
             rows={5}
             value={description}

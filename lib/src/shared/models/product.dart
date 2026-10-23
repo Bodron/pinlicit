@@ -1,13 +1,31 @@
 import 'app_user.dart';
 import 'category.dart';
 
+class ProductImageVariant {
+  const ProductImageVariant({
+    required this.url,
+    required this.width,
+    required this.height,
+  });
+  final String url;
+  final int width;
+  final int height;
+  factory ProductImageVariant.fromJson(Map<String, dynamic> json) =>
+      ProductImageVariant(
+        url: (json['url'] ?? '').toString(),
+        width: (json['width'] as num?)?.toInt() ?? 0,
+        height: (json['height'] as num?)?.toInt() ?? 0,
+      );
+}
+
 class Product {
   const Product({
     required this.id,
     required this.title,
     required this.description,
-    required this.videoUrl,
-    required this.videoKey,
+    required this.imageUrl,
+    required this.imageKey,
+    this.imageVariants = const [],
     required this.status,
     required this.startingPrice,
     this.reservePrice,
@@ -17,7 +35,6 @@ class Product {
     required this.favoriteCount,
     required this.startsAt,
     required this.endsAt,
-    this.thumbnailUrl,
     this.category,
     this.seller,
     this.reservedBy,
@@ -27,9 +44,23 @@ class Product {
   final String id;
   final String title;
   final String description;
-  final String videoUrl;
-  final String videoKey;
-  final String? thumbnailUrl;
+  final String imageUrl;
+  final String imageKey;
+  final List<ProductImageVariant> imageVariants;
+
+  String imageForWidth(double pixels) {
+    final variants =
+        imageVariants
+            .where((variant) => variant.width > 0 && variant.url.isNotEmpty)
+            .toList()
+          ..sort((a, b) => a.width.compareTo(b.width));
+    if (variants.isEmpty) return imageUrl;
+    for (final variant in variants) {
+      if (variant.width >= pixels) return variant.url;
+    }
+    return variants.last.url;
+  }
+
   final String status;
   final int startingPrice;
   final int? reservePrice;
@@ -63,9 +94,9 @@ class Product {
       id: id,
       title: title,
       description: description,
-      videoUrl: videoUrl,
-      videoKey: videoKey,
-      thumbnailUrl: thumbnailUrl,
+      imageUrl: imageUrl,
+      imageKey: imageKey,
+      imageVariants: imageVariants,
       status: status ?? this.status,
       startingPrice: startingPrice,
       reservePrice: reservePrice ?? this.reservePrice,
@@ -87,9 +118,12 @@ class Product {
       id: (json['id'] ?? json['_id'] ?? '').toString(),
       title: (json['title'] ?? '').toString(),
       description: (json['description'] ?? '').toString(),
-      videoUrl: (json['videoUrl'] ?? '').toString(),
-      videoKey: (json['videoKey'] ?? '').toString(),
-      thumbnailUrl: json['thumbnailUrl']?.toString(),
+      imageUrl: (json['imageUrl'] ?? json['thumbnailUrl'] ?? '').toString(),
+      imageKey: (json['imageKey'] ?? '').toString(),
+      imageVariants: (json['imageVariants'] as List? ?? [])
+          .whereType<Map<String, dynamic>>()
+          .map(ProductImageVariant.fromJson)
+          .toList(),
       status: (json['status'] ?? 'active').toString(),
       startingPrice: _asInt(json['startingPrice']),
       reservePrice: json['reservePrice'] == null

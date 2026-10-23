@@ -17,7 +17,7 @@ const {FavoriteSchema}=require(path.join(process.cwd(),'dist/favorites/schemas/f
   mongoose.model('Category',new mongoose.Schema({name:String}));
   await Promise.all([Product.init(),Favorite.init()]);
   const seller=new mongoose.Types.ObjectId();
-  const product=await Product.create({seller,category:new mongoose.Types.ObjectId(),title:'Isolated test',description:'Test only',videoKey:'test',videoUrl:'https://example.com/test.mp4',startingPrice:100,currentPrice:100,minBidIncrement:10,buyNowPrice:500,startsAt:new Date(),endsAt:new Date(Date.now()+86400000)});
+  const product=await Product.create({seller,category:new mongoose.Types.ObjectId(),title:'Isolated test',description:'Test only',imageKey:'test',imageUrl:'https://example.com/test.jpg',startingPrice:100,currentPrice:100,minBidIncrement:10,buyNowPrice:500,startsAt:new Date(),endsAt:new Date(Date.now()+86400000)});
   const service=new FavoritesService(Favorite,{getModel:()=>Product});
   const id=product._id.toString();
   const check=async(expected)=>{

@@ -1,3 +1,4 @@
+import '../../shared/images/product_image.dart';
 import 'package:licit/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,8 +10,7 @@ import '../../shared/models/product.dart';
 import '../../shared/state/session_controller.dart';
 import '../../shared/state/catalog_updates.dart';
 import '../../shared/widgets/app_layout.dart';
-import '../../shared/video/feed_playback.dart';
-import 'widgets/auction_video_card.dart';
+import 'widgets/auction_image_card.dart';
 
 class FeedScreen extends ConsumerStatefulWidget {
   const FeedScreen({super.key});
@@ -21,7 +21,6 @@ class FeedScreen extends ConsumerStatefulWidget {
 
 class _FeedScreenState extends ConsumerState<FeedScreen>
     with WidgetsBindingObserver {
-  final _playback = FeedPlayback();
   bool _feedVisible = false;
   bool _foreground = true;
   int _loadRevision = 0;
@@ -43,29 +42,21 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
   void didChangeDependencies() {
     super.didChangeDependencies();
     _feedVisible = AppLayoutVisibility.isFeedVisible(context);
-    _syncPlayback();
+    _prefetchNext();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    _foreground = state == AppLifecycleState.resumed;
-    _syncPlayback();
-  }
-
-  void _syncPlayback() {
-    final active =
-        _feedVisible &&
-        _foreground &&
-        !_loading &&
-        _currentIndex < _products.length;
-    final product = active ? _products[_currentIndex] : null;
-    _playback.select(product?.id, product?.videoUrl);
+    if (mounted) {
+      setState(() => _foreground = state == AppLifecycleState.resumed);
+    }
+    _prefetchNext();
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _playback.dispose();
+    ProductImage.prefetch.select(null);
     super.dispose();
   }
 
@@ -92,14 +83,13 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
                 itemCount: _products.length,
                 onPageChanged: (index) {
                   setState(() => _currentIndex = index);
-                  _syncPlayback();
+                  _prefetchNext();
                 },
-                itemBuilder: (context, index) => AuctionVideoCard(
+                itemBuilder: (context, index) => AuctionImageCard(
                   key: ValueKey(_products[index].id),
                   product: _products[index],
                   isActive:
                       _feedVisible && _foreground && index == _currentIndex,
-                  playback: _playback,
                   onOpenDetails: () =>
                       context.push('/products/${_products[index].id}'),
                   onFavoriteChanged: _updateProduct,
@@ -125,7 +115,6 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
       _currentIndex = 0;
       _error = null;
     });
-    _syncPlayback();
     try {
       final api = ref.read(apiClientProvider);
       final results = await Future.wait([
@@ -156,9 +145,26 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
     } finally {
       if (mounted && revision == _loadRevision) {
         setState(() => _loading = false);
-        _syncPlayback();
+        _prefetchNext();
       }
     }
+  }
+
+  void _prefetchNext() {
+    final next = _currentIndex + 1;
+    if (!mounted ||
+        !_feedVisible ||
+        !_foreground ||
+        _loading ||
+        next >= _products.length) {
+      ProductImage.prefetch.select(null);
+      return;
+    }
+    final pixels =
+        MediaQuery.sizeOf(context).width *
+        MediaQuery.devicePixelRatioOf(context);
+    final url = _products[next].imageForWidth(pixels);
+    ProductImage.prefetch.select(url.isEmpty ? null : url);
   }
 
   void _selectCategory(String? id) {

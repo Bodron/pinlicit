@@ -307,7 +307,7 @@ export function VerificationPage() {
               </div>
             </div>
             <div className="verification-information">
-              <Icon name="video" size={24} />
+              <Icon name="image" size={24} />
               <p>
                 Cererile pentru contul de vânzător se trimit din aplicația
                 Pinbind. Poți urmări starea lor aici; aprobarea unei cereri de

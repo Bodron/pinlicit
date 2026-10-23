@@ -131,9 +131,6 @@ class AppLocalizationsRo extends AppLocalizations {
   String get noActiveListings => 'Nu există anunțuri active.';
 
   @override
-  String get videoLoadFailed => 'Videoclipul nu poate fi încărcat.';
-
-  @override
   String get shareComingSoon => 'Distribuirea va fi disponibilă în curând.';
 
   @override
@@ -576,7 +573,7 @@ class AppLocalizationsRo extends AppLocalizations {
 
   @override
   String get sellerApplicationDescription =>
-      'Trimite cererea pentru aprobare. După acceptare poți publica anunțuri video și licitații.';
+      'Trimite cererea pentru aprobare. După acceptare poți publica anunțuri cu fotografii și licitații.';
 
   @override
   String get sellerName => 'Nume vânzător';
@@ -646,24 +643,11 @@ class AppLocalizationsRo extends AppLocalizations {
   String get sevenDays => '7 zile';
 
   @override
-  String get chooseVideo => 'Alege un videoclip pentru anunț.';
-
-  @override
   String get createListing => 'Creează un anunț nou';
 
   @override
   String get createListingDescription =>
       'Prezintă produsul tău comunității Pinbind.';
-
-  @override
-  String get uploadVideo => 'Încarcă videoclipul produsului';
-
-  @override
-  String get videoRequirements =>
-      'MP4 sau MOV, maximum 500 MB. Folosește un videoclip clar care prezintă produsul.';
-
-  @override
-  String get developmentVideoUrl => 'URL video pentru dezvoltare (opțional)';
 
   @override
   String get auctionRulesExplanation =>
@@ -1007,4 +991,21 @@ class AppLocalizationsRo extends AppLocalizations {
 
   @override
   String get demoAudioMonitor => 'Monitor audio profesional H1';
+
+  @override
+  String get imageLoadFailed => 'Fotografia nu poate fi încărcată.';
+
+  @override
+  String get chooseImage => 'Alege o fotografie pentru anunț.';
+
+  @override
+  String get uploadImage => 'Încarcă fotografia produsului';
+
+  @override
+  String get imageRequirements =>
+      'JPG, PNG sau WebP, maximum 10 MB. Alege o fotografie clară a produsului.';
+
+  @override
+  String get ownProductBuy =>
+      'Nu poți cumpăra propriul produs. Folosește un alt cont pentru a testa cumpărarea.';
 }

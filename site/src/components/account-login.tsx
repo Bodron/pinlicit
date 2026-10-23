@@ -61,7 +61,7 @@ export function AccountLogin({
             Regăsește produsele preferate
           </span>
           <span>
-            <Icon name="video" />
+            <Icon name="image" />
             Vezi anunțurile publicate
           </span>
         </div>

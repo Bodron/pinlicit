@@ -1,6 +1,6 @@
 # Licit
 
-Aplicatie Flutter + NestJS pentru licitatii video tip feed vertical.
+Aplicatie Flutter + NestJS pentru licitatii cu fotografii tip feed vertical.
 
 ## Structura
 
@@ -33,14 +33,14 @@ docker compose logs -f backend
 docker compose down
 ```
 
-Pentru upload video real completeaza in `.env`:
+Pentru upload de imagini completeaza in `.env`:
 
 ```env
 AWS_REGION=eu-central-1
-AWS_S3_BUCKET=licit-videos-dev
+AWS_S3_BUCKET=licit-images-dev
 AWS_ACCESS_KEY_ID=...
 AWS_SECRET_ACCESS_KEY=...
-PUBLIC_VIDEO_BASE_URL=
+PUBLIC_IMAGE_BASE_URL=
 ```
 
 Alternativ, pentru dezvoltare fara Docker (cu aceeasi conexiune cloud):
@@ -59,6 +59,31 @@ Adminul creat de seed este:
 - parola: `admin1234`
 
 ## Flutter
+
+### Pornire cu selector de backend
+
+Din rădăcina proiectului:
+
+```sh
+./run-mobile.command
+```
+
+Pe macOS poți deschide `run-mobile.command` și prin dublu-click în Finder. Necesită Flutter în `PATH` și Python 3.
+Alegi **Local** sau **Producție** (`https://pinbind.bcmenu.ro`), apoi telefonul/simulatorul. Dacă nu există un dispozitiv pornit, scriptul îți oferă emulatoarele configurate în Flutter și îl pornește pe cel ales.
+
+Pentru Local, portul este citit din `backend/.env` (implicit 3000 dacă lipsește). Pe simulator iOS se folosește `localhost`, pe emulator Android `10.0.2.2`, iar pe telefon fizic scriptul cere IP-ul LAN al calculatorului; telefonul trebuie să fie în aceeași rețea Wi-Fi. Dacă backend-ul local nu rulează, scriptul oferă să îl pornească și îl oprește când închizi sesiunea Flutter (`q` sau Ctrl+C). Un backend deja pornit este păstrat. Backend-ul local folosește în continuare baza MongoDB configurată în `.env`, inclusiv dacă este în cloud.
+
+Poți alege backend-ul și direct:
+
+```sh
+./run-mobile.command --backend production
+./run-mobile.command --backend local
+./run-mobile.command --backend local --local-host 192.168.1.10 --port 14020
+```
+
+`--device ID` selectează un dispozitiv din `flutter devices`, iar `--dry-run` afișează comanda fără să pornească aplicația/backend-ul. Schimbarea backend-ului cere relansarea aplicației cu scriptul. Pentru producție, serverul HTTPS trebuie să fie deja disponibil. În aplicație ajunge numai URL-ul API, niciodată fișierul `.env` sau cheile backend-ului.
+
+### Pornire manuală
 
 Pe emulator Android, default-ul API este `http://10.0.2.2:3000`.
 Pe simulator iOS si desktop, default-ul este `http://localhost:3000`.
@@ -89,3 +114,9 @@ npm test
 ## Stripe marketplace (backend sandbox)
 
 [Arhitectură, API, configurare și limitele integrării Stripe](docs/stripe-marketplace.md): Identity cu act și selfie, Connect și plăți cu transfer după confirmarea livrării. Integrarea este dezactivată implicit; cheile live sunt refuzate. Flutter și Next.js urmează să consume aceste endpoint-uri. Pentru teste este folosit exclusiv un MongoDB local temporar, cu Stripe simulat.
+
+## Anunțuri numai cu imagini
+
+Fotografiile trec prin `POST /uploads/images` ca multipart: backend-ul validează octeții, optimizează cu Sharp/libvips și salvează numai variante WebP în S3. Aplicația, administratorul și site-ul folosesc manifestul pentru miniaturi, feed și detalii. Sunt acceptate JPG/JPEG, PNG și WebP statice de maximum 10 MB/40 MP. Originalele nu sunt păstrate în S3.
+
+[Flux, cache, CloudFront, limite, curățare și măsurători](docs/image-optimization.md). Pentru eliminarea referințelor video vechi consultă [migrarea imaginilor](docs/images-only.md).

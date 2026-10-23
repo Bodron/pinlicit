@@ -1,3 +1,4 @@
+import '../../shared/images/product_image.dart';
 import 'package:intl/intl.dart';
 import 'package:licit/l10n/l10n.dart';
 import 'dart:async';
@@ -6,7 +7,6 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:video_player/video_player.dart';
 
 import '../../shared/models/product.dart';
 import '../../shared/state/session_controller.dart';
@@ -26,7 +26,6 @@ class ProductDetailScreen extends ConsumerStatefulWidget {
 
 class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
   Product? _product;
-  VideoPlayerController? _video;
   Timer? _clock;
   bool _visible = false;
   bool _loading = true;
@@ -47,30 +46,30 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
     _visible =
         AppLayoutVisibility.locationOf(context) ==
         '/products/${widget.productId}';
-    final video = _video;
-    if (video?.value.isInitialized == true) {
-      if (_visible) {
-        video!.play();
-      } else {
-        video!.pause();
-      }
-    }
   }
 
   @override
   void dispose() {
     _clock?.cancel();
-    _video?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final textTheme = GoogleFonts.montserratTextTheme(
-      Theme.of(context).textTheme,
+      Theme.of(context).textTheme.apply(
+        bodyColor: const Color(0xff363a34),
+        displayColor: const Color(0xff363a34),
+      ),
     );
     return Theme(
-      data: Theme.of(context).copyWith(textTheme: textTheme),
+      data: Theme.of(context).copyWith(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xff0f766e),
+          brightness: Brightness.light,
+        ),
+        textTheme: textTheme,
+      ),
       child: ColoredBox(
         color: const Color(0xfffcfcfd),
         child: _loading
@@ -81,7 +80,6 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
             ? Center(child: Text(_message ?? context.l10n.productNotFound))
             : _ProductDetailsBody(
                 product: _product!,
-                video: _video,
                 message: _message,
                 onBid: _product!.isActive ? _placeBid : null,
                 onBuyNow: _product!.canBuyNow ? _buyNow : null,
@@ -97,30 +95,12 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
           .product(widget.productId);
       if (!mounted) return;
       setState(() => _product = product);
-      await _initVideo(product.videoUrl);
     } catch (error) {
       if (mounted) {
         setState(() => _message = localizedError(error, context.l10n));
       }
     } finally {
       if (mounted) setState(() => _loading = false);
-    }
-  }
-
-  Future<void> _initVideo(String url) async {
-    final uri = Uri.tryParse(url);
-    if (uri == null) return;
-    final controller = VideoPlayerController.networkUrl(uri);
-    _video = controller;
-    try {
-      await controller.initialize();
-      await controller.setLooping(true);
-      if (_visible) await controller.play();
-      if (mounted) setState(() {});
-    } catch (_) {
-      await controller.dispose();
-      if (identical(_video, controller)) _video = null;
-      if (mounted) setState(() => _message = context.l10n.videoLoadFailed);
     }
   }
 
@@ -145,6 +125,11 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
   Future<void> _buyNow() async {
     final product = _product;
     if (product == null) return;
+    final userId = ref.read(sessionControllerProvider).user?.id;
+    if (userId != null && product.seller?.id == userId) {
+      setState(() => _message = context.l10n.ownProductBuy);
+      return;
+    }
     try {
       final updated = await ref.read(apiClientProvider).buyNow(product.id);
       if (mounted) {
@@ -165,54 +150,43 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
 class _ProductDetailsBody extends StatelessWidget {
   const _ProductDetailsBody({
     required this.product,
-    required this.video,
     required this.message,
     required this.onBid,
     required this.onBuyNow,
   });
 
   final Product product;
-  final VideoPlayerController? video;
   final String? message;
   final VoidCallback? onBid;
   final VoidCallback? onBuyNow;
 
   @override
   Widget build(BuildContext context) {
-    final ready = video?.value.isInitialized == true;
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 24, 16, 40),
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(12),
           child: AspectRatio(
-            aspectRatio: 16 / 9,
+            aspectRatio: 4 / 3,
             child: Stack(
               fit: StackFit.expand,
               children: [
-                if (ready)
-                  FittedBox(
-                    fit: BoxFit.cover,
-                    child: SizedBox(
-                      width: video!.value.size.width,
-                      height: video!.value.size.height,
-                      child: VideoPlayer(video!),
+                if (product.imageUrl.isNotEmpty)
+                  ProductImage(
+                    url: product.imageForWidth(
+                      MediaQuery.sizeOf(context).width *
+                          MediaQuery.devicePixelRatioOf(context),
                     ),
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) =>
+                        Center(child: Text(context.l10n.imageLoadFailed)),
                   )
                 else
-                  const ColoredBox(color: Color(0xffeeeeef)),
-                DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.black.withValues(alpha: 0.2),
-                        Colors.transparent,
-                      ],
-                    ),
+                  const ColoredBox(
+                    color: Color(0xffeeeeef),
+                    child: Center(child: Icon(Icons.image_outlined, size: 64)),
                   ),
-                ),
                 Positioned(
                   top: 12,
                   left: 12,
@@ -222,44 +196,9 @@ class _ProductDetailsBody extends StatelessWidget {
                         : localizedStatus(product.status, context.l10n),
                   ),
                 ),
-                Center(
-                  child: Icon(
-                    ready && video!.value.isPlaying
-                        ? Icons.pause_circle_outline_rounded
-                        : Icons.play_circle_fill_rounded,
-                    color: Colors.white.withValues(alpha: 0.92),
-                    size: 64,
-                  ),
-                ),
-                Positioned.fill(
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: ready
-                          ? () async {
-                              if (video!.value.isPlaying) {
-                                await video!.pause();
-                              } else {
-                                await video!.play();
-                              }
-                            }
-                          : null,
-                    ),
-                  ),
-                ),
               ],
             ),
           ),
-        ),
-        const SizedBox(height: 16),
-        const Row(
-          children: [
-            _MediaThumbnail(selected: true, icon: Icons.play_arrow_rounded),
-            SizedBox(width: 12),
-            _MediaThumbnail(icon: Icons.image_outlined),
-            SizedBox(width: 12),
-            _MediaThumbnail(icon: Icons.photo_library_outlined),
-          ],
         ),
         const SizedBox(height: 30),
         _SectionTitle(context.l10n.description),
@@ -422,6 +361,8 @@ class _PricingCard extends StatelessWidget {
                   style: FilledButton.styleFrom(
                     backgroundColor: const Color(0xff363a34),
                     foregroundColor: Colors.white,
+                    disabledBackgroundColor: const Color(0xffe6e7e2),
+                    disabledForegroundColor: const Color(0xff62665e),
                   ),
                   child: Text(context.l10n.placeMaxBid),
                 ),
@@ -432,6 +373,8 @@ class _PricingCard extends StatelessWidget {
                   onPressed: onBuyNow,
                   style: OutlinedButton.styleFrom(
                     foregroundColor: const Color(0xff363a34),
+                    disabledBackgroundColor: const Color(0xfff0f1ed),
+                    disabledForegroundColor: const Color(0xff62665e),
                     side: const BorderSide(color: Color(0xff363a34)),
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                   ),
@@ -612,25 +555,6 @@ class _Badge extends StatelessWidget {
         ),
       ],
     ),
-  );
-}
-
-class _MediaThumbnail extends StatelessWidget {
-  const _MediaThumbnail({required this.icon, this.selected = false});
-  final IconData icon;
-  final bool selected;
-  @override
-  Widget build(BuildContext context) => Container(
-    width: 68,
-    height: 68,
-    decoration: BoxDecoration(
-      color: const Color(0xffeeeeef),
-      borderRadius: BorderRadius.circular(8),
-      border: Border.all(
-        color: selected ? const Color(0xff363a34) : const Color(0xffc5c7c0),
-      ),
-    ),
-    child: Icon(icon, color: const Color(0xff454842)),
   );
 }
 

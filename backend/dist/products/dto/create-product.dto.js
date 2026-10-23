@@ -31,17 +31,14 @@ __decorate([
 ], CreateProductDto.prototype, "categoryId", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
+    (0, class_validator_1.Matches)(/^images\/v1\/[a-f0-9]{64}\/\d+x\d+\.webp$/),
     __metadata("design:type", String)
-], CreateProductDto.prototype, "videoKey", void 0);
+], CreateProductDto.prototype, "imageKey", void 0);
 __decorate([
-    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsUrl)({ protocols: ["https"], require_protocol: true }),
+    (0, class_validator_1.Matches)(/\.(jpg|jpeg|png|webp)$/i),
     __metadata("design:type", String)
-], CreateProductDto.prototype, "videoUrl", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)(),
-    __metadata("design:type", String)
-], CreateProductDto.prototype, "thumbnailUrl", void 0);
+], CreateProductDto.prototype, "imageUrl", void 0);
 __decorate([
     (0, class_transformer_1.Type)(() => Number),
     (0, class_validator_1.IsInt)(),

@@ -149,10 +149,10 @@ export function Explore({
     Number(Boolean(price.min || price.max));
   const infoText =
     info === "Vinde pe Pinbind"
-      ? "Publică un anunț video din secțiunea Vinde a aplicației Pinbind. După aprobarea contului de vânzător, anunțul tău va apărea și în acest catalog."
+      ? "Publică un anunț cu fotografie din secțiunea Vinde a aplicației Pinbind. După aprobarea contului de vânzător, anunțul tău va apărea și în acest catalog."
       : info === "Contul tău Pinbind"
-        ? "Autentificarea, ofertele și favoritele din cont sunt disponibile în aplicația Pinbind. Aici poți explora anunțurile și viziona prezentările video fără cont."
-        : "Pinbind aduce licitațiile în prim-plan prin video. Explorează anunțurile, verifică descrierea și prețul curent, apoi folosește aplicația Pinbind pentru a licita sau pentru a lua legătura cu vânzătorul.";
+        ? "Autentificarea, ofertele și favoritele din cont sunt disponibile în aplicația Pinbind. Aici poți explora anunțurile și vedea fotografiile produselor fără cont."
+        : "Pinbind aduce licitațiile în prim-plan prin fotografii. Explorează anunțurile, verifică descrierea și prețul curent, apoi folosește aplicația Pinbind pentru a licita sau pentru a lua legătura cu vânzătorul.";
 
   return (
     <>
@@ -169,8 +169,9 @@ export function Explore({
               <br className="hero-break" /> piesă din colecția ta.
             </h1>
             <p>
-              Obiecte cu poveste, prezentate prin video. Explorează licitațiile,
-              descoperă detaliile și găsește ceea ce merită păstrat.
+              Obiecte cu poveste, prezentate prin fotografii. Explorează
+              licitațiile, descoperă detaliile și găsește ceea ce merită
+              păstrat.
             </p>
           </div>
           <div className="catalog-stats">
@@ -359,12 +360,12 @@ export function Explore({
                   ))}
                 </div>
               </fieldset>
-              <div className="filter-section video-filter">
-                <span className="video-icon">
-                  <Icon name="video" size={22} />
+              <div className="filter-section image-filter">
+                <span className="image-icon">
+                  <Icon name="image" size={22} />
                 </span>
                 <div>
-                  <strong>Prezentări video</strong>
+                  <strong>Fotografii ale produselor</strong>
                   <p>Descoperă fiecare detaliu</p>
                 </div>
                 <Icon name="check" size={17} />
@@ -374,7 +375,7 @@ export function Explore({
               <Icon name="gavel" size={24} />
               <h3>Mai aproape de produs.</h3>
               <p>
-                Un videoclip spune mai mult. Vezi produsul în mișcare și citește
+                O fotografie arată detaliile. Privește produsul și citește
                 descrierea înainte să faci o ofertă.
               </p>
               <a href="#cum-functioneaza">
@@ -409,7 +410,7 @@ export function Explore({
                 {filterCount > 0 && `(${filterCount})`}
               </button>
               <span className="results-trust">
-                <Icon name="video" size={16} /> Anunțuri video
+                <Icon name="image" size={16} /> Anunțuri cu fotografii
                 <span className="label-dot" />
                 Prețuri în RON
               </span>
@@ -504,7 +505,7 @@ export function Explore({
                 </h2>
                 <p>
                   Explorează catalogul aici și continuă în aplicația Pinbind.
-                  Videoclipuri, oferte și toate detaliile produsului, într-un
+                  Fotografii, oferte și toate detaliile produsului, într-un
                   singur loc.
                 </p>
                 <button
@@ -530,7 +531,7 @@ export function Explore({
       {info && (
         <Dialog title={info} onClose={() => setInfo("")}>
           <div className="info-content">
-            <Icon name="video" size={38} />
+            <Icon name="image" size={38} />
             <p>{infoText}</p>
             <button
               className="button button-primary"

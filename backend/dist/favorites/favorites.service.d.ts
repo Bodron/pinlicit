@@ -15,9 +15,10 @@ export declare class FavoritesService {
         category: Types.ObjectId;
         title: string;
         description: string;
-        videoKey: string;
-        videoUrl: string;
+        imageKey?: string;
+        imageUrl?: string;
         thumbnailUrl?: string;
+        imageVariants: import("../uploads/image-policy").ImageVariant[];
         status: ProductStatus;
         startingPrice: number;
         reservePrice?: number;
@@ -40,9 +41,10 @@ export declare class FavoritesService {
         category: Types.ObjectId;
         title: string;
         description: string;
-        videoKey: string;
-        videoUrl: string;
+        imageKey?: string;
+        imageUrl?: string;
         thumbnailUrl?: string;
+        imageVariants: import("../uploads/image-policy").ImageVariant[];
         status: ProductStatus;
         startingPrice: number;
         reservePrice?: number;

@@ -32,7 +32,7 @@ export function useAccount() {
 }
 const navigation: { href: string; label: string; icon: IconName }[] = [
   { href: "/cont", label: "Prezentare generală", icon: "grid" },
-  { href: "/cont/video", label: "Prezentări video", icon: "video" },
+  { href: "/cont/imagini", label: "Fotografii ale produselor", icon: "image" },
   { href: "/cont/oferte", label: "Oferte și istoric", icon: "gavel" },
   { href: "/cont/anunturi", label: "Anunțurile mele", icon: "list" },
   { href: "/cont/favorite", label: "Favorite", icon: "heart" },

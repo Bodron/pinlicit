@@ -1,0 +1,14 @@
+[
+  {
+    "AllowedHeaders": ["content-type"],
+    "AllowedMethods": ["GET", "HEAD", "PUT"],
+    "AllowedOrigins": [
+      "https://pinbind.bcmenu.ro",
+      "http://localhost:3000",
+      "http://localhost:3001",
+      "http://localhost:3002"
+    ],
+    "ExposeHeaders": ["ETag"],
+    "MaxAgeSeconds": 300
+  }
+]

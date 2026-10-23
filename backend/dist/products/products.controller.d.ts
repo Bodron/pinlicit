@@ -35,13 +35,7 @@ export declare class ProductsController {
         _id: import("mongoose").Types.ObjectId;
     }>)[]>;
     catalog(query: CatalogQueryDto): Promise<{
-        items: (import("mongoose").FlattenMaps<import("mongoose").Document<unknown, {}, import("./schemas/product.schema").Product, {}, {}> & import("./schemas/product.schema").Product & {
-            _id: import("mongoose").Types.ObjectId;
-        } & {
-            __v: number;
-        }> & Required<{
-            _id: import("mongoose").Types.ObjectId;
-        }>)[];
+        items: Record<string, any>[];
         total: number;
         page: number;
         pageSize: number;

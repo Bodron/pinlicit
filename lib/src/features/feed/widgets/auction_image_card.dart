@@ -1,3 +1,4 @@
+import '../../../shared/images/product_image.dart';
 import 'package:licit/l10n/l10n.dart';
 import 'dart:async';
 import 'dart:ui';
@@ -6,7 +7,6 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
-import 'package:video_player/video_player.dart';
 
 import '../../../shared/config/app_config.dart';
 import '../../../shared/models/product.dart';
@@ -15,29 +15,26 @@ import '../../../shared/state/session_controller.dart';
 import '../../../shared/notifications/app_notifier.dart';
 import '../../../shared/state/favorite_mutation.dart';
 import '../../../shared/utils/money.dart';
-import '../../../shared/video/feed_playback.dart';
 
-class AuctionVideoCard extends ConsumerStatefulWidget {
-  const AuctionVideoCard({
+class AuctionImageCard extends ConsumerStatefulWidget {
+  const AuctionImageCard({
     super.key,
     required this.product,
-    required this.playback,
     required this.onOpenDetails,
     this.onFavoriteChanged,
     this.isActive = true,
   });
 
   final Product product;
-  final FeedPlayback playback;
   final bool isActive;
   final VoidCallback onOpenDetails;
   final ValueChanged<Product>? onFavoriteChanged;
 
   @override
-  ConsumerState<AuctionVideoCard> createState() => _AuctionVideoCardState();
+  ConsumerState<AuctionImageCard> createState() => _AuctionImageCardState();
 }
 
-class _AuctionVideoCardState extends ConsumerState<AuctionVideoCard>
+class _AuctionImageCardState extends ConsumerState<AuctionImageCard>
     with RouteAware, WidgetsBindingObserver {
   late Product _product;
   io.Socket? _socket;
@@ -56,7 +53,7 @@ class _AuctionVideoCardState extends ConsumerState<AuctionVideoCard>
   }
 
   @override
-  void didUpdateWidget(covariant AuctionVideoCard oldWidget) {
+  void didUpdateWidget(covariant AuctionImageCard oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.product.id != widget.product.id) {
       _disconnectSocket();
@@ -131,40 +128,35 @@ class _AuctionVideoCardState extends ConsumerState<AuctionVideoCard>
       fit: StackFit.expand,
       children: [
         RepaintBoundary(
-          child: ListenableBuilder(
-            listenable: widget.playback,
-            builder: (context, _) {
-              final playback = widget.playback;
-              final video = playback.controller;
-              if (playback.activeId == _product.id &&
-                  playback.ready &&
-                  video != null) {
-                return FittedBox(
-                  fit: BoxFit.cover,
-                  child: SizedBox(
-                    width: video.value.size.width,
-                    height: video.value.size.height,
-                    child: VideoPlayer(video),
+          child: _product.imageUrl.isEmpty
+              ? const ColoredBox(
+                  color: Color(0xff454842),
+                  child: Center(
+                    child: Icon(
+                      Icons.image_outlined,
+                      color: Colors.white,
+                      size: 64,
+                    ),
                   ),
-                );
-              }
-              return ColoredBox(
-                color: Colors.black,
-                child: Center(
-                  child: playback.activeId == _product.id && playback.failed
-                      ? Text(
-                          context.l10n.videoLoadFailed,
-                          style: const TextStyle(color: Colors.white),
-                        )
-                      : const CircularProgressIndicator(
-                          color: Color(0xffe4e3d8),
-                        ),
+                )
+              : ProductImage(
+                  url: _product.imageForWidth(
+                    MediaQuery.sizeOf(context).width *
+                        MediaQuery.devicePixelRatioOf(context),
+                  ),
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => ColoredBox(
+                    color: const Color(0xff454842),
+                    child: Center(
+                      child: Text(
+                        context.l10n.imageLoadFailed,
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ),
                 ),
-              );
-            },
-          ),
         ),
-        const _VideoGradient(),
+        const _ImageGradient(),
         Positioned.fill(
           child: GestureDetector(
             behavior: HitTestBehavior.translucent,
@@ -315,6 +307,11 @@ class _AuctionVideoCardState extends ConsumerState<AuctionVideoCard>
   }
 
   Future<void> _buyNow() async {
+    final userId = ref.read(sessionControllerProvider).user?.id;
+    if (userId != null && _product.seller?.id == userId) {
+      setState(() => _message = context.l10n.ownProductBuy);
+      return;
+    }
     try {
       final product = await ref.read(apiClientProvider).buyNow(_product.id);
       if (!mounted) return;
@@ -405,8 +402,8 @@ class _AuctionVideoCardState extends ConsumerState<AuctionVideoCard>
       localizedError(error, context.l10n);
 }
 
-class _VideoGradient extends StatelessWidget {
-  const _VideoGradient();
+class _ImageGradient extends StatelessWidget {
+  const _ImageGradient();
 
   @override
   Widget build(BuildContext context) {
@@ -754,8 +751,8 @@ class _BuyNowButton extends StatelessWidget {
   }
 }
 
-/// Updates only the countdown text, without rebuilding the video card or its
-/// video player once per second.
+/// Updates only the countdown text, without rebuilding the image card or its
+/// image once per second.
 class _LiveRemainingLabel extends StatefulWidget {
   const _LiveRemainingLabel({required this.endsAt, required this.status});
 
@@ -991,7 +988,7 @@ class _PlaceBidSheetState extends State<_PlaceBidSheet> {
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: const Icon(
-                        Icons.play_circle_outline,
+                        Icons.image_outlined,
                         color: Color(0xff363a34),
                       ),
                     ),

@@ -1,3 +1,4 @@
+import { UploadsModule } from "../uploads/uploads.module";
 import { forwardRef, Module } from "@nestjs/common";
 import { MongooseModule } from "@nestjs/mongoose";
 import { AuctionsModule } from "../auctions/auctions.module";
@@ -12,6 +13,7 @@ import { ProductsService } from "./products.service";
 @Module({
   imports: [
     UsersModule,
+    UploadsModule,
     CategoriesModule,
     forwardRef(() => AuctionsModule),
     forwardRef(() => BidsModule),

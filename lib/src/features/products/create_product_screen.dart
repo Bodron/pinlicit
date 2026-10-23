@@ -31,13 +31,12 @@ class _CreateProductScreenState extends ConsumerState<CreateProductScreen> {
   final _reservePrice = TextEditingController(text: '200');
   final _minIncrement = TextEditingController(text: '5');
   final _buyNow = TextEditingController(text: '250');
-  final _devVideoUrl = TextEditingController();
 
   final _durationOptions = const [3, 5, 7, 14, 30];
   int _durationDays = 7;
   List<ProductCategory> _categories = [];
   ProductCategory? _category;
-  PlatformFile? _video;
+  PlatformFile? _image;
   bool _loading = true;
   bool _saving = false;
   String? _message;
@@ -57,7 +56,6 @@ class _CreateProductScreenState extends ConsumerState<CreateProductScreen> {
     _reservePrice.dispose();
     _minIncrement.dispose();
     _buyNow.dispose();
-    _devVideoUrl.dispose();
     super.dispose();
   }
 
@@ -94,10 +92,9 @@ class _CreateProductScreenState extends ConsumerState<CreateProductScreen> {
                                   children: [
                                     const _PageHeader(),
                                     const SizedBox(height: 40),
-                                    _VideoUploadPanel(
-                                      video: _video,
-                                      devVideoUrl: _devVideoUrl,
-                                      onPickVideo: _pickVideo,
+                                    _ImageUploadPanel(
+                                      image: _image,
+                                      onPickImage: _pickImage,
                                     ),
                                     const SizedBox(height: 40),
                                     _FormSection(
@@ -362,20 +359,28 @@ class _CreateProductScreenState extends ConsumerState<CreateProductScreen> {
     }
   }
 
-  Future<void> _pickVideo() async {
+  Future<void> _pickImage() async {
     final result = await FilePicker.pickFiles(
-      type: FileType.video,
+      type: FileType.custom,
+      allowedExtensions: ['jpg', 'jpeg', 'png', 'webp'],
       withData: true,
     );
-    if (result != null && result.files.isNotEmpty) {
-      setState(() => _video = result.files.single);
+    if (!mounted || result == null || result.files.isEmpty) return;
+    final image = result.files.single;
+    if (image.size < 1 || image.size > 10 * 1024 * 1024) {
+      setState(() => _message = context.l10n.imageRequirements);
+      return;
     }
+    setState(() {
+      _image = image;
+      _message = null;
+    });
   }
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_video == null && _devVideoUrl.text.trim().isEmpty) {
-      setState(() => _message = context.l10n.chooseVideo);
+    if (_image == null) {
+      setState(() => _message = context.l10n.chooseImage);
       return;
     }
 
@@ -386,20 +391,23 @@ class _CreateProductScreenState extends ConsumerState<CreateProductScreen> {
 
     final l10n = context.l10n;
     try {
-      var videoKey = 'dev/${DateTime.now().millisecondsSinceEpoch}.mp4';
-      var videoUrl = _devVideoUrl.text.trim();
-
-      if (_video != null) {
-        final ticket = await ref
-            .read(apiClientProvider)
-            .createVideoUpload(fileName: _video!.name);
-        final bytes = _video!.bytes ?? await File(_video!.path!).readAsBytes();
-        await ref
-            .read(apiClientProvider)
-            .uploadVideo(ticket: ticket, bytes: bytes);
-        videoKey = ticket.key;
-        videoUrl = ticket.videoUrl;
-      }
+      final image = _image!;
+      final contentType = switch (image.extension?.toLowerCase()) {
+        'jpg' || 'jpeg' => 'image/jpeg',
+        'png' => 'image/png',
+        'webp' => 'image/webp',
+        _ => throw FormatException(l10n.imageRequirements),
+      };
+      final bytes = image.bytes ?? await File(image.path!).readAsBytes();
+      final optimized = await ref
+          .read(apiClientProvider)
+          .uploadImage(
+            fileName: image.name,
+            contentType: contentType,
+            bytes: bytes,
+          );
+      final imageKey = optimized.imageKey;
+      final imageUrl = optimized.imageUrl;
 
       final now = DateTime.now().toUtc();
       final materials = _materials.text.trim();
@@ -412,8 +420,8 @@ class _CreateProductScreenState extends ConsumerState<CreateProductScreen> {
         'title': _title.text.trim(),
         'description': description,
         'categoryId': _category!.id,
-        'videoKey': videoKey,
-        'videoUrl': videoUrl,
+        'imageKey': imageKey,
+        'imageUrl': imageUrl,
         'startingPrice': ronToBani(_startingPrice.text),
         'reservePrice': ronToBani(_reservePrice.text),
         'minBidIncrement': ronToBani(_minIncrement.text),
@@ -422,6 +430,7 @@ class _CreateProductScreenState extends ConsumerState<CreateProductScreen> {
         'endsAt': now.add(Duration(days: _durationDays)).toIso8601String(),
       });
       if (mounted) {
+        _image = null;
         ref.read(catalogUpdatesProvider.notifier).listingPublished();
         context.notifier.success(context.l10n.listingPublished);
         context.go('/activity?section=sales');
@@ -484,151 +493,66 @@ class _PageHeader extends StatelessWidget {
   }
 }
 
-class _VideoUploadPanel extends StatelessWidget {
-  const _VideoUploadPanel({
-    required this.video,
-    required this.devVideoUrl,
-    required this.onPickVideo,
-  });
-
-  final PlatformFile? video;
-  final TextEditingController devVideoUrl;
-  final VoidCallback onPickVideo;
+class _ImageUploadPanel extends StatelessWidget {
+  const _ImageUploadPanel({required this.image, required this.onPickImage});
+  final PlatformFile? image;
+  final VoidCallback onPickImage;
 
   @override
-  Widget build(BuildContext context) {
-    final width = MediaQuery.sizeOf(context).width;
-    final compact = width < 390;
-    final iconSize = compact ? 52.0 : 64.0;
-    final iconGlyphSize = compact ? 30.0 : 36.0;
-    final titleSize = compact ? 20.0 : 24.0;
-    final helperSize = compact ? 12.0 : 14.0;
-
-    return Column(
-      children: [
-        InkWell(
-          onTap: onPickVideo,
+  Widget build(BuildContext context) => InkWell(
+    onTap: onPickImage,
+    borderRadius: BorderRadius.circular(12),
+    child: AspectRatio(
+      aspectRatio: 4 / 3,
+      child: Container(
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: _PostColors.surfaceLow,
           borderRadius: BorderRadius.circular(12),
-          child: AspectRatio(
-            aspectRatio: 16 / 9,
-            child: Container(
-              decoration: BoxDecoration(
-                color: _PostColors.surfaceLow,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: _PostColors.outlineVariant.withValues(alpha: 0.55),
-                  width: 2,
-                ),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    Image.network(
-                      'https://lh3.googleusercontent.com/aida-public/AB6AXuD5-2R6YOSdI9wn1Jo1SH5c53T0ncfbbFolKO9ORbVYCw4gEHxX5JfWRfZPyikMgFoPBYTwhDgDTegtArjJteQ_C5Zlz1wB05mY_zlwq9yFD2uN6sK3D6FqNf_EIWKFgP--g5EPlkdYap6uVmivcGTFELrD9m0YlubrSZMmUyrwRpC8svIPLiC0cIF4IAHB43Def7carKCa6FMYAHbAXszwvydRG-Bxk5IViBzCzY-AgKUOvfoTMMwQj-xvW5F0LAWs2nTXe1LrHw',
-                      fit: BoxFit.cover,
-                      opacity: const AlwaysStoppedAnimation(0.2),
-                      errorBuilder: (context, error, stackTrace) =>
-                          const ColoredBox(color: _PostColors.surfaceLow),
-                    ),
-                    DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: _PostColors.surfaceLow.withValues(alpha: 0.28),
-                      ),
-                    ),
-                    Padding(
-                      padding: EdgeInsets.all(compact ? 14 : 24),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: iconSize,
-                            height: iconSize,
-                            decoration: BoxDecoration(
-                              color: _PostColors.primaryContainer.withValues(
-                                alpha: 0.1,
-                              ),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              Icons.movie_outlined,
-                              color: _PostColors.primary,
-                              size: iconGlyphSize,
-                            ),
-                          ),
-                          SizedBox(height: compact ? 10 : 16),
-                          FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Text(
-                              video == null
-                                  ? context.l10n.uploadVideo
-                                  : video!.name,
-                              textAlign: TextAlign.center,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: _PostColors.primary,
-                                fontSize: titleSize,
-                                height: 1.2,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: compact ? 6 : 8),
-                          Text(
-                            context.l10n.videoRequirements,
-                            textAlign: TextAlign.center,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: _PostColors.onSurfaceVariant,
-                              fontSize: helperSize,
-                              height: 1.25,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
+          border: Border.all(color: _PostColors.outlineVariant),
         ),
-        const SizedBox(height: 12),
-        TextFormField(
-          controller: devVideoUrl,
-          style: const TextStyle(color: _PostColors.onSurface),
-          decoration: InputDecoration(
-            hintText: context.l10n.developmentVideoUrl,
-            hintStyle: TextStyle(
-              color: _PostColors.outlineVariant.withValues(alpha: 0.85),
-            ),
-            prefixIcon: const Icon(
-              Icons.link,
-              color: _PostColors.onSurfaceVariant,
-            ),
-            filled: true,
-            fillColor: _PostColors.surfaceContainer,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide.none,
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(
-                color: _PostColors.primary,
-                width: 2,
+        child: image?.bytes != null
+            ? Image.memory(
+                image!.bytes!,
+                cacheWidth:
+                    (MediaQuery.sizeOf(context).width *
+                            MediaQuery.devicePixelRatioOf(context))
+                        .ceil()
+                        .clamp(1, 1280)
+                        .toInt(),
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) =>
+                    Center(child: Text(context.l10n.imageLoadFailed)),
+              )
+            : Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.add_photo_alternate_outlined,
+                    size: 64,
+                    color: _PostColors.primary,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    context.l10n.uploadImage,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 20,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Text(
+                      context.l10n.imageRequirements,
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+      ),
+    ),
+  );
 }
 
 class _FormSection extends StatelessWidget {

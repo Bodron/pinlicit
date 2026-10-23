@@ -17,7 +17,7 @@ class AppNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final destinations = [
-      (Icons.play_circle_outline, Icons.play_circle_fill, context.l10n.navFeed),
+      (Icons.image_outlined, Icons.photo_library, context.l10n.navFeed),
       (Icons.search, Icons.search, context.l10n.navExplore),
       (Icons.add_circle_outline, Icons.add_circle, context.l10n.navSell),
       (

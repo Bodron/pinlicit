@@ -5,6 +5,8 @@ import {
   IsInt,
   IsOptional,
   IsString,
+  IsUrl,
+  Matches,
   Min,
   MinLength,
 } from "class-validator";
@@ -22,14 +24,12 @@ export class CreateProductDto {
   categoryId: string;
 
   @IsString()
-  videoKey: string;
+  @Matches(/^images\/v1\/[a-f0-9]{64}\/\d+x\d+\.webp$/)
+  imageKey: string;
 
-  @IsString()
-  videoUrl: string;
-
-  @IsOptional()
-  @IsString()
-  thumbnailUrl?: string;
+  @IsUrl({ protocols: ["https"], require_protocol: true })
+  @Matches(/\.(jpg|jpeg|png|webp)$/i)
+  imageUrl: string;
 
   @Type(() => Number)
   @IsInt()

@@ -36,14 +36,17 @@ export class Product {
   @Prop({ required: true, trim: true })
   description: string;
 
-  @Prop({ required: true })
-  videoKey: string;
+  @Prop()
+  imageKey?: string;
 
-  @Prop({ required: true })
-  videoUrl: string;
+  @Prop()
+  imageUrl?: string;
 
   @Prop()
   thumbnailUrl?: string;
+
+  @Prop({ type: [Object], default: [] })
+  imageVariants: import("../../uploads/image-policy").ImageVariant[];
 
   @Prop({ enum: ProductStatus, default: ProductStatus.Active })
   status: ProductStatus;
@@ -79,3 +82,24 @@ export class Product {
 export const ProductSchema = SchemaFactory.createForClass(Product);
 ProductSchema.index({ status: 1, endsAt: 1, createdAt: -1 });
 ProductSchema.index({ category: 1, status: 1, endsAt: 1 });
+
+// Do not expose obsolete media fields from documents created before images-only.
+function imageOnly(_doc: unknown, value: any) {
+  value.imageUrl ||= value.thumbnailUrl || "";
+  delete value.videoKey;
+  delete value.videoUrl;
+  delete value.thumbnailUrl;
+  return value;
+}
+ProductSchema.set("toJSON", { transform: imageOnly });
+ProductSchema.set("toObject", { transform: imageOnly });
+ProductSchema.pre(/^find/, function (this: import("mongoose").Query<any, any>) {
+  const projection = this.projection();
+  // Inclusive projections already omit obsolete fields; mixing inclusion and
+  // exclusion would break commerce's explicit commerceVersion lookup.
+  if (
+    !projection ||
+    !Object.values(projection).some((value) => value === 1 || value === true)
+  )
+    this.select("-videoKey -videoUrl");
+});

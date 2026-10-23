@@ -7,7 +7,16 @@
   "previousPage": "Pagina anterioară",
   "nextPage": "Pagina următoare",
   "salesPage": "{page} din {total}",
-  "@salesPage": {"placeholders": {"page": {"type": "int"}, "total": {"type": "int"}}},
+  "@salesPage": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
   "myListings": "Anunțurile mele",
   "noCompletedSales": "Nu ai încă produse vândute.",
   "navFeed": "Acasă",
@@ -41,7 +50,6 @@
   "forYou": "Pentru tine",
   "reload": "Reîncarcă",
   "noActiveListings": "Nu există anunțuri active.",
-  "videoLoadFailed": "Videoclipul nu poate fi încărcat.",
   "shareComingSoon": "Distribuirea va fi disponibilă în curând.",
   "newLiveBid": "A fost primită o ofertă nouă.",
   "auctionExtended": "Licitația a fost prelungită.",
@@ -185,7 +193,7 @@
   "yesterday": "Ieri",
   "paid": "Plătit",
   "pendingUpper": "În așteptare",
-  "sellerApplicationDescription": "Trimite cererea pentru aprobare. După acceptare poți publica anunțuri video și licitații.",
+  "sellerApplicationDescription": "Trimite cererea pentru aprobare. După acceptare poți publica anunțuri cu fotografii și licitații.",
   "sellerName": "Nume vânzător",
   "contactPhone": "Telefon de contact",
   "whatDoYouSell": "Ce vinzi?",
@@ -208,12 +216,8 @@
   "setPrice": "Stabilește prețul",
   "auctionDuration": "Durata licitației",
   "sevenDays": "7 zile",
-  "chooseVideo": "Alege un videoclip pentru anunț.",
   "createListing": "Creează un anunț nou",
   "createListingDescription": "Prezintă produsul tău comunității Pinbind.",
-  "uploadVideo": "Încarcă videoclipul produsului",
-  "videoRequirements": "MP4 sau MOV, maximum 500 MB. Folosește un videoclip clar care prezintă produsul.",
-  "developmentVideoUrl": "URL video pentru dezvoltare (opțional)",
   "auctionRulesExplanation": "Cumpărătorii introduc suma maximă. Pinbind mărește oferta publică doar cât este necesar pentru a păstra ofertantul în frunte.",
   "invalidAmount": "Sumă invalidă",
   "publishing": "Se publică…",
@@ -494,5 +498,10 @@
   "categoryAuto": "Auto",
   "demoSunglasses": "Ochelari de soare cu ramă în carapace",
   "demoSilkShirt": "Tricou din mătase",
-  "demoAudioMonitor": "Monitor audio profesional H1"
+  "demoAudioMonitor": "Monitor audio profesional H1",
+  "imageLoadFailed": "Fotografia nu poate fi încărcată.",
+  "chooseImage": "Alege o fotografie pentru anunț.",
+  "uploadImage": "Încarcă fotografia produsului",
+  "imageRequirements": "JPG, PNG sau WebP, maximum 10 MB. Alege o fotografie clară a produsului.",
+  "ownProductBuy": "Nu poți cumpăra propriul produs. Folosește un alt cont pentru a testa cumpărarea."
 }

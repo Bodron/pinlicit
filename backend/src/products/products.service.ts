@@ -1,9 +1,11 @@
+import { UploadsService } from "../uploads/uploads.service";
 import {
   BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
   Optional,
+  ServiceUnavailableException,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { CommerceAccountsService } from "../commerce/commerce-accounts.service";
@@ -26,6 +28,7 @@ export class ProductsService {
     private readonly productModel: Model<ProductDocument>,
     @Optional() private readonly config?: ConfigService,
     @Optional() private readonly commerceAccounts?: CommerceAccountsService,
+    @Optional() private readonly uploads?: UploadsService,
   ) {}
 
   async create(seller: any, dto: CreateProductDto) {
@@ -55,15 +58,21 @@ export class ProductsService {
 
     const commerce = this.config?.get<string>("STRIPE_ENABLED") === "true";
     if (commerce) await this.commerceAccounts.requireSeller(String(seller._id));
+    if (!this.uploads)
+      throw new ServiceUnavailableException("Image processing is unavailable.");
+    const image = await this.uploads.requireImage(
+      dto.imageKey,
+      String(seller._id),
+    );
     return this.productModel.create({
       ...(commerce ? { commerceVersion: 1 } : {}),
       seller: seller._id,
       category: new Types.ObjectId(dto.categoryId),
       title: dto.title,
       description: dto.description,
-      videoKey: dto.videoKey,
-      videoUrl: dto.videoUrl,
-      thumbnailUrl: dto.thumbnailUrl,
+      imageKey: dto.imageKey,
+      imageUrl: image.imageUrl,
+      imageVariants: image.variants,
       startingPrice: dto.startingPrice,
       reservePrice: dto.reservePrice,
       currentPrice: dto.startingPrice,
@@ -92,7 +101,14 @@ export class ProductsService {
       .limit(query.limit);
   }
 
-  async catalog(query: CatalogQueryDto) {
+  async catalog(query: CatalogQueryDto): Promise<{
+    items: Record<string, any>[];
+    total: number;
+    page: number;
+    pageSize: number;
+    pages: number;
+    stats: { activeTotal: number; endingToday: number };
+  }> {
     const now = new Date();
     const base = { status: ProductStatus.Active, endsAt: { $gt: now } };
     const filter: Record<string, any> = { ...base };
@@ -166,7 +182,14 @@ export class ProductsService {
       }),
     ]);
     return {
-      items,
+      items: items.map((item) => {
+        const result = {
+          ...item,
+          imageUrl: item.imageUrl || item.thumbnailUrl || "",
+        };
+        delete result.thumbnailUrl;
+        return result;
+      }),
       total,
       page: query.page,
       pageSize: query.limit,
@@ -209,7 +232,10 @@ export class ProductsService {
   async reserveByBuyNow(productId: string, buyerId: string) {
     const candidate = await this.productModel
       .findById(productId)
-      .select("commerceVersion");
+      .select("commerceVersion seller");
+    if (candidate && String(candidate.seller) === String(buyerId)) {
+      throw new ForbiddenException("You cannot buy your own product.");
+    }
     if (candidate?.commerceVersion === 1) {
       if (!this.commerceAccounts)
         throw new ForbiddenException("Identity verification is required.");

@@ -10,10 +10,10 @@ describe("ProductsService", () => {
 
   const validDto = {
     title: "Camera vintage",
-    description: "Camera video in stare foarte buna.",
+    description: "Camera foto in stare foarte buna.",
     categoryId: "507f1f77bcf86cd799439011",
-    videoKey: "videos/demo.mp4",
-    videoUrl: "https://example.com/demo.mp4",
+    imageKey: "images/demo.jpg",
+    imageUrl: "https://example.com/demo.jpg",
     startingPrice: 1000,
     minBidIncrement: 100,
     buyNowPrice: 2500,
@@ -46,30 +46,50 @@ import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
 
 describe("Public catalog", () => {
-  const rows = [{ title: "Audi A4" }];
+  const rows = [{ title: "Audi A4", imageUrl: "https://example.com/car.jpg" }];
   let chain: any;
   let model: any;
   let service: ProductsService;
   beforeEach(() => {
     chain = {
-      populate: jest.fn().mockReturnThis(), sort: jest.fn().mockReturnThis(),
-      skip: jest.fn().mockReturnThis(), limit: jest.fn().mockReturnThis(),
+      populate: jest.fn().mockReturnThis(),
+      sort: jest.fn().mockReturnThis(),
+      skip: jest.fn().mockReturnThis(),
+      limit: jest.fn().mockReturnThis(),
       lean: jest.fn().mockResolvedValue(rows),
     };
-    model = { find: jest.fn(() => chain), countDocuments: jest.fn().mockResolvedValue(15) };
+    model = {
+      find: jest.fn(() => chain),
+      countDocuments: jest.fn().mockResolvedValue(15),
+    };
     service = new ProductsService(model);
   });
   it("paginates on the server, returns real totals and avoids public seller contact fields", async () => {
-    const result = await service.catalog(Object.assign(new CatalogQueryDto(), { page: 2, limit: 12 }));
+    const result = await service.catalog(
+      Object.assign(new CatalogQueryDto(), { page: 2, limit: 12 }),
+    );
     expect(chain.skip).toHaveBeenCalledWith(12);
     expect(chain.limit).toHaveBeenCalledWith(12);
     expect(chain.populate).toHaveBeenCalledWith("seller", "name role");
-    expect(result).toMatchObject({ items: rows, total: 15, page: 2, pages: 2, stats: { activeTotal: 15, endingToday: 15 } });
+    expect(result).toMatchObject({
+      items: rows,
+      total: 15,
+      page: 2,
+      pages: 2,
+      stats: { activeTotal: 15, endingToday: 15 },
+    });
   });
   it("escapes regex input and combines category, price and reserve filters", async () => {
-    await service.catalog(Object.assign(new CatalogQueryDto(), {
-      q: "Audi .*", categoryId: "507f1f77bcf86cd799439011", stage: "reserve", minPrice: 100, maxPrice: 5000, sort: "price-desc",
-    }));
+    await service.catalog(
+      Object.assign(new CatalogQueryDto(), {
+        q: "Audi .*",
+        categoryId: "507f1f77bcf86cd799439011",
+        stage: "reserve",
+        minPrice: 100,
+        maxPrice: 5000,
+        sort: "price-desc",
+      }),
+    );
     const filter = model.find.mock.calls[0][0];
     expect(filter.$or[0].title.$regex).toBe("Audi \\.\\*");
     expect(filter.category).toBe("507f1f77bcf86cd799439011");
@@ -78,13 +98,62 @@ describe("Public catalog", () => {
     expect(chain.sort).toHaveBeenCalledWith({ currentPrice: -1, _id: -1 });
   });
   it("rejects inverted price ranges before querying the database", async () => {
-    await expect(service.catalog(Object.assign(new CatalogQueryDto(), { minPrice: 200, maxPrice: 100 }))).rejects.toBeInstanceOf(BadRequestException);
+    await expect(
+      service.catalog(
+        Object.assign(new CatalogQueryDto(), { minPrice: 200, maxPrice: 100 }),
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
     expect(model.find).not.toHaveBeenCalled();
   });
   it("validates bounds and supported filters", async () => {
-    const valid = plainToInstance(CatalogQueryDto, { page: "2", limit: "12", stage: "live", sort: "newest" });
+    const valid = plainToInstance(CatalogQueryDto, {
+      page: "2",
+      limit: "12",
+      stage: "live",
+      sort: "newest",
+    });
     expect(await validate(valid)).toHaveLength(0);
-    const invalid = plainToInstance(CatalogQueryDto, { page: "0", limit: "5000", sort: "injected", minPrice: "-1" });
-    expect((await validate(invalid)).map(error => error.property)).toEqual(expect.arrayContaining(["page", "limit", "sort", "minPrice"]));
+    const invalid = plainToInstance(CatalogQueryDto, {
+      page: "0",
+      limit: "5000",
+      sort: "injected",
+      minPrice: "-1",
+    });
+    expect((await validate(invalid)).map((error) => error.property)).toEqual(
+      expect.arrayContaining(["page", "limit", "sort", "minPrice"]),
+    );
+  });
+});
+
+describe("Buy-now ownership", () => {
+  it("explains owner rejection without reserving or changing the price", async () => {
+    const model = {
+      findById: jest.fn(() => ({
+        select: jest
+          .fn()
+          .mockResolvedValue({ seller: { toString: () => "seller-id" } }),
+      })),
+      findOneAndUpdate: jest.fn(),
+    };
+    const service = new ProductsService(model as never);
+    await expect(
+      service.reserveByBuyNow("product-id", "seller-id"),
+    ).rejects.toThrow("You cannot buy your own product.");
+    expect(model.findOneAndUpdate).not.toHaveBeenCalled();
+  });
+  it("retains the atomic availability check for another buyer", async () => {
+    const model = {
+      findById: jest.fn(() => ({
+        select: jest.fn().mockResolvedValue({ seller: "seller-id" }),
+      })),
+      findOneAndUpdate: jest.fn().mockResolvedValue(null),
+    };
+    const service = new ProductsService(model as never);
+    await expect(
+      service.reserveByBuyNow("product-id", "507f1f77bcf86cd799439011"),
+    ).rejects.toThrow("Product cannot be bought now.");
+    expect(model.findOneAndUpdate.mock.calls[0][0].seller).toEqual({
+      $ne: "507f1f77bcf86cd799439011",
+    });
   });
 });

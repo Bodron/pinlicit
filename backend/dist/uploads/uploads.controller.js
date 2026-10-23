@@ -14,28 +14,40 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UploadsController = void 0;
 const common_1 = require("@nestjs/common");
+const platform_express_1 = require("@nestjs/platform-express");
 const jwt_auth_guard_1 = require("../auth/jwt-auth.guard");
+const current_user_decorator_1 = require("../common/current-user.decorator");
 const roles_decorator_1 = require("../common/roles.decorator");
 const roles_guard_1 = require("../common/roles.guard");
 const user_schema_1 = require("../users/schemas/user.schema");
-const create_video_upload_dto_1 = require("./dto/create-video-upload.dto");
+const image_policy_1 = require("./image-policy");
+const image_capacity_interceptor_1 = require("./image-capacity.interceptor");
 const uploads_service_1 = require("./uploads.service");
 let UploadsController = class UploadsController {
     constructor(uploadsService) {
         this.uploadsService = uploadsService;
     }
-    createVideoUrl(dto) {
-        return this.uploadsService.createVideoUpload(dto.fileName, dto.contentType);
+    upload(user, image) {
+        if (!image?.buffer?.length)
+            throw new common_1.BadRequestException("An image is required.");
+        return this.uploadsService.uploadImage(String(user._id), image.buffer);
     }
 };
 exports.UploadsController = UploadsController;
 __decorate([
-    (0, common_1.Post)("video-url"),
-    __param(0, (0, common_1.Body)()),
+    (0, common_1.Post)("images"),
+    (0, common_1.UseInterceptors)(image_capacity_interceptor_1.ImageCapacityInterceptor, (0, platform_express_1.FileInterceptor)("image", {
+        limits: { fileSize: image_policy_1.MAX_IMAGE_BYTES, files: 1, fields: 0, parts: 2 },
+        fileFilter: (_request, file, callback) => callback(["image/jpeg", "image/png", "image/webp"].includes(file.mimetype)
+            ? null
+            : new common_1.BadRequestException("Use JPG, PNG or WebP."), true),
+    })),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.UploadedFile)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [create_video_upload_dto_1.CreateVideoUploadDto]),
+    __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", void 0)
-], UploadsController.prototype, "createVideoUrl", null);
+], UploadsController.prototype, "upload", null);
 exports.UploadsController = UploadsController = __decorate([
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     (0, roles_decorator_1.Roles)(user_schema_1.UserRole.Seller, user_schema_1.UserRole.Admin),

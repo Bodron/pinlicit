@@ -6,9 +6,9 @@ import "@fontsource/montserrat/700.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Pinbind — Descoperă licitațiile prin video",
+  title: "Pinbind — Descoperă licitațiile prin fotografii",
   description:
-    "Descoperă anunțurile video și licitațiile active de pe Pinbind. Explorează, filtrează și găsește următoarea piesă din colecția ta.",
+    "Descoperă anunțurile cu fotografii și licitațiile active de pe Pinbind. Explorează, filtrează și găsește următoarea piesă din colecția ta.",
   icons: { icon: "/pinbind-icon.svg" },
 };
 

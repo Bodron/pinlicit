@@ -1,3 +1,4 @@
+import '../../shared/images/product_image.dart';
 import 'package:licit/l10n/l10n.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -603,7 +604,7 @@ class _ActiveAuctionsSectionState extends State<_ActiveAuctionsSection> {
                     localizedStatus(item.status, context.l10n),
                     formatRon(item.currentPrice),
                   ),
-                  imageUrl: item.thumbnailUrl,
+                  imageUrl: item.imageForWidth(320),
                   remaining: _remaining(context, item.endsAt),
                   fallbackIcon: Icons.sell_outlined,
                   onTap: () => widget.onOpenProduct(item),
@@ -833,7 +834,7 @@ class _SellerSidebar extends StatelessWidget {
               statusColor: product.status == 'reserved'
                   ? _SellerColors.pending
                   : _SellerColors.success,
-              imageUrl: product.thumbnailUrl,
+              imageUrl: product.imageForWidth(480),
               icon: Icons.sell_outlined,
             ),
         const SizedBox(height: 16),
@@ -1203,8 +1204,8 @@ class _NetworkArtwork extends StatelessWidget {
   Widget build(BuildContext context) {
     final url = imageUrl;
     if (url != null && url.isNotEmpty) {
-      return Image.network(
-        url,
+      return ProductImage(
+        url: url,
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) => _FallbackArtwork(icon),
       );

@@ -1,5 +1,5 @@
 "use client";
-import Image from "next/image";
+import { ProductImage } from "./product-image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { Position } from "@/lib/account";
@@ -48,16 +48,15 @@ function ProductRow({
     <article className="account-product-row">
       <div className="account-lot">
         <div className="account-lot-thumb">
-          {product.thumbnailUrl ? (
-            <Image
-              src={product.thumbnailUrl}
+          {product.imageUrl ? (
+            <ProductImage
+              product={product}
               alt=""
               fill
-              unoptimized
               sizes="64px"
             />
           ) : (
-            <Icon name="video" size={24} />
+            <Icon name="image" size={24} />
           )}
         </div>
         <div>
@@ -431,7 +430,7 @@ export function AccountDashboard({
             </h2>
             <p>
               {tab === "products"
-                ? "Publică primul tău anunț video din aplicația Pinbind."
+                ? "Publică primul tău anunț cu fotografie din aplicația Pinbind."
                 : "Descoperă produsele din catalog și continuă în aplicație."}
             </p>
             <Link href="/explore" className="button button-primary">
@@ -535,11 +534,11 @@ export function AccountDashboard({
           )}
         </div>
         <div className="account-help">
-          <Icon name="video" size={28} />
+          <Icon name="image" size={28} />
           <span className="eyebrow">Continuă în aplicație</span>
           <h2>Mai aproape de următoarea descoperire.</h2>
           <p>
-            Licitează, publică anunțuri video și gestionează favoritele din
+            Licitează, publică anunțuri cu fotografii și gestionează favoritele din
             aplicația Pinbind. Contul web îți oferă o vedere de ansamblu asupra
             activității tale.
           </p>

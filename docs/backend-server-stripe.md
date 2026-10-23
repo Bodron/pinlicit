@@ -19,7 +19,7 @@ Pe server poți copia privat `.env` existent sau porni de la `backend/.env.serve
 | `MONGODB_URI` | URI-ul cloud existent, cu numele explicit al bazei; permite IP-ul serverului în Atlas |
 | `JWT_SECRET` | Secretul generat din `.env`, identic pe toate instanțele backend |
 | `APP_ORIGIN` | Originile site-ului și adminului, separate prin virgulă, fără slash final sau cale |
-| `AWS_*`, `PUBLIC_VIDEO_BASE_URL` | Configurația existentă pentru video; pe un server cu IAM role cheile AWS pot lipsi |
+| `AWS_*`, `PUBLIC_IMAGE_BASE_URL` | Configurația existentă pentru imagini; pe un server cu IAM role cheile AWS pot lipsi |
 | `STRIPE_SECRET_KEY` | Cheie secretă `sk_test_...` a contului sandbox; niciodată cheie live |
 | `STRIPE_WEBHOOK_SECRET` | `whsec_...` al webhook-ului contului platformei |
 | `STRIPE_CONNECT_WEBHOOK_SECRET` | Alt `whsec_...`, pentru webhook-ul conturilor Connect |

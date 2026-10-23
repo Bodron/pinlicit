@@ -44,10 +44,10 @@ export function SiteShell({ children }: { children: ReactNode }) {
   const [info, setInfo] = useState("");
   const infoText =
     info === "Vinde pe Pinbind"
-      ? "Publică un anunț video din secțiunea Vinde a aplicației Pinbind. După aprobarea contului de vânzător, anunțul tău va apărea și în acest catalog."
+      ? "Publică un anunț cu fotografie din secțiunea Vinde a aplicației Pinbind. După aprobarea contului de vânzător, anunțul tău va apărea și în acest catalog."
       : info === "Contul tău Pinbind"
-        ? "Autentificarea, ofertele și favoritele din cont sunt disponibile în aplicația Pinbind. Aici poți explora anunțurile și viziona prezentările video fără cont."
-        : "Pinbind aduce licitațiile în prim-plan prin video. Explorează anunțurile, verifică descrierea și prețul curent, apoi folosește aplicația Pinbind pentru a licita sau pentru a lua legătura cu vânzătorul.";
+        ? "Autentificarea, ofertele și favoritele din cont sunt disponibile în aplicația Pinbind. Aici poți explora anunțurile și vedea fotografiile produselor fără cont."
+        : "Pinbind aduce licitațiile în prim-plan prin fotografii. Explorează anunțurile, verifică descrierea și prețul curent, apoi folosește aplicația Pinbind pentru a licita sau pentru a lua legătura cu vânzătorul.";
 
   return (
     <>
@@ -80,7 +80,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
               name="q"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Caută anunțuri, produse, video…"
+              placeholder="Caută anunțuri, produse, fotografii…"
               aria-label="Caută în catalog"
               maxLength={120}
             />
@@ -121,10 +121,10 @@ export function SiteShell({ children }: { children: ReactNode }) {
             />
             <p>
               O platformă de licitații în care produsele își spun povestea prin
-              video.
+              fotografii.
             </p>
             <span>
-              <Icon name="video" size={18} /> Descoperă fiecare detaliu.
+              <Icon name="image" size={18} /> Descoperă fiecare detaliu.
             </span>
           </div>
           <div>
@@ -137,7 +137,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
           </div>
           <div>
             <h2>Despre Pinbind</h2>
-            <a href="/#cum-functioneaza">Cum funcționează</a>
+            <Link href="/#cum-functioneaza">Cum funcționează</Link>
             <Link href="/cont">Contul și ofertele tale</Link>
             <Link href="/despre">Despre platformă</Link>
           </div>
@@ -157,14 +157,14 @@ export function SiteShell({ children }: { children: ReactNode }) {
         <div className="footer-bottom">
           <span>© 2026 Pinbind. Toate drepturile rezervate.</span>
           <span>
-            Creat pentru descoperiri, construit în jurul videoclipurilor.
+            Creat pentru descoperiri, construit în jurul fotografiilor.
           </span>
         </div>
       </footer>
       {info && (
         <Dialog title={info} onClose={() => setInfo("")}>
           <div className="info-content">
-            <Icon name="video" size={38} />
+            <Icon name="image" size={38} />
             <p>{infoText}</p>
             <button
               className="button button-primary"

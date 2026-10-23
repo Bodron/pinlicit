@@ -1,7 +1,7 @@
 # Pinbind — Site
 
 Next.js / TypeScript / App Router, cu paginile principală, Explore și detalii licitație adaptate din designurile furnizate.
-Fontul Montserrat și logo-ul sunt servite local. Catalogul folosește anunțurile reale din API: căutare, categorii, interval de preț, stadiu, sortare și paginare pe server. Videoclipurile nu se redau automat în grilă; cardurile deschid pagina dedicată a anunțului.
+Fontul Montserrat și logo-ul sunt servite local. Catalogul folosește anunțurile reale din API: căutare, categorii, interval de preț, stadiu, sortare și paginare pe server. Cardurile afișează fotografiile produselor și deschid pagina dedicată a anunțului.
 
 ## Site și backend în Docker
 
@@ -53,10 +53,10 @@ npm test
 - `/despre`: pagina editorială Despre Pinbind, cu principiile platformei, imagini locale din design, perspectivele comunității și statistici reale încărcate separat pe server.
 - `/explore`: catalogul Explore, în română, cu prețuri RON și date reale.
 - Linkurile vechi `/?q=…`, `/?categoryId=…`, `/?stage=…` redirecționează către catalog.
-- Imaginile de categorii din design sunt în `public/categories`; fotografiile și videoclipurile anunțurilor provin din API.
+- Imaginile de categorii din design sunt în `public/categories`; fotografiile anunțurilor provin din API.
 - Selecția de pe prima pagină folosește filtre și paginare pe server (4 anunțuri/pagină), cu anularea cererilor înlocuite și actualizare doar când fila este vizibilă.
 - Nu se simulează streaming live, spectatori, oferte sau recenzii. Secțiunile de prezentare descriu funcțiile existente.
-- `/anunturi/[id]`: pagina de detalii adaptată din designul furnizat, cu player video, descriere, detalii, vânzător și panou de preț.
+- `/anunturi/[id]`: pagina de detalii adaptată din designul furnizat, cu fotografia produsului, descriere, detalii, vânzător și panou de preț.
 - Header-ul și footer-ul se află în layout-ul comun și rămân montate la navigarea între catalog și anunțuri.
 - `/api/catalog`, `/api/categories`, `/api/products/[id]`: endpoint-uri same-origin către datele publice. Răspunsul de detalii include doar câmpurile necesare paginii, fără contactele vânzătorului și identitatea rezervării.
 - Căutarea din header se trimite cu Enter; linkurile de categorie și licitații active folosesc parametrii catalogului.
@@ -68,15 +68,15 @@ npm test
 - `/api/favorites/[id]`: POST/DELETE autentificate, cu verificarea originii și fără expunerea datelor private din răspunsul backend.
 - Reperele de preț și afișarea lor sunt setări locale browserului, separate pe cont, fără notificări SMS/email/push.
 - `/cont/anunturi`: inventarul personal, cu stări calculate din datele reale (programate, active, rezervate, încheiate), filtre, căutare, sortare și paginare la 6 carduri. Publicarea și administrarea se fac în aplicația mobilă.
-- `/cont/video`: cameră de vizionare pentru videoclipurile licitațiilor active, cu player principal, grilă 2×2 (maximum 4 videoclipuri), schimbarea produsului și participarea proprie. Nu simulează streaming live, spectatori sau oferte ale altor conturi.
-- Modul principal încarcă un singur player; în grilă videoclipurile sunt mute implicit și sunetul se poate activa pentru unul singur. Nu există autoplay; previzualizările secundare nu încarcă playere.
+- `/cont/imagini`: fotografiile licitațiilor active, cu produs principal, grilă 2×2 (maximum 4 produse), schimbarea produsului și participarea proprie.
+- Modul principal afișează fotografia produsului; grila compară cel mult patru produse, fără playere sau sunet.
 - `/cont/oferte`: pagina dedicată ofertelor și istoricului, cu filtre, căutare, sortare, paginare și export CSV al selecției. Exportul este un rezumat, nu un document fiscal.
 - `/cont`: panoul utilizatorului, cu autentificare prin contul existent din aplicație, oferte grupate pe anunț, favorite, anunțuri proprii și datele profilului.
 - `/cont/verificare`: datele profilului, rolul contului și istoricul cererilor de vânzător, cu filtre și paginare. Rezumatul tipăribil nu reprezintă o certificare a identității. KYC, conturile bancare, soldurile și escrow sunt marcate indisponibile.
 - `/api/verification`: citește exclusiv cererile utilizatorului autentificat, cu `private, no-store`; proiectează doar identificatorul, starea și datele cererii, fără note sau datele evaluatorului.
 - `/api/session`: autentificare și deconectare. Tokenul backend este păstrat într-un cookie HttpOnly, SameSite=Lax (Secure pe HTTPS); nu este returnat JavaScript-ului. Cererile de modificare a sesiunii verifică originea.
 - `/api/dashboard`: datele utilizatorului autentificat, cu `private, no-store`. Endpoint-urile backend verifică tokenul la fiecare cerere. O eroare parțială rămâne o secțiune indisponibilă, fără contoare inventate.
-- Layout-urile `(platform)` și `(account)` separă prezentarea publică de panoul cu navigare laterală. Sesiunea, meniul și actualizarea periodică a datelor persistă la navigarea între `/cont`, `/cont/oferte` `/cont/video` și `/cont/anunturi`. Legăturile `?section=favorites|products|profile` deschid secțiunile corespunzătoare. URL-urile publice existente sunt păstrate.
+- Layout-urile `(platform)` și `(account)` separă prezentarea publică de panoul cu navigare laterală. Sesiunea, meniul și actualizarea periodică a datelor persistă la navigarea între `/cont`, `/cont/oferte` `/cont/imagini` și `/cont/anunturi`. Legăturile `?section=favorites|products|profile` deschid secțiunile corespunzătoare. URL-urile publice existente sunt păstrate.
 - Panoul se actualizează la 30 secunde cât fila este vizibilă, grupează ofertele pe produs și afișează 12 rânduri pe pagină. „Licitații încheiate” nu presupune câștig sau tranzacție finalizată.
 - Căutările salvate sunt locale browserului (maximum 8), fără notificări SMS sau email.
 - Publicarea și licitarea se fac în continuare în aplicația mobilă. Panoul web oferă acces de citire la activitatea contului; nu afișează solduri, limite escrow sau garanții care nu există în API.

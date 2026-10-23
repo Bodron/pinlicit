@@ -29,6 +29,7 @@ String localizedError(Object? error, AppLocalizations l10n) {
         'You cannot bid on your own product.' => l10n.ownProductBid,
         'Auction is not active.' => l10n.auctionInactive,
         'Product cannot be bought now.' => l10n.cannotBuyNow,
+        'You cannot buy your own product.' => l10n.ownProductBuy,
         'You cannot favorite your own product.' =>
           l10n.cannotFavoriteOwnProduct,
         'Seller approval is required before listing products.' =>

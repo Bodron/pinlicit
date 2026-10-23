@@ -7,6 +7,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CommerceModule = void 0;
+const commerce_return_controller_1 = require("./commerce-return.controller");
 const common_1 = require("@nestjs/common");
 const mongoose_1 = require("@nestjs/mongoose");
 const user_schema_1 = require("../users/schemas/user.schema");
@@ -44,7 +45,11 @@ exports.CommerceModule = CommerceModule = __decorate([
             commerce_worker_1.CommerceWorker,
             commerce_controller_1.StripeHttpFilter,
         ],
-        controllers: [commerce_controller_1.CommerceController, commerce_controller_1.CommerceWebhooksController],
+        controllers: [
+            commerce_controller_1.CommerceController,
+            commerce_controller_1.CommerceWebhooksController,
+            commerce_return_controller_1.CommerceReturnController,
+        ],
         exports: [
             commerce_accounts_service_1.CommerceAccountsService,
             commerce_orders_service_1.CommerceOrdersService,

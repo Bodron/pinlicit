@@ -334,12 +334,6 @@ abstract class AppLocalizations {
   /// **'Nu există anunțuri active.'**
   String get noActiveListings;
 
-  /// No description provided for @videoLoadFailed.
-  ///
-  /// In ro, this message translates to:
-  /// **'Videoclipul nu poate fi încărcat.'**
-  String get videoLoadFailed;
-
   /// No description provided for @shareComingSoon.
   ///
   /// In ro, this message translates to:
@@ -1201,7 +1195,7 @@ abstract class AppLocalizations {
   /// No description provided for @sellerApplicationDescription.
   ///
   /// In ro, this message translates to:
-  /// **'Trimite cererea pentru aprobare. După acceptare poți publica anunțuri video și licitații.'**
+  /// **'Trimite cererea pentru aprobare. După acceptare poți publica anunțuri cu fotografii și licitații.'**
   String get sellerApplicationDescription;
 
   /// No description provided for @sellerName.
@@ -1336,12 +1330,6 @@ abstract class AppLocalizations {
   /// **'7 zile'**
   String get sevenDays;
 
-  /// No description provided for @chooseVideo.
-  ///
-  /// In ro, this message translates to:
-  /// **'Alege un videoclip pentru anunț.'**
-  String get chooseVideo;
-
   /// No description provided for @createListing.
   ///
   /// In ro, this message translates to:
@@ -1353,24 +1341,6 @@ abstract class AppLocalizations {
   /// In ro, this message translates to:
   /// **'Prezintă produsul tău comunității Pinbind.'**
   String get createListingDescription;
-
-  /// No description provided for @uploadVideo.
-  ///
-  /// In ro, this message translates to:
-  /// **'Încarcă videoclipul produsului'**
-  String get uploadVideo;
-
-  /// No description provided for @videoRequirements.
-  ///
-  /// In ro, this message translates to:
-  /// **'MP4 sau MOV, maximum 500 MB. Folosește un videoclip clar care prezintă produsul.'**
-  String get videoRequirements;
-
-  /// No description provided for @developmentVideoUrl.
-  ///
-  /// In ro, this message translates to:
-  /// **'URL video pentru dezvoltare (opțional)'**
-  String get developmentVideoUrl;
 
   /// No description provided for @auctionRulesExplanation.
   ///
@@ -1827,6 +1797,36 @@ abstract class AppLocalizations {
   /// In ro, this message translates to:
   /// **'Monitor audio profesional H1'**
   String get demoAudioMonitor;
+
+  /// No description provided for @imageLoadFailed.
+  ///
+  /// In ro, this message translates to:
+  /// **'Fotografia nu poate fi încărcată.'**
+  String get imageLoadFailed;
+
+  /// No description provided for @chooseImage.
+  ///
+  /// In ro, this message translates to:
+  /// **'Alege o fotografie pentru anunț.'**
+  String get chooseImage;
+
+  /// No description provided for @uploadImage.
+  ///
+  /// In ro, this message translates to:
+  /// **'Încarcă fotografia produsului'**
+  String get uploadImage;
+
+  /// No description provided for @imageRequirements.
+  ///
+  /// In ro, this message translates to:
+  /// **'JPG, PNG sau WebP, maximum 10 MB. Alege o fotografie clară a produsului.'**
+  String get imageRequirements;
+
+  /// No description provided for @ownProductBuy.
+  ///
+  /// In ro, this message translates to:
+  /// **'Nu poți cumpăra propriul produs. Folosește un alt cont pentru a testa cumpărarea.'**
+  String get ownProductBuy;
 }
 
 class _AppLocalizationsDelegate

@@ -4,8 +4,13 @@ export type Product = {
   status?: "active" | "reserved" | "sold" | "hidden";
   title: string;
   description: string;
-  videoUrl: string;
-  thumbnailUrl?: string;
+  imageUrl: string;
+  imageVariants?: {
+    url: string;
+    width: number;
+    height: number;
+    bytes: number;
+  }[];
   category?: Category | null;
   seller?: { name: string } | null;
   currentPrice: number;

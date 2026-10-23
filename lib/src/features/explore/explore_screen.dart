@@ -1,3 +1,4 @@
+import '../../shared/images/product_image.dart';
 import 'package:licit/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -251,7 +252,7 @@ class _ProductSearchCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasImage = product.thumbnailUrl?.trim().isNotEmpty == true;
+    final hasImage = product.imageUrl.trim().isNotEmpty;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
@@ -272,12 +273,14 @@ class _ProductSearchCard extends StatelessWidget {
                 width: 76,
                 height: 76,
                 child: hasImage
-                    ? Image.network(
-                        product.thumbnailUrl!,
+                    ? ProductImage(
+                        url: product.imageForWidth(
+                          76 * MediaQuery.devicePixelRatioOf(context),
+                        ),
                         fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) => _videoFallback(),
+                        errorBuilder: (_, _, _) => _imageFallback(),
                       )
-                    : _videoFallback(),
+                    : _imageFallback(),
               ),
             ),
             const SizedBox(width: 12),
@@ -329,13 +332,9 @@ class _ProductSearchCard extends StatelessWidget {
     );
   }
 
-  Widget _videoFallback() => const ColoredBox(
+  Widget _imageFallback() => const ColoredBox(
     color: _ExploreColors.secondaryContainer,
-    child: Icon(
-      Icons.play_circle_outline,
-      color: _ExploreColors.primary,
-      size: 34,
-    ),
+    child: Icon(Icons.image_outlined, color: _ExploreColors.primary, size: 34),
   );
 }
 
@@ -441,8 +440,8 @@ class _CategoryCardState extends State<_CategoryCard> {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              Image.network(
-                widget.category.imageUrl,
+              ProductImage(
+                url: widget.category.imageUrl,
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) => ColoredBox(
                   color: _ExploreColors.surfaceLow,

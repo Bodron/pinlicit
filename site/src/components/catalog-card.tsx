@@ -1,7 +1,7 @@
 "use client";
+import { ProductImage } from "./product-image";
 import Link from "next/link";
-import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import {
   categoryName,
   money,
@@ -22,56 +22,36 @@ export function CatalogCard({
   onSave: () => void;
   now: number;
 }) {
-  const container = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
   const [failed, setFailed] = useState(false);
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setVisible(true);
-          observer.disconnect();
-        }
-      },
-      { rootMargin: "100px" },
-    );
-    if (container.current) observer.observe(container.current);
-    return () => observer.disconnect();
-  }, []);
   return (
     <article className="auction-card">
-      <div className="card-media" ref={container}>
-        {product.thumbnailUrl && !failed ? (
-          <Image
-            src={product.thumbnailUrl}
+      <div className="card-media">
+        {product.imageUrl && !failed ? (
+          <ProductImage
+            product={product}
             alt={product.title}
             fill
-            unoptimized
+            sizes="(max-width: 700px) 100vw, 33vw"
             onError={() => setFailed(true)}
-          />
-        ) : visible && product.videoUrl && !failed ? (
-          <video
-            src={`${product.videoUrl.split("#")[0]}#t=0.1`}
-            preload="metadata"
-            muted
-            playsInline
-            onError={() => setFailed(true)}
-            aria-label={`Previzualizare ${product.title}`}
           />
         ) : (
           <div className="media-fallback">
-            <Icon name="video" size={42} />
-            <span>{failed ? "Vezi videoclipul în anunț" : "Anunț video"}</span>
+            <Icon name="image" size={42} />
+            <span>
+              {failed
+                ? "Fotografia nu poate fi încărcată"
+                : "Fotografie indisponibilă"}
+            </span>
           </div>
         )}
         <Link
           className="media-open"
           href={`/anunturi/${product._id}`}
-          aria-label={`Vezi videoclipul: ${product.title}`}
+          aria-label={`Vezi fotografia: ${product.title}`}
         />
         <div className="card-badges">
           <span className="badge">
-            <Icon name="play" size={15} /> Prezentare video
+            <Icon name="image" size={15} /> Fotografia produsului
           </span>
           <span className="badge badge-dark">
             <span className="live-dot" />
@@ -91,11 +71,11 @@ export function CatalogCard({
           <Icon name="heart" size={19} />
         </button>
         <Link
-          className="media-play"
+          className="media-open-icon"
           href={`/anunturi/${product._id}`}
           aria-label={`Deschide ${product.title}`}
         >
-          <Icon name="play" size={42} />
+          <Icon name="image" size={42} />
         </Link>
       </div>
       <div className="card-description">

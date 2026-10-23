@@ -8,9 +8,8 @@ export type IconName =
   | "grid"
   | "list"
   | "heart"
-  | "play"
   | "shield"
-  | "video"
+  | "image"
   | "gavel"
   | "close"
   | "filter"
@@ -59,22 +58,17 @@ const paths: Record<IconName, React.ReactNode> = {
   heart: (
     <path d="M20.8 4.8a5.5 5.5 0 0 0-7.8 0L12 6l-1-1.2a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.4a5.5 5.5 0 0 0 0-7.8Z" />
   ),
-  play: (
-    <>
-      <circle cx="12" cy="12" r="9" />
-      <path d="m10 8 6 4-6 4z" />
-    </>
-  ),
   shield: (
     <>
       <path d="M12 2 3 6v6c0 5 9 10 9 10s9-5 9-10V6z" />
       <path d="m8 12 3 3 5-6" />
     </>
   ),
-  video: (
+  image: (
     <>
-      <rect x="2" y="5" width="14" height="14" rx="2" />
-      <path d="m16 9 6-4v14l-6-4" />
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <circle cx="8" cy="8" r="1.5" />
+      <path d="m3 17 5-5 4 4 4-6 5 7" />
     </>
   ),
   gavel: (

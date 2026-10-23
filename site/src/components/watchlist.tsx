@@ -1,5 +1,5 @@
 "use client";
-import Image from "next/image";
+import { ProductImage } from "./product-image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { type Product, categoryName, money, remaining } from "@/lib/catalog";
@@ -37,14 +37,13 @@ function FavoriteCard({
       <Link
         href={`/anunturi/${p._id}#prezentare`}
         className="watch-media"
-        aria-label={`Vezi videoclipul pentru ${p.title}`}
+        aria-label={`Vezi fotografia pentru ${p.title}`}
       >
-        {p.thumbnailUrl ? (
-          <Image
-            src={p.thumbnailUrl}
+        {p.imageUrl ? (
+          <ProductImage
+            product={p}
             alt=""
             fill
-            unoptimized
             sizes={
               priority
                 ? "(max-width:900px) 100vw, 50vw"
@@ -53,19 +52,19 @@ function FavoriteCard({
           />
         ) : (
           <div>
-            <Icon name="video" size={48} />
-            <span>Prezentare video</span>
+            <Icon name="image" size={48} />
+            <span>Fotografia produsului</span>
           </div>
         )}
         <span>
-          <Icon name="video" size={14} />
-          Anunț video
+          <Icon name="image" size={14} />
+          Anunț cu fotografie
         </span>
         <span className="watch-media-time">
           <Icon name="clock" size={14} />
           {remaining(p.endsAt, now)}
         </span>
-        <Icon className="watch-play-icon" name="play" size={42} />
+        <Icon className="watch-image-icon" name="image" size={42} />
       </Link>
       <div className="watch-card-copy">
         <div>
@@ -103,8 +102,8 @@ function FavoriteCard({
             <Icon name="gavel" size={15} />
           </Link>
           <Link href={`/anunturi/${p._id}#prezentare`}>
-            <Icon name="play" size={17} />
-            Vezi video
+            <Icon name="image" size={17} />
+            Vezi fotografia
           </Link>
         </div>
         {showMarker && (
@@ -283,7 +282,7 @@ export function Watchlist() {
               {favorites
                 ? `${favorites.length} ${favorites.length === 1 ? "produs salvat" : "produse salvate"} în contul tău Pinbind.`
                 : "Favoritele nu sunt disponibile momentan."}{" "}
-              Regăsește prezentările video și urmărește licitațiile care te
+              Regăsește fotografiile produselor și urmărește licitațiile care te
               interesează.
             </p>
           </div>
@@ -461,16 +460,15 @@ export function Watchlist() {
             {recs.map((p) => (
               <article key={p._id}>
                 <Link href={`/anunturi/${p._id}`} className="watch-rec-image">
-                  {p.thumbnailUrl ? (
-                    <Image
-                      src={p.thumbnailUrl}
+                  {p.imageUrl ? (
+                    <ProductImage
+                      product={p}
                       alt=""
                       fill
-                      unoptimized
                       sizes="56px"
                     />
                   ) : (
-                    <Icon name="video" size={24} />
+                    <Icon name="image" size={24} />
                   )}
                 </Link>
                 <div>

@@ -56,17 +56,21 @@ __decorate([
     __metadata("design:type", String)
 ], Product.prototype, "description", void 0);
 __decorate([
-    (0, mongoose_1.Prop)({ required: true }),
+    (0, mongoose_1.Prop)(),
     __metadata("design:type", String)
-], Product.prototype, "videoKey", void 0);
+], Product.prototype, "imageKey", void 0);
 __decorate([
-    (0, mongoose_1.Prop)({ required: true }),
+    (0, mongoose_1.Prop)(),
     __metadata("design:type", String)
-], Product.prototype, "videoUrl", void 0);
+], Product.prototype, "imageUrl", void 0);
 __decorate([
     (0, mongoose_1.Prop)(),
     __metadata("design:type", String)
 ], Product.prototype, "thumbnailUrl", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ type: [Object], default: [] }),
+    __metadata("design:type", Array)
+], Product.prototype, "imageVariants", void 0);
 __decorate([
     (0, mongoose_1.Prop)({ enum: ProductStatus, default: ProductStatus.Active }),
     __metadata("design:type", String)
@@ -113,4 +117,19 @@ exports.Product = Product = __decorate([
 exports.ProductSchema = mongoose_1.SchemaFactory.createForClass(Product);
 exports.ProductSchema.index({ status: 1, endsAt: 1, createdAt: -1 });
 exports.ProductSchema.index({ category: 1, status: 1, endsAt: 1 });
+function imageOnly(_doc, value) {
+    value.imageUrl ||= value.thumbnailUrl || "";
+    delete value.videoKey;
+    delete value.videoUrl;
+    delete value.thumbnailUrl;
+    return value;
+}
+exports.ProductSchema.set("toJSON", { transform: imageOnly });
+exports.ProductSchema.set("toObject", { transform: imageOnly });
+exports.ProductSchema.pre(/^find/, function () {
+    const projection = this.projection();
+    if (!projection ||
+        !Object.values(projection).some((value) => value === 1 || value === true))
+        this.select("-videoKey -videoUrl");
+});
 //# sourceMappingURL=product.schema.js.map

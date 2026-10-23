@@ -1,5 +1,5 @@
 "use client";
-import Image from "next/image";
+import { ProductImage } from "./product-image";
 import Link from "next/link";
 import { useState } from "react";
 import { useAccount } from "./account-workspace";
@@ -59,7 +59,7 @@ export function MyListings() {
             className="button button-primary"
             onClick={() => setInfo("Publică un anunț nou")}
           >
-            <Icon name="video" size={18} />
+            <Icon name="image" size={18} />
             Publică un anunț nou
           </button>
         </div>
@@ -188,25 +188,24 @@ export function MyListings() {
                       className="listings-card-media"
                       aria-label={`Vezi anunțul ${product.title}`}
                     >
-                      {product.thumbnailUrl ? (
-                        <Image
-                          src={product.thumbnailUrl}
+                      {product.imageUrl ? (
+                        <ProductImage
+                          product={product}
                           alt=""
                           fill
-                          unoptimized
                           sizes="(max-width:760px) 100vw, 220px"
                         />
                       ) : (
                         <div>
-                          <Icon name="video" size={46} />
-                          <span>Prezentare video</span>
+                          <Icon name="image" size={46} />
+                          <span>Fotografia produsului</span>
                         </div>
                       )}
                       <span className="listings-lot-id">
                         #{product._id.slice(-6).toUpperCase()}
                       </span>
-                      <span className="listings-media-play">
-                        <Icon name="play" size={36} />
+                      <span className="listings-media-open-icon">
+                        <Icon name="image" size={36} />
                       </span>
                     </Link>
                     <div className="listings-card-content">
@@ -247,7 +246,7 @@ export function MyListings() {
                       <div className="listings-card-footer">
                         <span>
                           <Icon
-                            name={stage === "live" ? "clock" : "video"}
+                            name={stage === "live" ? "clock" : "image"}
                             size={16}
                           />
                           {stage === "live"
@@ -283,14 +282,14 @@ export function MyListings() {
             </div>
           ) : (
             <div className="account-empty">
-              <Icon name="video" size={36} />
+              <Icon name="image" size={36} />
               <h2>
                 {query || filter !== "all"
                   ? "Niciun anunț în această selecție."
                   : "Nu ai anunțuri publicate încă."}
               </h2>
               <p>
-                Prezintă primul tău produs printr-un videoclip și publică-l din
+                Prezintă primul tău produs printr-o fotografie și publică-l din
                 aplicația Pinbind.
               </p>
               {query || filter !== "all" ? (
@@ -378,7 +377,7 @@ export function MyListings() {
             <dl>
               <div>
                 <dt>Prezentare</dt>
-                <dd>Un videoclip clar al produsului</dd>
+                <dd>O fotografie clar al produsului</dd>
               </div>
               <div>
                 <dt>Descriere</dt>
@@ -394,7 +393,7 @@ export function MyListings() {
               </div>
             </dl>
             <div>
-              <Icon name="video" size={19} />
+              <Icon name="image" size={19} />
               <p>
                 O prezentare atentă îi ajută pe cumpărători să înțeleagă mai
                 bine produsul. Verifică descrierea și condițiile înainte de
@@ -422,11 +421,11 @@ export function MyListings() {
       {info && (
         <Dialog title={info} onClose={() => setInfo("")}>
           <div className="info-content">
-            <Icon name="video" size={38} />
+            <Icon name="image" size={38} />
             <p>
               {info === "Gestionează anunțul"
                 ? "Deschide anunțurile tale în aplicația Pinbind pentru opțiunile de administrare disponibile. Pe web poți urmări starea, prețurile și pagina publică a produsului."
-                : "Deschide aplicația Pinbind și intră în secțiunea Vinde. Urmează pașii pentru contul de vânzător, apoi adaugă videoclipul, descrierea, categoria, prețurile și calendarul licitației."}
+                : "Deschide aplicația Pinbind și intră în secțiunea Vinde. Urmează pașii pentru contul de vânzător, apoi adaugă fotografia, descrierea, categoria, prețurile și calendarul licitației."}
             </p>
             <button
               className="button button-primary"

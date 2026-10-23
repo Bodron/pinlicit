@@ -18,27 +18,23 @@ class AuthSession {
   final AppUser user;
 }
 
-class VideoUploadTicket {
-  const VideoUploadTicket({
-    required this.key,
-    required this.uploadUrl,
-    required this.videoUrl,
-    required this.contentType,
+class OptimizedImage {
+  const OptimizedImage({
+    required this.imageKey,
+    required this.imageUrl,
+    required this.sourceBytes,
+    required this.totalBytes,
   });
-
-  final String key;
-  final String uploadUrl;
-  final String videoUrl;
-  final String contentType;
-
-  factory VideoUploadTicket.fromJson(Map<String, dynamic> json) {
-    return VideoUploadTicket(
-      key: (json['key'] ?? '').toString(),
-      uploadUrl: (json['uploadUrl'] ?? '').toString(),
-      videoUrl: (json['videoUrl'] ?? '').toString(),
-      contentType: (json['contentType'] ?? 'video/mp4').toString(),
-    );
-  }
+  final String imageKey;
+  final String imageUrl;
+  final int sourceBytes;
+  final int totalBytes;
+  factory OptimizedImage.fromJson(Map<String, dynamic> json) => OptimizedImage(
+    imageKey: json['imageKey'].toString(),
+    imageUrl: json['imageUrl'].toString(),
+    sourceBytes: (json['sourceBytes'] as num).toInt(),
+    totalBytes: (json['totalBytes'] as num).toInt(),
+  );
 }
 
 class ApiClient {
@@ -148,31 +144,26 @@ class ApiClient {
     return Product.fromJson(response.data!);
   }
 
-  Future<VideoUploadTicket> createVideoUpload({
+  Future<OptimizedImage> uploadImage({
     required String fileName,
-    String contentType = 'video/mp4',
-  }) async {
-    final response = await dio.post<Map<String, dynamic>>(
-      '/uploads/video-url',
-      data: {'fileName': fileName, 'contentType': contentType},
-    );
-    return VideoUploadTicket.fromJson(response.data!);
-  }
-
-  Future<void> uploadVideo({
-    required VideoUploadTicket ticket,
+    required String contentType,
     required List<int> bytes,
   }) async {
-    await Dio().put<void>(
-      ticket.uploadUrl,
-      data: bytes,
+    final response = await dio.post<Map<String, dynamic>>(
+      '/uploads/images',
+      data: FormData.fromMap({
+        'image': MultipartFile.fromBytes(
+          bytes,
+          filename: fileName,
+          contentType: DioMediaType.parse(contentType),
+        ),
+      }),
       options: Options(
-        headers: {
-          HttpHeaders.contentTypeHeader: ticket.contentType,
-          HttpHeaders.contentLengthHeader: bytes.length,
-        },
+        sendTimeout: const Duration(seconds: 90),
+        receiveTimeout: const Duration(seconds: 120),
       ),
     );
+    return OptimizedImage.fromJson(response.data!);
   }
 
   Future<Product> createProduct(Map<String, dynamic> data) async {

@@ -1,0 +1,74 @@
+{
+  "note": "Repository JPEG fixtures, compared with decoded/resized source. Local codec timing is not production request/CDN latency. PSNR is not a guarantee of perceptual equivalence.",
+  "results": [
+    {
+      "fixture": "auto",
+      "sourceBytes": 31282,
+      "primaryBytes": 20648,
+      "totalVariantBytes": 28404,
+      "primaryWidth": 512,
+      "primaryHeight": 286,
+      "variants": [
+        {
+          "width": 320,
+          "height": 179,
+          "bytes": 7756
+        },
+        {
+          "width": 512,
+          "height": 286,
+          "bytes": 20648
+        }
+      ],
+      "primaryReductionPercent": 34,
+      "PSNRdB": 41.62,
+      "localEncodeMilliseconds": 37
+    },
+    {
+      "fixture": "casa",
+      "sourceBytes": 33489,
+      "primaryBytes": 22670,
+      "totalVariantBytes": 30158,
+      "primaryWidth": 512,
+      "primaryHeight": 286,
+      "variants": [
+        {
+          "width": 320,
+          "height": 179,
+          "bytes": 7488
+        },
+        {
+          "width": 512,
+          "height": 286,
+          "bytes": 22670
+        }
+      ],
+      "primaryReductionPercent": 32,
+      "PSNRdB": 41.07,
+      "localEncodeMilliseconds": 38
+    },
+    {
+      "fixture": "collectibles",
+      "sourceBytes": 27714,
+      "primaryBytes": 15480,
+      "totalVariantBytes": 20512,
+      "primaryWidth": 512,
+      "primaryHeight": 279,
+      "variants": [
+        {
+          "width": 320,
+          "height": 174,
+          "bytes": 5032
+        },
+        {
+          "width": 512,
+          "height": 279,
+          "bytes": 15480
+        }
+      ],
+      "primaryReductionPercent": 44,
+      "PSNRdB": 42.07,
+      "localEncodeMilliseconds": 32
+    }
+  ]
+}

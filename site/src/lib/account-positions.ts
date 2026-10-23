@@ -17,8 +17,20 @@ export function accountProduct(p: ApiProduct): Product {
     _id: p._id,
     title: p.title,
     description: p.description,
-    videoUrl: p.videoUrl,
-    thumbnailUrl: p.thumbnailUrl,
+    imageUrl: p.imageUrl,
+    imageVariants: p.imageVariants?.map(
+      (variant: {
+        url: string;
+        width: number;
+        height: number;
+        bytes: number;
+      }) => ({
+        url: variant.url,
+        width: variant.width,
+        height: variant.height,
+        bytes: variant.bytes,
+      }),
+    ),
     status: p.status,
     category: typeof p.category === "object" ? p.category : null,
     seller:

@@ -1,5 +1,5 @@
 "use client";
-import Image from "next/image";
+import { ProductImage } from "./product-image";
 import Link from "next/link";
 import { useState } from "react";
 import { useAccount } from "./account-workspace";
@@ -177,16 +177,15 @@ export function BidLedger() {
         <section className="ledger-urgent">
           <div className="ledger-urgent-product">
             <div className="ledger-urgent-thumb">
-              {urgent.product.thumbnailUrl ? (
-                <Image
-                  src={urgent.product.thumbnailUrl}
+              {urgent.product.imageUrl ? (
+                <ProductImage
+                  product={urgent.product}
                   alt=""
                   fill
-                  unoptimized
                   sizes="100px"
                 />
               ) : (
-                <Icon name="video" size={36} />
+                <Icon name="image" size={36} />
               )}
               <span>Depășită</span>
             </div>
@@ -295,16 +294,15 @@ export function BidLedger() {
                 >
                   <div className="ledger-row-product">
                     <div className="ledger-row-thumb">
-                      {p.thumbnailUrl ? (
-                        <Image
-                          src={p.thumbnailUrl}
+                      {p.imageUrl ? (
+                        <ProductImage
+                          product={p}
                           alt=""
                           fill
-                          unoptimized
                           sizes="80px"
                         />
                       ) : (
-                        <Icon name="video" size={30} />
+                        <Icon name="image" size={30} />
                       )}
                     </div>
                     <div>
@@ -351,9 +349,9 @@ export function BidLedger() {
                       </Link>
                       <Link
                         href={`/anunturi/${p._id}#prezentare`}
-                        aria-label={`Vezi videoclipul pentru ${p.title}`}
+                        aria-label={`Vezi fotografia pentru ${p.title}`}
                       >
-                        <Icon name="video" size={18} />
+                        <Icon name="image" size={18} />
                       </Link>
                     </div>
                   </div>
