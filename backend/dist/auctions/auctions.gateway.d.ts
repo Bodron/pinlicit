@@ -14,11 +14,7 @@ export declare class AuctionsGateway implements OnGatewayConnection {
     leave(client: Socket, body: {
         productId: string;
     }): Promise<void>;
-    place(client: Socket, body: {
-        productId: string;
-        userId: string;
-        amount: number;
-    }): Promise<void>;
+    place(client: Socket): void;
     broadcastBid(product: any, bid: any, extended: boolean): void;
     broadcastClosed(product: any): void;
     private room;

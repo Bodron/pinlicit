@@ -1,13 +1,16 @@
-import { HydratedDocument, Types } from "mongoose";
+import { HydratedDocument, Types, Schema as MongooseSchema } from "mongoose";
 export type ProductDocument = HydratedDocument<Product>;
 export declare enum ProductStatus {
     Active = "active",
     Reserved = "reserved",
     Sold = "sold",
-    Hidden = "hidden"
+    Hidden = "hidden",
+    Expired = "expired"
 }
 export declare class Product {
     seller: Types.ObjectId;
+    reservedAt?: Date;
+    commerceVersion?: number;
     reservedBy?: Types.ObjectId;
     category: Types.ObjectId;
     title: string;
@@ -26,7 +29,7 @@ export declare class Product {
     endsAt: Date;
     highestBid?: Types.ObjectId;
 }
-export declare const ProductSchema: import("mongoose").Schema<Product, import("mongoose").Model<Product, any, any, any, import("mongoose").Document<unknown, any, Product, any, {}> & Product & {
+export declare const ProductSchema: MongooseSchema<Product, import("mongoose").Model<Product, any, any, any, import("mongoose").Document<unknown, any, Product, any, {}> & Product & {
     _id: Types.ObjectId;
 } & {
     __v: number;

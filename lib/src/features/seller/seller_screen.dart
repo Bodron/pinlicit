@@ -1,14 +1,39 @@
+import 'package:licit/l10n/l10n.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 
+import '../products/create_product_screen.dart';
 import '../../shared/models/product.dart';
 import '../../shared/models/seller_application.dart';
 import '../../shared/state/session_controller.dart';
+import '../../shared/notifications/app_notifier.dart';
+import '../../shared/state/catalog_updates.dart';
 import '../../shared/utils/money.dart';
 
+/// The publishing tab contains only the form (or the required seller access).
+class SellScreen extends ConsumerWidget {
+  const SellScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isSeller = ref.watch(
+      sessionControllerProvider.select(
+        (session) => session.user?.isSeller == true,
+      ),
+    );
+    // Discard a successfully published draft, but preserve unfinished forms
+    // when navigating between the persistent tabs.
+    final revision = ref.watch(catalogUpdatesProvider);
+    return isSeller
+        ? CreateProductScreen(key: ValueKey(revision))
+        : const SellerAccessScreen();
+  }
+}
+
+/// Seller performance and inventory, hosted by the Activity tab.
 class SellerScreen extends ConsumerStatefulWidget {
   const SellerScreen({super.key});
 
@@ -17,13 +42,10 @@ class SellerScreen extends ConsumerStatefulWidget {
 }
 
 class _SellerScreenState extends ConsumerState<SellerScreen> {
-  final _displayName = TextEditingController();
-  final _phone = TextEditingController();
-  final _notes = TextEditingController();
-  List<SellerApplication> _applications = [];
   List<Product> _products = [];
   bool _loading = true;
   String? _message;
+  int _request = 0;
 
   @override
   void initState() {
@@ -32,34 +54,23 @@ class _SellerScreenState extends ConsumerState<SellerScreen> {
   }
 
   @override
-  void dispose() {
-    _displayName.dispose();
-    _phone.dispose();
-    _notes.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
+    ref.listen(catalogUpdatesProvider, (_, _) => _load());
     final session = ref.watch(sessionControllerProvider);
     final user = session.user;
-    final isSeller = user?.isSeller == true;
+    if (user?.isSeller != true) return const SellerAccessScreen();
     final theme = Theme.of(context).copyWith(
       textTheme: GoogleFonts.montserratTextTheme(Theme.of(context).textTheme),
     );
 
     return Theme(
       data: theme,
-      child: Scaffold(
-        backgroundColor: _SellerColors.background,
-        body: SafeArea(
+      child: ColoredBox(
+        color: _SellerColors.background,
+        child: SafeArea(
           bottom: false,
           child: Column(
             children: [
-              _SellerTopBar(
-                onMenu: () => context.go('/'),
-                onBag: () => context.go('/account'),
-              ),
               Expanded(
                 child: RefreshIndicator(
                   color: _SellerColors.primaryContainer,
@@ -73,27 +84,13 @@ class _SellerScreenState extends ConsumerState<SellerScreen> {
                         padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
                         sliver: SliverToBoxAdapter(
                           child: _SellerHeader(
-                            sellerName: user?.name ?? 'Licit Seller',
-                            isSeller: isSeller,
+                            sellerName:
+                                user?.name ?? context.l10n.defaultSellerName,
                             message: _message,
-                            latestApplication: _latestApplication,
-                            onNewListing: () => _handleNewListing(isSeller),
+                            onNewListing: () => _handleNewListing(),
                           ),
                         ),
                       ),
-                      if (!isSeller)
-                        SliverPadding(
-                          padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
-                          sliver: SliverToBoxAdapter(
-                            child: _SellerApplicationPanel(
-                              displayName: _displayName,
-                              phone: _phone,
-                              notes: _notes,
-                              applications: _applications,
-                              onSubmit: _requestSeller,
-                            ),
-                          ),
-                        ),
                       SliverPadding(
                         padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
                         sliver: SliverToBoxAdapter(
@@ -118,8 +115,7 @@ class _SellerScreenState extends ConsumerState<SellerScreen> {
                                     _ActiveAuctionsSection(
                                       products: _products,
                                       onOpenProduct: _openProduct,
-                                      onNewListing: () =>
-                                          _handleNewListing(isSeller),
+                                      onNewListing: () => _handleNewListing(),
                                     ),
                                     const SizedBox(height: 48),
                                     _SellerSidebar(
@@ -138,8 +134,7 @@ class _SellerScreenState extends ConsumerState<SellerScreen> {
                                     child: _ActiveAuctionsSection(
                                       products: _products,
                                       onOpenProduct: _openProduct,
-                                      onNewListing: () =>
-                                          _handleNewListing(isSeller),
+                                      onNewListing: () => _handleNewListing(),
                                     ),
                                   ),
                                   const SizedBox(width: 64),
@@ -163,73 +158,105 @@ class _SellerScreenState extends ConsumerState<SellerScreen> {
             ],
           ),
         ),
-        bottomNavigationBar: const _SellerBottomNav(),
-        floatingActionButton: isSeller
-            ? FloatingActionButton.extended(
-                onPressed: () => context.go('/seller/new'),
-                backgroundColor: _SellerColors.primary,
-                foregroundColor: Colors.white,
-                icon: const Icon(Icons.add),
-                label: const Text('New Listing'),
-              )
-            : null,
       ),
     );
   }
 
-  List<Product> get _activeProducts {
-    return _products.where((product) => product.isActive).toList();
-  }
+  List<Product> get _activeProducts =>
+      _products.where((product) => product.isActive).toList();
 
-  List<Product> get _soldProducts {
-    return _products
-        .where(
-          (product) =>
-              product.status == 'reserved' ||
-              product.status == 'sold' ||
-              product.status == 'closed',
-        )
-        .toList();
-  }
+  List<Product> get _soldProducts =>
+      _products.where((product) => product.status == 'sold').toList();
 
-  int get _revenueBani {
-    return _soldProducts.fold<int>(
-      0,
-      (total, product) => total + product.currentPrice,
-    );
-  }
-
-  SellerApplication? get _latestApplication {
-    if (_applications.isEmpty) return null;
-    return _applications.first;
-  }
+  int get _revenueBani => _soldProducts.fold<int>(
+    0,
+    (total, product) => total + product.currentPrice,
+  );
 
   Future<void> _load() async {
+    final request = ++_request;
+    if (ref.read(sessionControllerProvider).user?.isSeller != true) {
+      setState(() => _loading = false);
+      return;
+    }
     setState(() {
       _loading = true;
       _message = null;
     });
     try {
-      final api = ref.read(apiClientProvider);
-      final apps = await api.mySellerApplications();
-      final user = ref.read(sessionControllerProvider).user;
-      final products = user?.isSeller == true
-          ? await api.myProducts()
-          : <Product>[];
-      if (!mounted) return;
-      setState(() {
-        _applications = apps;
-        _products = products;
-      });
+      final products = await ref.read(apiClientProvider).myProducts();
+      if (!mounted || request != _request) return;
+      setState(() => _products = products);
     } catch (error) {
-      if (!mounted) return;
-      setState(() => _message = error.toString());
+      if (mounted && request == _request) {
+        setState(() => _message = localizedError(error, context.l10n));
+      }
+    } finally {
+      if (mounted && request == _request) setState(() => _loading = false);
+    }
+  }
+
+  void _openProduct(Product product) => context.push('/products/${product.id}');
+  void _handleNewListing() => context.go('/seller');
+  void _showComingSoon(String label) {
+    context.notifier.info(context.l10n.featureComingSoon(label));
+  }
+}
+
+/// Shared access form for accounts that cannot publish yet.
+class SellerAccessScreen extends ConsumerStatefulWidget {
+  const SellerAccessScreen({super.key});
+  @override
+  ConsumerState<SellerAccessScreen> createState() => _SellerAccessScreenState();
+}
+
+class _SellerAccessScreenState extends ConsumerState<SellerAccessScreen> {
+  final _displayName = TextEditingController();
+  final _phone = TextEditingController();
+  final _notes = TextEditingController();
+  List<SellerApplication> _applications = [];
+  bool _loading = true;
+  bool _submitting = false;
+  String? _message;
+
+  @override
+  void initState() {
+    super.initState();
+    final user = ref.read(sessionControllerProvider).user;
+    _displayName.text = user?.name ?? '';
+    _phone.text = user?.phone ?? '';
+    _load();
+  }
+
+  @override
+  void dispose() {
+    _displayName.dispose();
+    _phone.dispose();
+    _notes.dispose();
+    super.dispose();
+  }
+
+  Future<void> _load() async {
+    try {
+      final applications = await ref
+          .read(apiClientProvider)
+          .mySellerApplications();
+      if (mounted) setState(() => _applications = applications);
+    } catch (error) {
+      if (mounted) {
+        setState(() => _message = localizedError(error, context.l10n));
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
 
   Future<void> _requestSeller() async {
+    if (_submitting) return;
+    setState(() {
+      _submitting = true;
+      _message = null;
+    });
     try {
       await ref
           .read(apiClientProvider)
@@ -238,44 +265,38 @@ class _SellerScreenState extends ConsumerState<SellerScreen> {
             contactPhone: _phone.text.trim(),
             notes: _notes.text.trim(),
           );
-      await _load();
+      if (mounted) await _load();
     } on DioException catch (error) {
-      setState(() => _message = _messageFrom(error));
+      if (mounted) {
+        setState(() => _message = localizedError(error, context.l10n));
+      }
+    } finally {
+      if (mounted) setState(() => _submitting = false);
     }
   }
 
-  void _openProduct(Product product) {
-    context.push('/products/${product.id}');
-  }
-
-  void _handleNewListing(bool isSeller) {
-    if (isSeller) {
-      context.go('/seller/new');
-      return;
-    }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Ai nevoie de aprobare seller inainte sa creezi o listare.',
+  @override
+  Widget build(BuildContext context) => RefreshIndicator(
+    onRefresh: _load,
+    child: ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
+      children: [
+        if (_loading) const _LoadingStrip(),
+        if (_message != null) ...[
+          _InlineNotice(icon: Icons.info_outline, text: _message!),
+          const SizedBox(height: 16),
+        ],
+        _SellerApplicationPanel(
+          displayName: _displayName,
+          phone: _phone,
+          notes: _notes,
+          applications: _applications,
+          onSubmit: _submitting ? null : _requestSeller,
         ),
-      ),
-    );
-  }
-
-  void _showComingSoon(String label) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('$label va fi adaugat in urmatorul pas.')),
-    );
-  }
-
-  String _messageFrom(DioException error) {
-    final data = error.response?.data;
-    if (data is Map && data['message'] != null) {
-      return data['message'].toString();
-    }
-    return error.message ?? 'Cererea a esuat.';
-  }
+      ],
+    ),
+  );
 }
 
 class _SellerColors {
@@ -294,90 +315,28 @@ class _SellerColors {
   static const pending = Color(0xffa66a12);
 }
 
-class _SellerTopBar extends StatelessWidget {
-  const _SellerTopBar({required this.onMenu, required this.onBag});
-
-  final VoidCallback onMenu;
-  final VoidCallback onBag;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 64,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: _SellerColors.background.withValues(alpha: 0.88),
-        border: Border(
-          bottom: BorderSide(
-            color: _SellerColors.outlineVariant.withValues(alpha: 0.3),
-          ),
-        ),
-      ),
-      child: Row(
-        children: [
-          IconButton(
-            tooltip: 'Feed',
-            onPressed: onMenu,
-            icon: const Icon(Icons.menu, color: _SellerColors.primary),
-          ),
-          const SizedBox(width: 8),
-          const Text(
-            'Licit',
-            style: TextStyle(
-              color: _SellerColors.primary,
-              fontSize: 36,
-              height: 1.2,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const Spacer(),
-          TextButton(
-            onPressed: () => context.go('/explore'),
-            child: const Text('Marketplace'),
-          ),
-          const SizedBox(width: 8),
-          IconButton(
-            tooltip: 'Profile',
-            onPressed: onBag,
-            icon: const Icon(
-              Icons.shopping_bag_outlined,
-              color: _SellerColors.primary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _SellerHeader extends StatelessWidget {
   const _SellerHeader({
     required this.sellerName,
-    required this.isSeller,
     required this.message,
-    required this.latestApplication,
     required this.onNewListing,
   });
 
   final String sellerName;
-  final bool isSeller;
   final String? message;
-  final SellerApplication? latestApplication;
   final VoidCallback? onNewListing;
 
   @override
   Widget build(BuildContext context) {
-    final status = latestApplication?.status;
-
     return LayoutBuilder(
       builder: (context, constraints) {
         final compact = constraints.maxWidth < 430;
         final titleBlock = Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'OVERVIEW',
-              style: TextStyle(
+            Text(
+              context.l10n.overview,
+              style: const TextStyle(
                 color: _SellerColors.onSurfaceVariant,
                 fontSize: 12,
                 fontWeight: FontWeight.w800,
@@ -385,9 +344,9 @@ class _SellerHeader extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 4),
-            const Text(
-              'Performance',
-              style: TextStyle(
+            Text(
+              context.l10n.performance,
+              style: const TextStyle(
                 color: _SellerColors.primary,
                 fontSize: 30,
                 height: 1.3,
@@ -396,11 +355,7 @@ class _SellerHeader extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              isSeller
-                  ? 'Seller dashboard pentru $sellerName'
-                  : status == null
-                  ? 'Cere acces seller ca sa poti lista produse.'
-                  : 'Cererea ta seller este ${_statusLabel(status)}.',
+              context.l10n.sellerDashboard(sellerName),
               style: const TextStyle(
                 color: _SellerColors.onSurfaceVariant,
                 fontSize: 16,
@@ -419,7 +374,7 @@ class _SellerHeader extends StatelessWidget {
             ),
           ),
           icon: const Icon(Icons.add, size: 18),
-          label: const Text('New Listing'),
+          label: Text(context.l10n.newListing),
         );
 
         return Column(
@@ -446,17 +401,6 @@ class _SellerHeader extends StatelessWidget {
         );
       },
     );
-  }
-
-  String _statusLabel(String status) {
-    switch (status) {
-      case 'approved':
-        return 'aprobata';
-      case 'rejected':
-        return 'respinsa';
-      default:
-        return 'in asteptare';
-    }
   }
 }
 
@@ -488,21 +432,18 @@ class _PerformanceGrid extends StatelessWidget {
           children: [
             _MetricCard(
               icon: Icons.gavel_outlined,
-              trend: '+12% vs last month',
               value: activeCount.toString(),
-              label: 'Active Auctions',
+              label: context.l10n.activeAuctions,
             ),
             _MetricCard(
               icon: Icons.check_circle_outline,
-              trend: '+8% vs last month',
               value: soldCount.toString(),
-              label: 'Items Sold',
+              label: context.l10n.itemsSold,
             ),
             _MetricCard(
               icon: Icons.payments_outlined,
-              trend: '+24.5%',
-              value: revenueBani == 0 ? 'RON 0' : formatRon(revenueBani),
-              label: 'Total Revenue',
+              value: formatRon(revenueBani),
+              label: context.l10n.totalRevenue,
               inverted: true,
             ),
           ],
@@ -515,14 +456,12 @@ class _PerformanceGrid extends StatelessWidget {
 class _MetricCard extends StatelessWidget {
   const _MetricCard({
     required this.icon,
-    required this.trend,
     required this.value,
     required this.label,
     this.inverted = false,
   });
 
   final IconData icon;
-  final String trend;
   final String value;
   final String label;
   final bool inverted;
@@ -552,20 +491,6 @@ class _MetricCard extends StatelessWidget {
               Row(
                 children: [
                   Icon(icon, color: foreground.withValues(alpha: 0.58)),
-                  const Spacer(),
-                  Flexible(
-                    child: Text(
-                      trend,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.right,
-                      style: TextStyle(
-                        color: foreground.withValues(alpha: 0.72),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
                 ],
               ),
               const Spacer(),
@@ -609,7 +534,7 @@ class _MetricCard extends StatelessWidget {
   }
 }
 
-class _ActiveAuctionsSection extends StatelessWidget {
+class _ActiveAuctionsSection extends StatefulWidget {
   const _ActiveAuctionsSection({
     required this.products,
     required this.onOpenProduct,
@@ -621,18 +546,27 @@ class _ActiveAuctionsSection extends StatelessWidget {
   final VoidCallback? onNewListing;
 
   @override
-  Widget build(BuildContext context) {
-    final displayProducts = products.isEmpty ? _demoProducts : products;
+  State<_ActiveAuctionsSection> createState() => _ActiveAuctionsSectionState();
+}
 
+class _ActiveAuctionsSectionState extends State<_ActiveAuctionsSection> {
+  int _page = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final products = widget.products;
+    final pages = ((products.length + 5) ~/ 6).clamp(1, 1 << 30);
+    final page = _page.clamp(0, pages - 1);
+    final visible = products.skip(page * 6).take(6).toList();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Row(
           children: [
-            const Expanded(
+            Expanded(
               child: Text(
-                'Active Auctions',
-                style: TextStyle(
+                context.l10n.myListings,
+                style: const TextStyle(
                   color: _SellerColors.primary,
                   fontSize: 24,
                   height: 1.4,
@@ -641,19 +575,20 @@ class _ActiveAuctionsSection extends StatelessWidget {
               ),
             ),
             TextButton(
-              onPressed: onNewListing,
-              child: Text(products.isEmpty ? 'Create First' : 'View All'),
+              onPressed: widget.onNewListing,
+              child: Text(context.l10n.newListing),
             ),
           ],
         ),
         const SizedBox(height: 24),
+        if (products.isEmpty) Text(context.l10n.addFirstProduct),
         LayoutBuilder(
           builder: (context, constraints) {
             final columns = constraints.maxWidth >= 640 ? 2 : 1;
             return GridView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: displayProducts.length.clamp(0, 4),
+              itemCount: visible.length,
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: columns,
                 crossAxisSpacing: 24,
@@ -661,83 +596,61 @@ class _ActiveAuctionsSection extends StatelessWidget {
                 childAspectRatio: 0.64,
               ),
               itemBuilder: (context, index) {
-                final item = displayProducts[index];
-                if (item is Product) {
-                  return _ProductAuctionCard(
-                    title: item.title,
-                    subtitle:
-                        '${item.status} - Highest ${formatRon(item.currentPrice)}',
-                    imageUrl: item.thumbnailUrl,
-                    remaining: _remaining(item.endsAt),
-                    fallbackIcon: Icons.sell_outlined,
-                    onTap: () => onOpenProduct(item),
-                  );
-                }
-
-                final demo = item as _DemoAuction;
+                final item = visible[index];
                 return _ProductAuctionCard(
-                  title: demo.title,
-                  subtitle: demo.subtitle,
-                  imageUrl: demo.imageUrl,
-                  remaining: demo.remaining,
-                  fallbackIcon: demo.icon,
-                  onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Adauga primul produs pentru date reale.'),
-                    ),
+                  title: item.title,
+                  subtitle: context.l10n.statusHighest(
+                    localizedStatus(item.status, context.l10n),
+                    formatRon(item.currentPrice),
                   ),
+                  imageUrl: item.thumbnailUrl,
+                  remaining: _remaining(context, item.endsAt),
+                  fallbackIcon: Icons.sell_outlined,
+                  onTap: () => widget.onOpenProduct(item),
                 );
               },
             );
           },
         ),
+        if (pages > 1)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              IconButton(
+                tooltip: context.l10n.previousPage,
+                onPressed: page > 0
+                    ? () => setState(() => _page = page - 1)
+                    : null,
+                icon: const Icon(Icons.chevron_left),
+              ),
+              Text(context.l10n.salesPage(page + 1, pages)),
+              IconButton(
+                tooltip: context.l10n.nextPage,
+                onPressed: page + 1 < pages
+                    ? () => setState(() => _page = page + 1)
+                    : null,
+                icon: const Icon(Icons.chevron_right),
+              ),
+            ],
+          ),
       ],
     );
   }
 
-  String _remaining(DateTime endsAt) {
+  String _remaining(BuildContext context, DateTime endsAt) {
     final remaining = endsAt.difference(DateTime.now());
-    if (remaining.isNegative) return 'Ended';
+    if (remaining.isNegative) return context.l10n.ended;
     if (remaining.inDays > 0) {
-      return '${remaining.inDays}d ${remaining.inHours.remainder(24)}h';
+      return context.l10n.daysHours(
+        remaining.inDays,
+        remaining.inHours.remainder(24),
+      );
     }
-    return '${remaining.inHours}h ${remaining.inMinutes.remainder(60)}m';
+    return context.l10n.hoursMinutes(
+      remaining.inHours,
+      remaining.inMinutes.remainder(60),
+    );
   }
-
-  static const _demoProducts = [
-    _DemoAuction(
-      title: 'Patek Philippe Calatrava',
-      subtitle: '24 Bids - Highest RON 32,400',
-      remaining: '2d 04h',
-      icon: Icons.watch_outlined,
-      imageUrl:
-          'https://lh3.googleusercontent.com/aida-public/AB6AXuCO2Q79m5xoBdnzFQ4WmB-s5VP_xWjgVQ_jSE0-JYTEcxHfv_8Ujvz0gYk3xDVLv1eg5-roLVQMYIziLmOcLBOLZEBqqLBZrVj5Z9w3ALoFdlCcA-Kz3lM-vshGB58q0MZQxEyv-zWK63WrrEP3N5mLgcuZQ1BqEe0-PuNHEEZ1s11cXoHLX1OaT9p-Dwmo9riT6yTuS_8RFEvHsiUu-ZOsXJX2NGYY6SR1TSZa_hpLJZ2GPAfWGsglDxX9mpTZ-CMjhZyp2bLr5A',
-    ),
-    _DemoAuction(
-      title: 'Vintage Leica M3 Limited',
-      subtitle: '12 Bids - Highest RON 8,200',
-      remaining: '08h 15m',
-      icon: Icons.camera_alt_outlined,
-      imageUrl:
-          'https://lh3.googleusercontent.com/aida-public/AB6AXuC1p3RHU55eJng1cvWiJl5edU4C6Ttjqyy-X0xrT8BUT5bxpAEeuEjfTFC1YsXLeZkvxce3SlENrRKxcT8K5fWbwXGHslaYIe7_xODwu1UDgljIpnFXwEqyWVvWcbNdg_WhpiKRWkEX_xhReZbKmHfF2cyUiydWvltMg8j2LkgIQKAQpDgmZuLBy9-p5KFFQV9QDKy-ryVq4ftFHbqBZJ3SfqkxIJxAioueBB_BpBQT6K4Sp-6-7_oj2F0RBxFxj1y0Rld-KSpgOw',
-    ),
-  ];
-}
-
-class _DemoAuction {
-  const _DemoAuction({
-    required this.title,
-    required this.subtitle,
-    required this.remaining,
-    required this.icon,
-    required this.imageUrl,
-  });
-
-  final String title;
-  final String subtitle;
-  final String remaining;
-  final IconData icon;
-  final String imageUrl;
 }
 
 class _ProductAuctionCard extends StatelessWidget {
@@ -846,7 +759,7 @@ class _ProductAuctionCard extends StatelessWidget {
                 ),
               ),
               IconButton(
-                tooltip: 'More',
+                tooltip: context.l10n.more,
                 onPressed: onTap,
                 icon: const Icon(Icons.more_vert, color: _SellerColors.primary),
               ),
@@ -866,21 +779,14 @@ class _SellerSidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final sold = products
-        .where(
-          (product) =>
-              product.status == 'reserved' ||
-              product.status == 'sold' ||
-              product.status == 'closed',
-        )
-        .toList();
+    final sold = products.where((product) => product.status == 'sold').toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text(
-          'Inventory',
-          style: TextStyle(
+        Text(
+          context.l10n.inventory,
+          style: const TextStyle(
             color: _SellerColors.primary,
             fontSize: 24,
             height: 1.4,
@@ -890,21 +796,24 @@ class _SellerSidebar extends StatelessWidget {
         const SizedBox(height: 24),
         _InventoryButton(
           icon: Icons.description_outlined,
-          title: 'Drafts',
-          subtitle: '4 items ready for review',
-          onTap: () => onComingSoon('Drafts'),
+          title: context.l10n.drafts,
+          subtitle: products
+              .where((product) => product.status == 'draft')
+              .length
+              .toString(),
+          onTap: () => onComingSoon(context.l10n.drafts),
         ),
         const SizedBox(height: 8),
         _InventoryButton(
           icon: Icons.inventory_2_outlined,
-          title: 'Unsold Items',
-          subtitle: '${_unsoldCount(products)} items expired',
-          onTap: () => onComingSoon('Unsold Items'),
+          title: context.l10n.unsoldItems,
+          subtitle: context.l10n.expiredItemCount(_unsoldCount(products)),
+          onTap: () => onComingSoon(context.l10n.unsoldItems),
         ),
         const SizedBox(height: 64),
-        const Text(
-          'Recently Sold',
-          style: TextStyle(
+        Text(
+          context.l10n.recentlySold,
+          style: const TextStyle(
             color: _SellerColors.primary,
             fontSize: 24,
             height: 1.4,
@@ -913,23 +822,14 @@ class _SellerSidebar extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         if (sold.isEmpty)
-          for (final item in _recentSoldFallback)
-            _SoldItemRow(
-              title: item.title,
-              subtitle: item.subtitle,
-              trailingTop: item.time,
-              status: item.status,
-              statusColor: item.statusColor,
-              imageUrl: item.imageUrl,
-              icon: item.icon,
-            )
+          Text(context.l10n.noCompletedSales)
         else
           for (final product in sold.take(3))
             _SoldItemRow(
               title: product.title,
-              subtitle: 'Sold for ${formatRon(product.currentPrice)}',
-              trailingTop: 'Recent',
-              status: product.status,
+              subtitle: context.l10n.soldFor(formatRon(product.currentPrice)),
+              trailingTop: context.l10n.recent,
+              status: localizedStatus(product.status, context.l10n),
               statusColor: product.status == 'reserved'
                   ? _SellerColors.pending
                   : _SellerColors.success,
@@ -938,7 +838,7 @@ class _SellerSidebar extends StatelessWidget {
             ),
         const SizedBox(height: 16),
         OutlinedButton(
-          onPressed: () => onComingSoon('Sales report'),
+          onPressed: () => onComingSoon(context.l10n.salesReport),
           style: OutlinedButton.styleFrom(
             foregroundColor: _SellerColors.primary,
             side: BorderSide(
@@ -948,7 +848,7 @@ class _SellerSidebar extends StatelessWidget {
               borderRadius: BorderRadius.circular(8),
             ),
           ),
-          child: const Text('Download Sales Report'),
+          child: Text(context.l10n.downloadSalesReport),
         ),
       ],
     );
@@ -963,59 +863,6 @@ class _SellerSidebar extends StatelessWidget {
         )
         .length;
   }
-
-  static const _recentSoldFallback = [
-    _SoldFallback(
-      title: 'Luxe Tortoise Shades',
-      subtitle: 'Sold for RON 450',
-      time: '2h ago',
-      status: 'Paid',
-      statusColor: _SellerColors.success,
-      icon: Icons.visibility_outlined,
-      imageUrl:
-          'https://lh3.googleusercontent.com/aida-public/AB6AXuBEhXQkA9cf72KiTk2VIS34y1fSmLvuz52V1Ku-V1nllgnXFPEons77U-Hk3ZX8cWOCY7YK9AJD0k4hvSADoL8K6KplWrEDWKjNvh8NfGWJkkwHok_ezETgdW2WvGbZ6aY8Y65W5500d7naGqU2SxB1_ftzh0-CIQsnmHunfqEntnFUEY6fqrVoDp9-GA0gri8b7Iduqgvw2HdjTe50vjjHbHgnyzlIoQE_MefJcdrXZ4HvE8YVoXNYGGNnj-80jVCN8iT8MVVgLg',
-    ),
-    _SoldFallback(
-      title: 'Essential Silk Tee',
-      subtitle: 'Sold for RON 180',
-      time: '5h ago',
-      status: 'Pending',
-      statusColor: _SellerColors.pending,
-      icon: Icons.checkroom_outlined,
-      imageUrl:
-          'https://lh3.googleusercontent.com/aida-public/AB6AXuA0Th1y2R8I4QZ7DfPFhnqm05HW3Zz1bOSTNBGAPCjErpGHJkuJ745R2v8hdiAGO9L7GltWJZlxC3H4XXSq3TH_l_sD8Rgs78xp3N-_QDrlNkPnDtYOrWYS8CvbmNIEpu1aQ1HDPYa2idgFl0x8VrrqsirrZPYU_AD8OCVvaxzSlKsVz5gQrE5KEE3teHp-TtrYZSSSrOxBeFcimVDWabUsrICtZwDRAzL2jUDYoWwUBjJDR29nLfvdHddsZQvopyww7Ajwxsd4-w',
-    ),
-    _SoldFallback(
-      title: 'Pro Audio Monitor H1',
-      subtitle: 'Sold for RON 1,200',
-      time: 'Yesterday',
-      status: 'Paid',
-      statusColor: _SellerColors.success,
-      icon: Icons.headphones_outlined,
-      imageUrl:
-          'https://lh3.googleusercontent.com/aida-public/AB6AXuB-MwXvRyXFLDZRSbH379c9b45-QV1_Tf2zwNUVdF2Z-494qmlwJOJKaRXcTSI3DmZ2uvr0Oyp_1zWCc2nJCttgKu6Ntu1QLVwzGdDt8lUM6EowbV5hjlfiQA1_JvLNHorXqsd4iNDIEf8O-WpYH_zEijqfYEup5SLi5lsSLWenZYGnxUPtbQYJf_tvXa5_PBAgKP10JncEjVihqtLIFrZpucDnXM65euKJN35NeQqtbmn4VrbDiwr-7ZGZIrz7iM6V09fGXdIeOg',
-    ),
-  ];
-}
-
-class _SoldFallback {
-  const _SoldFallback({
-    required this.title,
-    required this.subtitle,
-    required this.time,
-    required this.status,
-    required this.statusColor,
-    required this.icon,
-    required this.imageUrl,
-  });
-
-  final String title;
-  final String subtitle;
-  final String time;
-  final String status;
-  final Color statusColor;
-  final IconData icon;
-  final String imageUrl;
 }
 
 class _InventoryButton extends StatelessWidget {
@@ -1209,7 +1056,7 @@ class _SellerApplicationPanel extends StatelessWidget {
   final TextEditingController phone;
   final TextEditingController notes;
   final List<SellerApplication> applications;
-  final VoidCallback onSubmit;
+  final VoidCallback? onSubmit;
 
   @override
   Widget build(BuildContext context) {
@@ -1225,9 +1072,9 @@ class _SellerApplicationPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text(
-            'Become a Seller',
-            style: TextStyle(
+          Text(
+            context.l10n.becomeSeller,
+            style: const TextStyle(
               color: _SellerColors.primary,
               fontSize: 24,
               height: 1.35,
@@ -1235,9 +1082,9 @@ class _SellerApplicationPanel extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 6),
-          const Text(
-            'Trimite cererea pentru aprobare. Dupa acceptare poti crea listari video si licitatii.',
-            style: TextStyle(
+          Text(
+            context.l10n.sellerApplicationDescription,
+            style: const TextStyle(
               color: _SellerColors.onSurfaceVariant,
               fontSize: 14,
               height: 1.5,
@@ -1247,14 +1094,14 @@ class _SellerApplicationPanel extends StatelessWidget {
           TextField(
             controller: displayName,
             style: const TextStyle(color: _SellerColors.primary),
-            decoration: _inputDecoration('Nume seller'),
+            decoration: _inputDecoration(context.l10n.sellerName),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: phone,
             keyboardType: TextInputType.phone,
             style: const TextStyle(color: _SellerColors.primary),
-            decoration: _inputDecoration('Telefon contact'),
+            decoration: _inputDecoration(context.l10n.contactPhone),
           ),
           const SizedBox(height: 12),
           TextField(
@@ -1262,7 +1109,7 @@ class _SellerApplicationPanel extends StatelessWidget {
             minLines: 3,
             maxLines: 5,
             style: const TextStyle(color: _SellerColors.primary),
-            decoration: _inputDecoration('Ce vinzi?'),
+            decoration: _inputDecoration(context.l10n.whatDoYouSell),
           ),
           const SizedBox(height: 16),
           FilledButton.icon(
@@ -1275,7 +1122,7 @@ class _SellerApplicationPanel extends StatelessWidget {
               ),
             ),
             icon: const Icon(Icons.send_outlined),
-            label: const Text('Trimite cererea'),
+            label: Text(context.l10n.submitApplication),
           ),
           if (applications.isNotEmpty) ...[
             const SizedBox(height: 20),
@@ -1283,7 +1130,7 @@ class _SellerApplicationPanel extends StatelessWidget {
               _InlineNotice(
                 icon: Icons.verified_user_outlined,
                 text:
-                    '${application.displayName} - ${application.contactPhone} - ${application.status}',
+                    '${application.displayName} - ${application.contactPhone} - ${localizedStatus(application.status, context.l10n)}',
               ),
           ],
         ],
@@ -1376,113 +1223,6 @@ class _FallbackArtwork extends StatelessWidget {
     return ColoredBox(
       color: _SellerColors.surfaceHigh,
       child: Center(child: Icon(icon, color: _SellerColors.primary, size: 42)),
-    );
-  }
-}
-
-class _SellerBottomNav extends StatelessWidget {
-  const _SellerBottomNav();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 80 + MediaQuery.paddingOf(context).bottom,
-      padding: EdgeInsets.fromLTRB(
-        8,
-        8,
-        8,
-        8 + MediaQuery.paddingOf(context).bottom,
-      ),
-      decoration: BoxDecoration(
-        color: _SellerColors.background,
-        border: Border(
-          top: BorderSide(
-            color: _SellerColors.outlineVariant.withValues(alpha: 0.2),
-          ),
-        ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _BottomItem(
-            icon: Icons.play_circle_outline,
-            label: 'Feed',
-            onTap: () => context.go('/'),
-          ),
-          _BottomItem(
-            icon: Icons.search,
-            label: 'Explore',
-            onTap: () => context.go('/explore'),
-          ),
-          _BottomItem(
-            icon: Icons.add_circle,
-            label: 'Sell',
-            active: true,
-            onTap: () => context.go('/seller'),
-          ),
-          _BottomItem(
-            icon: Icons.notifications_outlined,
-            label: 'Activity',
-            onTap: () => context.go('/activity'),
-          ),
-          _BottomItem(
-            icon: Icons.person_outline,
-            label: 'Profile',
-            onTap: () => context.go('/account'),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _BottomItem extends StatelessWidget {
-  const _BottomItem({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    this.active = false,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  final bool active;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = active
-        ? _SellerColors.primary
-        : _SellerColors.onSurfaceVariant;
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-        decoration: BoxDecoration(
-          color: active
-              ? _SellerColors.secondaryContainer.withValues(alpha: 0.5)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: color.withValues(alpha: active ? 1 : 0.62)),
-            Text(
-              label,
-              style: TextStyle(
-                color: color.withValues(alpha: active ? 1 : 0.62),
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.6,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

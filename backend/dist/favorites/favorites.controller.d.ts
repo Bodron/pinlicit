@@ -5,6 +5,8 @@ export declare class FavoritesController {
     mine(user: any): Promise<{
         isFavorite: boolean;
         seller: import("mongoose").Types.ObjectId;
+        reservedAt?: Date;
+        commerceVersion?: number;
         reservedBy?: import("mongoose").Types.ObjectId;
         category: import("mongoose").Types.ObjectId;
         title: string;
@@ -28,6 +30,8 @@ export declare class FavoritesController {
     add(user: any, productId: string): Promise<{
         isFavorite: boolean;
         seller: import("mongoose").Types.ObjectId;
+        reservedAt?: Date;
+        commerceVersion?: number;
         reservedBy?: import("mongoose").Types.ObjectId;
         category: import("mongoose").Types.ObjectId;
         title: string;
@@ -51,5 +55,6 @@ export declare class FavoritesController {
     remove(user: any, productId: string): Promise<{
         productId: string;
         isFavorite: boolean;
+        favoriteCount: number;
     }>;
 }

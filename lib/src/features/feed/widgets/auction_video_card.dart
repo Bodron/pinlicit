@@ -1,3 +1,4 @@
+import 'package:licit/l10n/l10n.dart';
 import 'dart:async';
 import 'dart:ui';
 
@@ -8,21 +9,27 @@ import 'package:socket_io_client/socket_io_client.dart' as io;
 import 'package:video_player/video_player.dart';
 
 import '../../../shared/config/app_config.dart';
-import '../../../shared/models/bid.dart';
 import '../../../shared/models/product.dart';
 import '../../../shared/navigation/app_route_observer.dart';
 import '../../../shared/state/session_controller.dart';
+import '../../../shared/notifications/app_notifier.dart';
+import '../../../shared/state/favorite_mutation.dart';
 import '../../../shared/utils/money.dart';
+import '../../../shared/video/feed_playback.dart';
 
 class AuctionVideoCard extends ConsumerStatefulWidget {
   const AuctionVideoCard({
     super.key,
     required this.product,
+    required this.playback,
     required this.onOpenDetails,
     this.onFavoriteChanged,
+    this.isActive = true,
   });
 
   final Product product;
+  final FeedPlayback playback;
+  final bool isActive;
   final VoidCallback onOpenDetails;
   final ValueChanged<Product>? onFavoriteChanged;
 
@@ -31,36 +38,41 @@ class AuctionVideoCard extends ConsumerStatefulWidget {
 }
 
 class _AuctionVideoCardState extends ConsumerState<AuctionVideoCard>
-    with RouteAware {
+    with RouteAware, WidgetsBindingObserver {
   late Product _product;
-  VideoPlayerController? _video;
   io.Socket? _socket;
-  List<Bid> _bids = [];
   String? _message;
+  bool _panelExpanded = false;
+  FavoriteMutation _favoriteMutation = FavoriteMutation();
   ModalRoute<dynamic>? _route;
+  bool _foreground = true;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _product = widget.product;
-    _initVideo();
-    _connectSocket();
+    _syncSocket();
   }
 
   @override
   void didUpdateWidget(covariant AuctionVideoCard oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.product.id != widget.product.id) {
-      _socket?.dispose();
-      _video?.dispose();
+      _disconnectSocket();
       _product = widget.product;
-      _bids = [];
       _message = null;
-      _initVideo();
-      _connectSocket();
-    } else if (oldWidget.product.isFavorite != widget.product.isFavorite) {
-      _product = _product.copyWith(isFavorite: widget.product.isFavorite);
+      _panelExpanded = false;
+      _favoriteMutation = FavoriteMutation();
+    } else if (!_favoriteMutation.pending &&
+        (oldWidget.product.isFavorite != widget.product.isFavorite ||
+            oldWidget.product.favoriteCount != widget.product.favoriteCount)) {
+      _product = _product.copyWith(
+        isFavorite: widget.product.isFavorite,
+        favoriteCount: widget.product.favoriteCount,
+      );
     }
+    _syncSocket();
   }
 
   @override
@@ -76,58 +88,82 @@ class _AuctionVideoCardState extends ConsumerState<AuctionVideoCard>
 
   @override
   void didPushNext() {
-    _video?.pause();
+    _disconnectSocket();
   }
 
   @override
   void didPopNext() {
-    _resumeVideo();
+    _syncSocket();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     appRouteObserver.unsubscribe(this);
-    _socket?.emit('auction:leave', {'productId': _product.id});
-    _socket?.dispose();
-    _video?.dispose();
+    _disconnectSocket();
     super.dispose();
   }
 
-  Future<void> _resumeVideo() async {
-    final video = _video;
-    if (video == null || !video.value.isInitialized) return;
-    try {
-      await video.play();
-      if (mounted) setState(() {});
-    } catch (_) {
-      // The regular video initialization path already surfaces playback errors.
+  void _disconnectSocket() {
+    final socket = _socket;
+    _socket = null;
+    socket?.emit('auction:leave', {'productId': _product.id});
+    socket?.dispose();
+  }
+
+  void _syncSocket() {
+    if (!widget.isActive || !_foreground || _route?.isCurrent == false) {
+      _disconnectSocket();
+    } else if (_socket == null) {
+      _connectSocket();
     }
   }
 
   @override
-  Widget build(BuildContext context) {
-    final video = _video;
-    final initialized = video?.value.isInitialized == true;
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _foreground = state == AppLifecycleState.resumed;
+    _syncSocket();
+  }
 
+  @override
+  Widget build(BuildContext context) {
     return Stack(
       fit: StackFit.expand,
       children: [
-        if (initialized)
-          FittedBox(
-            fit: BoxFit.cover,
-            child: SizedBox(
-              width: video!.value.size.width,
-              height: video.value.size.height,
-              child: VideoPlayer(video),
-            ),
-          )
-        else
-          Container(
-            color: Colors.black,
-            child: const Center(
-              child: CircularProgressIndicator(color: Color(0xffe4e3d8)),
-            ),
+        RepaintBoundary(
+          child: ListenableBuilder(
+            listenable: widget.playback,
+            builder: (context, _) {
+              final playback = widget.playback;
+              final video = playback.controller;
+              if (playback.activeId == _product.id &&
+                  playback.ready &&
+                  video != null) {
+                return FittedBox(
+                  fit: BoxFit.cover,
+                  child: SizedBox(
+                    width: video.value.size.width,
+                    height: video.value.size.height,
+                    child: VideoPlayer(video),
+                  ),
+                );
+              }
+              return ColoredBox(
+                color: Colors.black,
+                child: Center(
+                  child: playback.activeId == _product.id && playback.failed
+                      ? Text(
+                          context.l10n.videoLoadFailed,
+                          style: const TextStyle(color: Colors.white),
+                        )
+                      : const CircularProgressIndicator(
+                          color: Color(0xffe4e3d8),
+                        ),
+                ),
+              );
+            },
           ),
+        ),
         const _VideoGradient(),
         Positioned.fill(
           child: GestureDetector(
@@ -144,21 +180,9 @@ class _AuctionVideoCardState extends ConsumerState<AuctionVideoCard>
           child: SafeArea(
             top: false,
             bottom: false,
-            child: _AuctionInfoPanel(
-              product: _product,
-              message: _message,
-              onBid: _product.isActive ? _openBidSheet : null,
-              onBuyNow: _product.canBuyNow ? _buyNow : null,
-            ),
-          ),
-        ),
-        Positioned(
-          right: 16,
-          bottom: 270,
-          child: SafeArea(
-            top: false,
             child: Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 _MetricAction(
                   icon: _product.isFavorite
@@ -166,13 +190,23 @@ class _AuctionVideoCardState extends ConsumerState<AuctionVideoCard>
                       : Icons.favorite_border,
                   label: _compactCount(_product.favoriteCount),
                   active: _product.isFavorite,
-                  onTap: _toggleFavorite,
+                  onTap: _favoriteMutation.pending ? null : _toggleFavorite,
                 ),
                 const SizedBox(height: 20),
                 _MetricAction(
                   icon: Icons.share_outlined,
                   onTap: () =>
-                      setState(() => _message = 'Share va fi adaugat curand.'),
+                      setState(() => _message = context.l10n.shareComingSoon),
+                ),
+                const SizedBox(height: 12),
+                _AuctionInfoPanel(
+                  product: _product,
+                  message: _message,
+                  expanded: _panelExpanded,
+                  onToggle: () =>
+                      setState(() => _panelExpanded = !_panelExpanded),
+                  onBid: _product.isActive ? _openBidSheet : null,
+                  onBuyNow: _product.canBuyNow ? _buyNow : null,
                 ),
               ],
             ),
@@ -182,76 +216,69 @@ class _AuctionVideoCardState extends ConsumerState<AuctionVideoCard>
     );
   }
 
-  Future<void> _initVideo() async {
-    final uri = Uri.tryParse(_product.videoUrl);
-    if (uri == null) return;
-    final controller = VideoPlayerController.networkUrl(uri);
-    _video = controller;
-    try {
-      await controller.initialize();
-      await controller.setLooping(true);
-      await controller.play();
-      if (mounted) setState(() {});
-    } catch (_) {
-      if (mounted) setState(() => _message = 'Video-ul nu poate fi incarcat.');
-    }
-  }
-
   void _connectSocket() {
     final socket = io.io(
       AppConfig.apiBaseUrl,
       io.OptionBuilder()
           .setTransports(['websocket'])
+          .enableForceNew()
           .disableAutoConnect()
           .build(),
     );
     _socket = socket;
-    socket.onConnect(
-      (_) => socket.emit('auction:join', {'productId': _product.id}),
-    );
+    socket.onConnect((_) {
+      if (!mounted || !identical(_socket, socket)) return;
+      socket.emit('auction:join', {'productId': _product.id});
+    });
     socket.on('auction:update', (data) {
+      if (!mounted || !identical(_socket, socket)) return;
       final map = Map<String, dynamic>.from(data as Map);
       if (map['product'] is Map) {
         setState(
-          () => _product = Product.fromJson(
-            Map<String, dynamic>.from(map['product']),
-          ).copyWith(isFavorite: _product.isFavorite),
+          () => _product =
+              Product.fromJson(
+                Map<String, dynamic>.from(map['product']),
+              ).copyWith(
+                isFavorite: _product.isFavorite,
+                favoriteCount: _favoriteMutation.pending
+                    ? _product.favoriteCount
+                    : null,
+              ),
         );
-      }
-      if (map['bids'] is List) {
-        setState(() {
-          _bids = (map['bids'] as List)
-              .whereType<Map>()
-              .map((item) => Bid.fromJson(Map<String, dynamic>.from(item)))
-              .toList();
-        });
       }
     });
     socket.on('bid:new', (data) {
+      if (!mounted || !identical(_socket, socket)) return;
       final map = Map<String, dynamic>.from(data as Map);
       if (map['product'] is Map) {
-        _product = Product.fromJson(
-          Map<String, dynamic>.from(map['product']),
-        ).copyWith(isFavorite: _product.isFavorite);
+        _product = Product.fromJson(Map<String, dynamic>.from(map['product']))
+            .copyWith(
+              isFavorite: _product.isFavorite,
+              favoriteCount: _favoriteMutation.pending
+                  ? _product.favoriteCount
+                  : null,
+            );
       }
-      if (map['bid'] is Map) {
-        _bids = [
-          Bid.fromJson(Map<String, dynamic>.from(map['bid'])),
-          ..._bids.take(4),
-        ];
-      }
-      if (mounted) setState(() => _message = 'Oferta noua primita live.');
+      if (mounted) setState(() => _message = context.l10n.newLiveBid);
     });
     socket.on('auction:extended', (_) {
-      if (mounted) setState(() => _message = 'Licitatia a fost prelungita.');
+      if (!mounted || !identical(_socket, socket)) return;
+      if (mounted) setState(() => _message = context.l10n.auctionExtended);
     });
     socket.on('auction:closed', (data) {
+      if (!mounted || !identical(_socket, socket)) return;
       final map = Map<String, dynamic>.from(data as Map);
       if (map['product'] is Map && mounted) {
         setState(
-          () => _product = Product.fromJson(
-            Map<String, dynamic>.from(map['product']),
-          ).copyWith(isFavorite: _product.isFavorite),
+          () => _product =
+              Product.fromJson(
+                Map<String, dynamic>.from(map['product']),
+              ).copyWith(
+                isFavorite: _product.isFavorite,
+                favoriteCount: _favoriteMutation.pending
+                    ? _product.favoriteCount
+                    : null,
+              ),
         );
       }
     });
@@ -276,11 +303,13 @@ class _AuctionVideoCardState extends ConsumerState<AuctionVideoCard>
       final product = await ref
           .read(apiClientProvider)
           .placeBid(_product.id, amount);
+      if (!mounted) return;
       setState(() {
         _product = product.copyWith(isFavorite: _product.isFavorite);
-        _message = 'Oferta trimisa.';
+        _message = context.l10n.bidSubmitted;
       });
     } on DioException catch (error) {
+      if (!mounted) return;
       setState(() => _message = _messageFrom(error));
     }
   }
@@ -288,48 +317,78 @@ class _AuctionVideoCardState extends ConsumerState<AuctionVideoCard>
   Future<void> _buyNow() async {
     try {
       final product = await ref.read(apiClientProvider).buyNow(_product.id);
+      if (!mounted) return;
       setState(() {
         _product = product.copyWith(isFavorite: _product.isFavorite);
-        _message = 'Produs rezervat. Sellerul va vedea contactul tau.';
+        _message = context.l10n.productReservedContact;
       });
     } on DioException catch (error) {
+      if (!mounted) return;
       setState(() => _message = _messageFrom(error));
     }
   }
 
   Future<void> _toggleFavorite() async {
-    final next = !_product.isFavorite;
-    setState(() {
-      _product = _product.copyWith(
-        isFavorite: next,
-        favoriteCount: next
-            ? _product.favoriteCount + 1
-            : _product.favoriteCount > 0
-            ? _product.favoriteCount - 1
-            : 0,
+    final mutation = _favoriteMutation;
+    if (mutation.pending) return;
+    final userId = ref.read(sessionControllerProvider).user?.id;
+    if (userId != null && _product.seller?.id == userId) {
+      context.notifier.warning(
+        context.l10n.cannotFavoriteOwnProduct,
+        id: 'favorite:${_product.id}',
       );
-      _message = next ? 'Adaugat la favorite.' : 'Scos de la favorite.';
+      return;
+    }
+    final optimistic = mutation.begin(_product, userId);
+    if (optimistic == null) return;
+    final productId = _product.id;
+    final next = optimistic.isFavorite;
+    bool isCurrent() =>
+        mounted &&
+        identical(_favoriteMutation, mutation) &&
+        _product.id == productId;
+    setState(() {
+      _product = optimistic;
+      _message = null;
     });
     widget.onFavoriteChanged?.call(_product);
-
     try {
+      final api = ref.read(apiClientProvider);
+      final int? confirmedCount;
       if (next) {
-        final product = await ref
-            .read(apiClientProvider)
-            .addFavorite(_product.id);
-        if (!mounted) return;
-        setState(() => _product = product.copyWith(isFavorite: true));
-        widget.onFavoriteChanged?.call(_product);
+        final product = await api.addFavorite(productId);
+        confirmedCount = product.favoriteCount;
       } else {
-        await ref.read(apiClientProvider).removeFavorite(_product.id);
+        confirmedCount = await api.removeFavorite(productId);
       }
-    } on DioException catch (error) {
-      if (!mounted) return;
+      if (!mounted || !isCurrent()) return;
       setState(() {
-        _product = _product.copyWith(isFavorite: !next);
-        _message = _messageFrom(error);
+        _product = _product.copyWith(
+          isFavorite: next,
+          favoriteCount: confirmedCount,
+        );
+        _message = null;
       });
+      context.notifier.success(
+        next
+            ? context.l10n.addedToFavorites
+            : context.l10n.removedFromFavorites,
+        id: 'favorite:$productId',
+      );
       widget.onFavoriteChanged?.call(_product);
+    } catch (error) {
+      if (!mounted || !isCurrent()) return;
+      setState(() {
+        _product = mutation.rollback(_product);
+        _message = null;
+      });
+      context.notifier.error(
+        localizedError(error, context.l10n),
+        id: 'favorite:$productId',
+      );
+      widget.onFavoriteChanged?.call(_product);
+    } finally {
+      if (isCurrent()) setState(mutation.complete);
     }
   }
 
@@ -342,13 +401,8 @@ class _AuctionVideoCardState extends ConsumerState<AuctionVideoCard>
     return '${text.replaceAll('.0', '')}k';
   }
 
-  String _messageFrom(DioException error) {
-    final data = error.response?.data;
-    if (data is Map && data['message'] != null) {
-      return data['message'].toString();
-    }
-    return error.message ?? 'Actiunea a esuat.';
-  }
+  String _messageFrom(DioException error) =>
+      localizedError(error, context.l10n);
 }
 
 class _VideoGradient extends StatelessWidget {
@@ -378,12 +432,16 @@ class _AuctionInfoPanel extends StatelessWidget {
     required this.message,
     required this.onBid,
     required this.onBuyNow,
+    required this.expanded,
+    required this.onToggle,
   });
 
   final Product product;
   final String? message;
   final VoidCallback? onBid;
   final VoidCallback? onBuyNow;
+  final bool expanded;
+  final VoidCallback onToggle;
 
   @override
   Widget build(BuildContext context) {
@@ -404,69 +462,181 @@ class _AuctionInfoPanel extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  const Icon(
-                    Icons.timer_outlined,
-                    size: 16,
-                    color: Color(0xff454842),
-                  ),
-                  const SizedBox(width: 5),
-                  Expanded(
-                    child: _LiveRemainingLabel(
-                      endsAt: product.endsAt,
-                      status: product.status,
+              Semantics(
+                button: true,
+                expanded: expanded,
+                label: expanded
+                    ? context.l10n.collapseAuction
+                    : context.l10n.expandAuction,
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: onToggle,
+                    borderRadius: BorderRadius.circular(12),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.timer_outlined,
+                                size: 16,
+                                color: Color(0xff454842),
+                              ),
+                              const SizedBox(width: 5),
+                              Expanded(
+                                child: _LiveRemainingLabel(
+                                  endsAt: product.endsAt,
+                                  status: product.status,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                expanded
+                                    ? context.l10n.showLess
+                                    : context.l10n.bidDetails,
+                                style: const TextStyle(
+                                  color: Color(0xff454842),
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              AnimatedRotation(
+                                turns: expanded ? 0.5 : 0,
+                                duration: const Duration(milliseconds: 240),
+                                child: const Icon(
+                                  Icons.keyboard_arrow_up,
+                                  color: Color(0xff454842),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  product.title,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: Color(0xff242522),
+                                    fontSize: 21,
+                                    height: 1.15,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Flexible(
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  alignment: Alignment.centerRight,
+                                  child: _BidPrice(
+                                    label: context.l10n.currentBidUpper,
+                                    value: formatRon(product.currentPrice),
+                                    alignEnd: true,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  if (product.category != null)
-                    _CategoryPill(label: product.category!.name),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                product.title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Color(0xff242522),
-                  fontSize: 25,
-                  height: 1.15,
-                  fontWeight: FontWeight.w800,
                 ),
               ),
-              const SizedBox(height: 3),
-              Text(
-                product.description,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Color(0xff5d5f59),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                ),
+              AnimatedSize(
+                duration: const Duration(milliseconds: 240),
+                curve: Curves.easeInOutCubic,
+                alignment: Alignment.bottomCenter,
+                child: expanded
+                    ? ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxHeight: MediaQuery.sizeOf(context).height * 0.3,
+                        ),
+                        child: SingleChildScrollView(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const SizedBox(height: 3),
+                              Text(
+                                product.description,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: Color(0xff5d5f59),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 13),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _BidPrice(
+                                      label: context.l10n.minimumBidUpper,
+                                      value: formatRon(product.nextBid),
+                                    ),
+                                  ),
+                                  if (product.category != null)
+                                    Flexible(
+                                      child: _CategoryPill(
+                                        label: localizedCategory(
+                                          product.category!.name,
+                                          context.l10n,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                              if (product.hasReserve) ...[
+                                const SizedBox(height: 8),
+                                _ReserveStatus(met: product.reserveMet),
+                              ],
+                              const SizedBox(height: 16),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: FilledButton(
+                                      onPressed: onBid,
+                                      style: FilledButton.styleFrom(
+                                        minimumSize: const Size.fromHeight(46),
+                                        backgroundColor: const Color(
+                                          0xff363a34,
+                                        ),
+                                        foregroundColor: Colors.white,
+                                        textStyle: const TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        context.l10n.maxBidAmount(
+                                          formatRon(product.nextBid),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: _BuyNowButton(
+                                      price: formatRon(product.buyNowPrice),
+                                      onPressed: onBuyNow,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    : const SizedBox(width: double.infinity),
               ),
-              const SizedBox(height: 13),
-              Row(
-                children: [
-                  Expanded(
-                    child: _BidPrice(
-                      label: 'CURRENT BID',
-                      value: formatRon(product.currentPrice),
-                    ),
-                  ),
-                  Expanded(
-                    child: _BidPrice(
-                      label: 'MIN MAX BID',
-                      value: formatRon(product.nextBid),
-                      alignEnd: true,
-                    ),
-                  ),
-                ],
-              ),
-              if (product.hasReserve) ...[
-                const SizedBox(height: 8),
-                _ReserveStatus(met: product.reserveMet),
-              ],
               if (message != null) ...[
                 const SizedBox(height: 9),
                 Text(
@@ -480,33 +650,6 @@ class _AuctionInfoPanel extends StatelessWidget {
                   ),
                 ),
               ],
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: FilledButton(
-                      onPressed: onBid,
-                      style: FilledButton.styleFrom(
-                        minimumSize: const Size.fromHeight(46),
-                        backgroundColor: const Color(0xff363a34),
-                        foregroundColor: Colors.white,
-                        textStyle: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      child: Text('MAX BID ${formatRon(product.nextBid)}'),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _BuyNowButton(
-                      price: formatRon(product.buyNowPrice),
-                      onPressed: onBuyNow,
-                    ),
-                  ),
-                ],
-              ),
             ],
           ),
         ),
@@ -569,7 +712,7 @@ class _BuyNowButton extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'BUY NOW',
+                      context.l10n.buyNowUpper,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -644,8 +787,8 @@ class _LiveRemainingLabelState extends State<_LiveRemainingLabel> {
   Widget build(BuildContext context) {
     final remaining = widget.endsAt.difference(DateTime.now());
     final label = remaining.isNegative
-        ? widget.status.toUpperCase()
-        : '${_format(remaining)} REMAINING';
+        ? localizedStatus(widget.status, context.l10n)
+        : context.l10n.remainingTime(_format(remaining));
     return Text(
       label,
       maxLines: 1,
@@ -730,7 +873,7 @@ class _ReserveStatus extends StatelessWidget {
         ),
         const SizedBox(width: 5),
         Text(
-          met ? 'Reserve met' : 'Reserve not met',
+          met ? context.l10n.reserveMet : context.l10n.reserveNotMet,
           style: TextStyle(
             color: met ? const Color(0xff287264) : const Color(0xff8a6f19),
             fontSize: 11,
@@ -793,7 +936,9 @@ class _PlaceBidSheetState extends State<_PlaceBidSheet> {
   void initState() {
     super.initState();
     _controller = TextEditingController(
-      text: (widget.product.nextBid / 100).toStringAsFixed(2),
+      text: (widget.product.nextBid / 100)
+          .toStringAsFixed(2)
+          .replaceAll('.', ','),
     )..addListener(() => setState(() => _error = null));
   }
 
@@ -804,7 +949,7 @@ class _PlaceBidSheetState extends State<_PlaceBidSheet> {
   }
 
   int get _amount {
-    final value = double.tryParse(_controller.text.replaceAll(',', '.'));
+    final value = parseRon(_controller.text);
     return value == null ? 0 : (value * 100).round();
   }
 
@@ -867,14 +1012,16 @@ class _PlaceBidSheetState extends State<_PlaceBidSheet> {
                           ),
                           const SizedBox(height: 3),
                           Text(
-                            'Current bid: ${formatRon(widget.product.currentPrice)}',
+                            context.l10n.currentBidAmount(
+                              formatRon(widget.product.currentPrice),
+                            ),
                             style: const TextStyle(color: Color(0xff454842)),
                           ),
                           if (widget.product.hasReserve)
                             Text(
                               widget.product.reserveMet
-                                  ? 'Reserve met'
-                                  : 'Reserve not met',
+                                  ? context.l10n.reserveMet
+                                  : context.l10n.reserveNotMet,
                               style: TextStyle(
                                 color: widget.product.reserveMet
                                     ? const Color(0xff287264)
@@ -893,9 +1040,9 @@ class _PlaceBidSheetState extends State<_PlaceBidSheet> {
                   ],
                 ),
                 const SizedBox(height: 22),
-                const Text(
-                  'YOUR MAX BID',
-                  style: TextStyle(
+                Text(
+                  context.l10n.yourMaxBidUpper,
+                  style: const TextStyle(
                     color: Color(0xff454842),
                     fontSize: 12,
                     fontWeight: FontWeight.w800,
@@ -966,9 +1113,9 @@ class _PlaceBidSheetState extends State<_PlaceBidSheet> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                const Text(
-                  'We only bid enough to keep you winning. Your maximum stays private unless another bidder pushes the auction up.',
-                  style: TextStyle(
+                Text(
+                  context.l10n.proxyBidExplanation,
+                  style: const TextStyle(
                     color: Color(0xff454842),
                     fontSize: 12,
                     height: 1.35,
@@ -985,7 +1132,7 @@ class _PlaceBidSheetState extends State<_PlaceBidSheet> {
                   child: Column(
                     children: [
                       _BidSummaryRow(
-                        label: 'Minimum max bid',
+                        label: context.l10n.minimumMaxBid,
                         value: formatRon(widget.product.nextBid),
                       ),
                       const Padding(
@@ -993,7 +1140,7 @@ class _PlaceBidSheetState extends State<_PlaceBidSheet> {
                         child: Divider(height: 1, color: Color(0xffc5c7c0)),
                       ),
                       _BidSummaryRow(
-                        label: 'Your max bid',
+                        label: context.l10n.yourMaxBid,
                         value: formatRon(_amount),
                         emphasized: true,
                       ),
@@ -1012,19 +1159,22 @@ class _PlaceBidSheetState extends State<_PlaceBidSheet> {
                     ),
                   ),
                   icon: const Icon(Icons.arrow_forward, size: 18),
-                  label: const Text(
-                    'PLACE MAX BID',
-                    style: TextStyle(
+                  label: Text(
+                    context.l10n.placeMaxBid,
+                    style: const TextStyle(
                       fontWeight: FontWeight.w800,
                       letterSpacing: 0.8,
                     ),
                   ),
                 ),
                 const SizedBox(height: 10),
-                const Text(
-                  'By placing a bid, you agree to our Terms of Auction.',
+                Text(
+                  context.l10n.bidTerms,
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Color(0xff454842), fontSize: 11),
+                  style: const TextStyle(
+                    color: Color(0xff454842),
+                    fontSize: 11,
+                  ),
                 ),
               ],
             ),
@@ -1038,13 +1188,17 @@ class _PlaceBidSheetState extends State<_PlaceBidSheet> {
     final base = _amount < widget.product.nextBid
         ? widget.product.nextBid
         : _amount;
-    _controller.text = ((base + increment) / 100).toStringAsFixed(2);
+    _controller.text = ((base + increment) / 100)
+        .toStringAsFixed(2)
+        .replaceAll('.', ',');
   }
 
   void _submit() {
     if (_amount < widget.product.nextBid) {
       setState(
-        () => _error = 'Minimum bid is ${formatRon(widget.product.nextBid)}.',
+        () => _error = context.l10n.minimumBidAmount(
+          formatRon(widget.product.nextBid),
+        ),
       );
       return;
     }
@@ -1093,7 +1247,7 @@ class _MetricAction extends StatelessWidget {
 
   final IconData icon;
   final String? label;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final bool active;
 
   @override
@@ -1102,6 +1256,7 @@ class _MetricAction extends StatelessWidget {
       message: label ?? '',
       child: Semantics(
         button: true,
+        enabled: onTap != null,
         label: label,
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,

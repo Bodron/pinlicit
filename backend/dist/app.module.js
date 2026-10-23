@@ -7,6 +7,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppModule = void 0;
+const commerce_module_1 = require("./commerce/commerce.module");
 const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
 const mongoose_1 = require("@nestjs/mongoose");
@@ -35,6 +36,7 @@ exports.AppModule = AppModule = __decorate([
                         "mongodb://localhost:27017/licit",
                 }),
             }),
+            commerce_module_1.CommerceModule,
             users_module_1.UsersModule,
             auth_module_1.AuthModule,
             categories_module_1.CategoriesModule,

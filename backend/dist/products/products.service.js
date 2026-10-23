@@ -14,13 +14,17 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ProductsService = void 0;
 const common_1 = require("@nestjs/common");
+const config_1 = require("@nestjs/config");
+const commerce_accounts_service_1 = require("../commerce/commerce-accounts.service");
 const mongoose_1 = require("@nestjs/mongoose");
 const mongoose_2 = require("mongoose");
 const user_schema_1 = require("../users/schemas/user.schema");
 const product_schema_1 = require("./schemas/product.schema");
 let ProductsService = class ProductsService {
-    constructor(productModel) {
+    constructor(productModel, config, commerceAccounts) {
         this.productModel = productModel;
+        this.config = config;
+        this.commerceAccounts = commerceAccounts;
     }
     async create(seller, dto) {
         if (seller.role !== user_schema_1.UserRole.Seller && seller.role !== user_schema_1.UserRole.Admin) {
@@ -38,7 +42,11 @@ let ProductsService = class ProductsService {
         if (endsAt <= startsAt) {
             throw new common_1.BadRequestException("Auction end must be after start.");
         }
+        const commerce = this.config?.get("STRIPE_ENABLED") === "true";
+        if (commerce)
+            await this.commerceAccounts.requireSeller(String(seller._id));
         return this.productModel.create({
+            ...(commerce ? { commerceVersion: 1 } : {}),
             seller: seller._id,
             category: new mongoose_2.Types.ObjectId(dto.categoryId),
             title: dto.title,
@@ -71,6 +79,84 @@ let ProductsService = class ProductsService {
             .sort({ endsAt: 1, updatedAt: -1, createdAt: -1 })
             .limit(query.limit);
     }
+    async catalog(query) {
+        const now = new Date();
+        const base = { status: product_schema_1.ProductStatus.Active, endsAt: { $gt: now } };
+        const filter = { ...base };
+        if (query.categoryId)
+            filter.category = query.categoryId;
+        if (query.q?.trim()) {
+            const text = Array.from(query.q.trim(), (char) => ".*+?^${}()|[]".includes(char) || char.charCodeAt(0) === 92
+                ? String.fromCharCode(92) + char
+                : char).join("");
+            filter.$or = [
+                { title: { $regex: text, $options: "i" } },
+                { description: { $regex: text, $options: "i" } },
+            ];
+        }
+        if (query.minPrice != null || query.maxPrice != null) {
+            if (query.minPrice != null &&
+                query.maxPrice != null &&
+                query.minPrice > query.maxPrice) {
+                throw new common_1.BadRequestException("Minimum price cannot exceed maximum price.");
+            }
+            filter.currentPrice = {
+                ...(query.minPrice != null ? { $gte: query.minPrice } : {}),
+                ...(query.maxPrice != null ? { $lte: query.maxPrice } : {}),
+            };
+        }
+        if (query.stage === "live")
+            filter.startsAt = { $lte: now };
+        if (query.stage === "ending")
+            filter.endsAt = {
+                $gt: now,
+                $lte: new Date(now.getTime() + 12 * 3600000),
+            };
+        if (query.stage === "upcoming")
+            filter.startsAt = { $gt: now };
+        if (query.stage === "reserve")
+            filter.$and = [
+                {
+                    $or: [
+                        { reservePrice: { $exists: false } },
+                        { reservePrice: null },
+                        { $expr: { $lte: ["$reservePrice", "$startingPrice"] } },
+                        { $expr: { $gte: ["$currentPrice", "$reservePrice"] } },
+                    ],
+                },
+            ];
+        const sort = query.sort === "newest"
+            ? { createdAt: -1, _id: -1 }
+            : query.sort === "price-desc"
+                ? { currentPrice: -1, _id: -1 }
+                : query.sort === "price-asc"
+                    ? { currentPrice: 1, _id: 1 }
+                    : { endsAt: 1, _id: 1 };
+        const [items, total, activeTotal, endingToday] = await Promise.all([
+            this.productModel
+                .find(filter)
+                .populate("category", "name slug")
+                .populate("seller", "name role")
+                .sort(sort)
+                .skip((query.page - 1) * query.limit)
+                .limit(query.limit)
+                .lean(),
+            this.productModel.countDocuments(filter),
+            this.productModel.countDocuments(base),
+            this.productModel.countDocuments({
+                ...base,
+                endsAt: { $gt: now, $lte: new Date(now.getTime() + 24 * 3600000) },
+            }),
+        ]);
+        return {
+            items,
+            total,
+            page: query.page,
+            pageSize: query.limit,
+            pages: Math.ceil(total / query.limit),
+            stats: { activeTotal, endingToday },
+        };
+    }
     async findPublic(productId) {
         const product = await this.productModel
             .findById(productId)
@@ -96,11 +182,20 @@ let ProductsService = class ProductsService {
         return product;
     }
     async reserveByBuyNow(productId, buyerId) {
+        const candidate = await this.productModel
+            .findById(productId)
+            .select("commerceVersion");
+        if (candidate?.commerceVersion === 1) {
+            if (!this.commerceAccounts)
+                throw new common_1.ForbiddenException("Identity verification is required.");
+            await this.commerceAccounts.requireBuyer(buyerId);
+        }
         const now = new Date();
         const product = await this.productModel.findOneAndUpdate({
             _id: productId,
             status: product_schema_1.ProductStatus.Active,
             endsAt: { $gt: now },
+            startsAt: { $lte: now },
             seller: { $ne: buyerId },
             $or: [
                 { reservePrice: { $exists: false } },
@@ -108,15 +203,20 @@ let ProductsService = class ProductsService {
                 { $expr: { $lte: ["$reservePrice", "$startingPrice"] } },
                 { $expr: { $lt: ["$currentPrice", "$reservePrice"] } },
             ],
-        }, {
-            status: product_schema_1.ProductStatus.Reserved,
-            reservedBy: new mongoose_2.Types.ObjectId(buyerId),
-        }, { new: true });
+        }, [
+            {
+                $set: {
+                    status: product_schema_1.ProductStatus.Reserved,
+                    reservedBy: new mongoose_2.Types.ObjectId(buyerId),
+                    reservedAt: now,
+                    currentPrice: "$buyNowPrice",
+                    __v: { $add: [{ $ifNull: ["$__v", 0] }, 1] },
+                },
+            },
+        ], { new: true });
         if (!product) {
             throw new common_1.BadRequestException("Product cannot be bought now.");
         }
-        product.currentPrice = product.buyNowPrice;
-        await product.save();
         return product.populate([
             { path: "seller", select: "name email phone role" },
             { path: "reservedBy", select: "name email phone role" },
@@ -131,6 +231,10 @@ exports.ProductsService = ProductsService;
 exports.ProductsService = ProductsService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, mongoose_1.InjectModel)(product_schema_1.Product.name)),
-    __metadata("design:paramtypes", [mongoose_2.Model])
+    __param(1, (0, common_1.Optional)()),
+    __param(2, (0, common_1.Optional)()),
+    __metadata("design:paramtypes", [mongoose_2.Model,
+        config_1.ConfigService,
+        commerce_accounts_service_1.CommerceAccountsService])
 ], ProductsService);
 //# sourceMappingURL=products.service.js.map

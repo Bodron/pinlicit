@@ -1,8 +1,10 @@
+import 'package:licit/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../seller/seller_screen.dart';
 import '../../shared/models/bid.dart';
 import '../../shared/models/product.dart';
 import '../../shared/state/session_controller.dart';
@@ -11,7 +13,9 @@ import '../../shared/utils/money.dart';
 enum _ActivityFilter { all, bids, watching, wins }
 
 class ActivityScreen extends ConsumerStatefulWidget {
-  const ActivityScreen({super.key});
+  const ActivityScreen({super.key, this.showSales = false});
+
+  final bool showSales;
 
   @override
   ConsumerState<ActivityScreen> createState() => _ActivityScreenState();
@@ -22,12 +26,25 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
   List<Product> _favorites = [];
   _ActivityFilter _filter = _ActivityFilter.all;
   bool _loading = true;
+  bool _salesVisited = false;
+  bool _purchasesVisited = false;
   String? _error;
 
   @override
   void initState() {
     super.initState();
-    _load();
+    _salesVisited = widget.showSales;
+    if (!widget.showSales) _load();
+  }
+
+  @override
+  void didUpdateWidget(covariant ActivityScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.showSales) {
+      _salesVisited = true;
+    } else if (!_purchasesVisited) {
+      _load();
+    }
   }
 
   @override
@@ -36,40 +53,17 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
       data: Theme.of(context).copyWith(
         textTheme: GoogleFonts.montserratTextTheme(Theme.of(context).textTheme),
       ),
-      child: Scaffold(
-        backgroundColor: const Color(0xfff9f9fa),
-        appBar: AppBar(
-          backgroundColor: const Color(0xfff9f9fa).withValues(alpha: 0.94),
-          foregroundColor: const Color(0xff363a34),
-          surfaceTintColor: Colors.transparent,
-          centerTitle: true,
-          leading: IconButton(
-            tooltip: 'Seller',
-            onPressed: () => context.go('/seller'),
-            icon: const Icon(Icons.menu),
-          ),
-          title: const Text(
-            'Licit',
-            style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800),
-          ),
-          actions: [
-            IconButton(
-              tooltip: 'Account',
-              onPressed: () => context.go('/account'),
-              icon: const Icon(Icons.shopping_bag_outlined),
-            ),
-            const SizedBox(width: 8),
-          ],
-        ),
-        body: Column(
+      child: ColoredBox(
+        color: const Color(0xfff9f9fa),
+        child: Column(
           children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(24, 22, 24, 8),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 22, 24, 8),
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'Activity',
-                  style: TextStyle(
+                  context.l10n.navActivity,
+                  style: const TextStyle(
                     color: Color(0xff1a1c1d),
                     fontSize: 30,
                     fontWeight: FontWeight.w600,
@@ -77,11 +71,66 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                 ),
               ),
             ),
-            _FilterTabs(selected: _filter, onSelected: _select),
-            Expanded(child: _buildContent()),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+              child: SizedBox(
+                width: double.infinity,
+                child: SegmentedButton<bool>(
+                  style: SegmentedButton.styleFrom(
+                    foregroundColor: const Color(0xff454842),
+                    backgroundColor: const Color(0xfff9f9fa),
+                    selectedForegroundColor: Theme.of(
+                      context,
+                    ).colorScheme.onSecondaryContainer,
+                    selectedBackgroundColor: Theme.of(
+                      context,
+                    ).colorScheme.secondaryContainer,
+                    side: const BorderSide(color: Color(0xffc5c7c0)),
+                    textStyle: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  segments: [
+                    ButtonSegment(
+                      value: false,
+                      icon: const Icon(Icons.shopping_bag_outlined),
+                      label: Text(context.l10n.activityPurchases),
+                    ),
+                    ButtonSegment(
+                      value: true,
+                      icon: const Icon(Icons.sell_outlined),
+                      label: Text(context.l10n.activitySales),
+                    ),
+                  ],
+                  selected: {widget.showSales},
+                  onSelectionChanged: (selected) => context.go(
+                    selected.first ? '/activity?section=sales' : '/activity',
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              child: IndexedStack(
+                index: widget.showSales ? 1 : 0,
+                children: [
+                  TickerMode(
+                    enabled: !widget.showSales,
+                    child: Column(
+                      children: [
+                        _FilterTabs(selected: _filter, onSelected: _select),
+                        Expanded(child: _buildContent()),
+                      ],
+                    ),
+                  ),
+                  TickerMode(
+                    enabled: widget.showSales,
+                    child: _salesVisited
+                        ? const SellerScreen()
+                        : const SizedBox.shrink(),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
-        bottomNavigationBar: const _ActivityBottomBar(),
       ),
     );
   }
@@ -109,13 +158,10 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
       );
     }
     if (_filter == _ActivityFilter.watching && _favorites.isEmpty) {
-      return const _ActivityMessage(message: 'Nu ai produse urmărite încă.');
+      return _ActivityMessage(message: context.l10n.noWatchedProducts);
     }
     if (_filter == _ActivityFilter.watching) {
-      return const _ActivityMessage(
-        message:
-            'Nu ai produse urmărite încă. Funcția de watchlist va apărea aici.',
-      );
+      return _ActivityMessage(message: context.l10n.watchlistEmpty);
     }
 
     final items = _filter == _ActivityFilter.wins
@@ -124,8 +170,8 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
     if (items.isEmpty) {
       return _ActivityMessage(
         message: _filter == _ActivityFilter.wins
-            ? 'Nu ai nicio licitație câștigată încă.'
-            : 'Nu există activitate de afișat.',
+            ? context.l10n.noWonAuctions
+            : context.l10n.noActivity,
       );
     }
     return RefreshIndicator(
@@ -148,6 +194,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
   }
 
   Future<void> _load() async {
+    _purchasesVisited = true;
     setState(() {
       _loading = true;
       _error = null;
@@ -163,7 +210,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
       }
     } catch (_) {
       if (mounted) {
-        setState(() => _error = 'Activitatea nu a putut fi încărcată.');
+        setState(() => _error = context.l10n.activityLoadFailed);
       }
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -188,28 +235,28 @@ class _FilterTabs extends StatelessWidget {
       children: [
         Expanded(
           child: _Tab(
-            label: 'All',
+            label: context.l10n.all,
             active: selected == _ActivityFilter.all,
             onTap: () => onSelected(_ActivityFilter.all),
           ),
         ),
         Expanded(
           child: _Tab(
-            label: 'Bids',
+            label: context.l10n.bids,
             active: selected == _ActivityFilter.bids,
             onTap: () => onSelected(_ActivityFilter.bids),
           ),
         ),
         Expanded(
           child: _Tab(
-            label: 'Watching',
+            label: context.l10n.watching,
             active: selected == _ActivityFilter.watching,
             onTap: () => onSelected(_ActivityFilter.watching),
           ),
         ),
         Expanded(
           child: _Tab(
-            label: 'Wins',
+            label: context.l10n.wins,
             active: selected == _ActivityFilter.wins,
             onTap: () => onSelected(_ActivityFilter.wins),
           ),
@@ -270,14 +317,14 @@ class _ActivityCard extends StatelessWidget {
         product != null &&
         product.isActive &&
         bid.maxAmount < product.currentPrice;
-    final title = product?.title ?? 'Licitație';
+    final title = product?.title ?? context.l10n.auction;
     final type = won
-        ? 'Success'
+        ? context.l10n.success
         : outbid
-        ? 'Outbid Alert'
+        ? context.l10n.outbidAlert
         : product?.isActive == true
-        ? 'Active bid'
-        : 'Bid activity';
+        ? context.l10n.activeBid
+        : context.l10n.bidActivity;
     final icon = won
         ? Icons.celebration_outlined
         : outbid
@@ -325,10 +372,10 @@ class _ActivityCard extends StatelessWidget {
                 const SizedBox(height: 5),
                 Text(
                   won
-                      ? 'You won $title'
+                      ? context.l10n.youWon(title)
                       : outbid
-                      ? 'You were outbid on $title'
-                      : 'Your bid for $title',
+                      ? context.l10n.youWereOutbid(title)
+                      : context.l10n.yourBidFor(title),
                   style: const TextStyle(
                     color: Color(0xff1a1c1d),
                     fontSize: 15,
@@ -344,7 +391,7 @@ class _ActivityCard extends StatelessWidget {
                       fontSize: 13,
                     ),
                     children: [
-                      const TextSpan(text: 'Your bid: '),
+                      TextSpan(text: context.l10n.yourBidPrefix),
                       TextSpan(
                         text: formatRon(bid.maxAmount),
                         style: const TextStyle(
@@ -353,7 +400,7 @@ class _ActivityCard extends StatelessWidget {
                         ),
                       ),
                       if (product != null) ...[
-                        const TextSpan(text: '  •  Current bid: '),
+                        TextSpan(text: context.l10n.currentBidBullet),
                         TextSpan(
                           text: formatRon(product.currentPrice),
                           style: const TextStyle(
@@ -367,7 +414,7 @@ class _ActivityCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  _ago(bid.createdAt),
+                  _ago(context, bid.createdAt),
                   style: const TextStyle(
                     color: Color(0xff454842),
                     fontSize: 11,
@@ -381,10 +428,10 @@ class _ActivityCard extends StatelessWidget {
               onPressed: () => context.push('/products/${product.id}'),
               child: Text(
                 won
-                    ? 'VIEW'
+                    ? context.l10n.viewUpper
                     : outbid
-                    ? 'RE-BID'
-                    : 'OPEN',
+                    ? context.l10n.rebidUpper
+                    : context.l10n.openUpper,
               ),
             ),
         ],
@@ -392,12 +439,14 @@ class _ActivityCard extends StatelessWidget {
     );
   }
 
-  String _ago(DateTime value) {
+  String _ago(BuildContext context, DateTime value) {
     final difference = DateTime.now().difference(value);
-    if (difference.inMinutes < 1) return 'Just now';
-    if (difference.inHours < 1) return '${difference.inMinutes} min ago';
-    if (difference.inDays < 1) return '${difference.inHours} h ago';
-    return '${difference.inDays} days ago';
+    if (difference.inMinutes < 1) return context.l10n.justNow;
+    if (difference.inHours < 1) {
+      return context.l10n.minutesAgo(difference.inMinutes);
+    }
+    if (difference.inDays < 1) return context.l10n.hoursAgo(difference.inHours);
+    return context.l10n.daysAgo(difference.inDays);
   }
 }
 
@@ -438,7 +487,7 @@ class _FavoriteActivityCard extends StatelessWidget {
                     const SizedBox(width: 5),
                     Expanded(
                       child: Text(
-                        active ? 'Watching' : 'Saved item',
+                        active ? context.l10n.watching : context.l10n.savedItem,
                         style: TextStyle(
                           color: accent,
                           fontSize: 12,
@@ -468,7 +517,7 @@ class _FavoriteActivityCard extends StatelessWidget {
                       fontSize: 13,
                     ),
                     children: [
-                      const TextSpan(text: 'Current bid: '),
+                      TextSpan(text: context.l10n.currentBidPrefix),
                       TextSpan(
                         text: formatRon(product.currentPrice),
                         style: const TextStyle(
@@ -476,7 +525,7 @@ class _FavoriteActivityCard extends StatelessWidget {
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                      const TextSpan(text: '  •  Buy now: '),
+                      TextSpan(text: context.l10n.buyNowBullet),
                       TextSpan(
                         text: formatRon(product.buyNowPrice),
                         style: const TextStyle(
@@ -489,7 +538,9 @@ class _FavoriteActivityCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  active ? 'Auction active' : product.status.toUpperCase(),
+                  active
+                      ? context.l10n.auctionActive
+                      : localizedStatus(product.status, context.l10n),
                   style: const TextStyle(
                     color: Color(0xff454842),
                     fontSize: 11,
@@ -500,7 +551,7 @@ class _FavoriteActivityCard extends StatelessWidget {
           ),
           TextButton(
             onPressed: () => context.push('/products/${product.id}'),
-            child: const Text('OPEN'),
+            child: Text(context.l10n.openUpper),
           ),
         ],
       ),
@@ -570,106 +621,9 @@ class _ActivityMessage extends StatelessWidget {
             const SizedBox(height: 16),
             OutlinedButton(
               onPressed: action,
-              child: const Text('Încearcă din nou'),
+              child: Text(context.l10n.tryAgain),
             ),
           ],
-        ],
-      ),
-    ),
-  );
-}
-
-class _ActivityBottomBar extends StatelessWidget {
-  const _ActivityBottomBar();
-  @override
-  Widget build(BuildContext context) => Container(
-    height: 80 + MediaQuery.paddingOf(context).bottom,
-    padding: EdgeInsets.fromLTRB(
-      8,
-      8,
-      8,
-      8 + MediaQuery.paddingOf(context).bottom,
-    ),
-    decoration: const BoxDecoration(
-      color: Color(0xfff9f9fa),
-      border: Border(top: BorderSide(color: Color(0xffe2e2e3))),
-    ),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceAround,
-      children: [
-        _ActivityNav(
-          icon: Icons.play_circle_outline,
-          label: 'Feed',
-          onTap: () => context.go('/'),
-        ),
-        _ActivityNav(
-          icon: Icons.search,
-          label: 'Explore',
-          onTap: () => context.go('/explore'),
-        ),
-        _ActivityNav(
-          icon: Icons.add_circle_outline,
-          label: 'Sell',
-          onTap: () => context.go('/seller'),
-        ),
-        _ActivityNav(
-          icon: Icons.notifications,
-          label: 'Activity',
-          active: true,
-          onTap: () {},
-        ),
-        _ActivityNav(
-          icon: Icons.person_outline,
-          label: 'Profile',
-          onTap: () => context.go('/account'),
-        ),
-      ],
-    ),
-  );
-}
-
-class _ActivityNav extends StatelessWidget {
-  const _ActivityNav({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    this.active = false,
-  });
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  final bool active;
-  @override
-  Widget build(BuildContext context) => InkWell(
-    onTap: onTap,
-    borderRadius: BorderRadius.circular(12),
-    child: Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-      decoration: BoxDecoration(
-        color: active
-            ? const Color(0xffe4e3d8).withValues(alpha: 0.6)
-            : Colors.transparent,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 22,
-            color: const Color(0xff363a34).withValues(alpha: active ? 1 : 0.62),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: TextStyle(
-              color: const Color(
-                0xff363a34,
-              ).withValues(alpha: active ? 1 : 0.62),
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
         ],
       ),
     ),

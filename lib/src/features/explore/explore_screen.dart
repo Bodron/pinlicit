@@ -1,3 +1,4 @@
+import 'package:licit/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -5,6 +6,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../shared/models/product.dart';
 import '../../shared/state/session_controller.dart';
+import '../../shared/notifications/app_notifier.dart';
+import '../../shared/state/catalog_updates.dart';
 import '../../shared/utils/money.dart';
 
 class ExploreScreen extends ConsumerStatefulWidget {
@@ -20,44 +23,44 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
   List<Product> _products = [];
   bool _productsLoading = true;
 
-  static const _categories = [
+  List<_ExploreCategory> get _categories => [
     _ExploreCategory(
-      title: 'Watches',
+      title: context.l10n.categoryWatches,
       activeCount: 124,
       icon: Icons.watch_outlined,
       imageUrl:
           'https://lh3.googleusercontent.com/aida-public/AB6AXuBZ4INWSHHTQIrCfwRXlU1CO-cfKM8QQ_uLDNuZ6hAMLgd866_Df0w8CkxmXT3ZeNXdLHY8EROUlcZh8ko2hg0iEOHtBsnlMVPg59Bj1ln1me9ijtpPTEvxcpQmnUg52jQ6rm_x_aiVaC5Se1ZhtWhZiFQBOEGzb0uscwizad6hK_eR_Owp4jdii-_BkHUOOqCGViSXH-PXNyAbf_zUWAMLuTntrdyH9T-3CezxK4knipmy91rv2NA9GVDdql6dNSdhDHB-QNi0pA',
     ),
     _ExploreCategory(
-      title: 'Art',
+      title: context.l10n.categoryArt,
       activeCount: 86,
       icon: Icons.palette_outlined,
       imageUrl:
           'https://lh3.googleusercontent.com/aida-public/AB6AXuDNccLadMuPmbWJPudd8_T6ZJ-tNgWN-KzmyUt87srscUxiM3FrjSeqZV1v7sgC52MQbwZn_S7sPkjtaf5DeY6GzV3Nsal_g9aLKQorrjdR1wYjvszjCr3g9Ei0H-x3h-YvYV2rWkOGNsOBmerRezRdBvwTfMcsYYOKTz2ysvK5IxMnf2GGpjtDF96Eu73m7m3n5rzqbbwuAGTLJU1kR_AvsejDTPlwZoRexAa93C_MU4EFaeeN9AfrPaGLkNOlqdrhranvmAtRGA',
     ),
     _ExploreCategory(
-      title: 'Fashion',
+      title: context.l10n.categoryFashion,
       activeCount: 241,
       icon: Icons.checkroom_outlined,
       imageUrl:
           'https://lh3.googleusercontent.com/aida-public/AB6AXuD4ZwAYt_9CDAIEVJm2loj9Erns2-sQo4VDrGY4hsnwspaIysbwywZyf7AV-OcFhFlAp5fuPYP7bYUtgguxxwJKCrXU5qgCSNQFmK0d3CcNk7t5hr228LtOmUUqrL_Mb49ItzgyJCO1M76f-G0pIg6lcLYZF9X5w6ygoeuT3o9UOE7dbn-uF_aOrf5I6_TexX4aFD9d5KVDxJTPRf-5z1HLo6u1Z-dkJzobARvz15qvaK2-7vTKe82D1ARMcm1ymbReoNoFXXV40g',
     ),
     _ExploreCategory(
-      title: 'Furniture',
+      title: context.l10n.categoryFurniture,
       activeCount: 42,
       icon: Icons.chair_outlined,
       imageUrl:
           'https://lh3.googleusercontent.com/aida-public/AB6AXuDASv39D6iA25pboS6-zp4yuhhFrhlpH6RGc9EvESpv3eqrxHb1uesZffYRsCXSLtPkKXHc20DB49JK-XQCO-NVp9sqYDNAFLQWVgcuE8fMPaNrAeWLynhZ9hZNf9dDFAfj9JwhBZZ_Ve_N10-GQJacJYxKtA1L4oQY_4B9ePoTPJisA8rU8os37iJEe1059Ikks3SUx3FilZnueZKnIyygMK22RQcC4gY3kW7paEbyVDhiuVSWBGYC7SPr3OPpJDYEkkyF1hxlHg',
     ),
     _ExploreCategory(
-      title: 'Collectibles',
+      title: context.l10n.categoryCollectibles,
       activeCount: 312,
       icon: Icons.camera_alt_outlined,
       imageUrl:
           'https://lh3.googleusercontent.com/aida-public/AB6AXuCm-Wuljy1wqhuN8vnMfXDI2U9J0VmxEZABSPjJdWrEt0_Z0xN2LLEOTEEGcE065J2Iat21G4DrRDTTA23OorH9bGp3R-w_uEWJ4yH3Cp35b7Z5Cg3OXSteZGidrT05K-q1lEycP_F9tQ8_SoWSdORN4UCzYUyjn5RtQh8TRW3PHfn5-Pgtzz5HjxEUPkK7Nh1I7g613DQL9VtTALJ81LwUg8q_4I0k-b-x9DWcnEHZG2A4kKT3v1PHQCmKk2Clg9YxN-_6yESfow',
     ),
     _ExploreCategory(
-      title: 'Electronics',
+      title: context.l10n.categoryElectronics,
       activeCount: 95,
       icon: Icons.speaker_outlined,
       imageUrl:
@@ -79,6 +82,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(catalogUpdatesProvider, (_, _) => _loadProducts());
     final theme = Theme.of(context).copyWith(
       textTheme: GoogleFonts.montserratTextTheme(Theme.of(context).textTheme),
     );
@@ -100,9 +104,9 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
 
     return Theme(
       data: theme,
-      child: Scaffold(
-        backgroundColor: _ExploreColors.background,
-        body: SafeArea(
+      child: ColoredBox(
+        color: _ExploreColors.background,
+        child: SafeArea(
           bottom: false,
           child: Column(
             children: [
@@ -118,20 +122,20 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                       sliver: SliverToBoxAdapter(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          children: const [
+                          children: [
                             Text(
-                              'Explore Curated',
-                              style: TextStyle(
+                              context.l10n.exploreCurated,
+                              style: const TextStyle(
                                 color: _ExploreColors.primary,
                                 fontSize: 30,
                                 height: 1.3,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
-                            SizedBox(height: 4),
+                            const SizedBox(height: 4),
                             Text(
-                              'Discover exceptional pieces across our most exclusive categories.',
-                              style: TextStyle(
+                              context.l10n.exploreDescription,
+                              style: const TextStyle(
                                 color: _ExploreColors.onSurfaceVariant,
                                 fontSize: 16,
                                 height: 1.6,
@@ -147,8 +151,10 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                         sliver: SliverToBoxAdapter(
                           child: Text(
                             _productsLoading
-                                ? 'Searching auctions...'
-                                : '${productResults.length} result${productResults.length == 1 ? '' : 's'}',
+                                ? context.l10n.searchingAuctions
+                                : context.l10n.resultCount(
+                                    productResults.length,
+                                  ),
                             style: const TextStyle(
                               color: _ExploreColors.onSurfaceVariant,
                               fontSize: 16,
@@ -162,9 +168,9 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                           child: Center(child: CircularProgressIndicator()),
                         )
                       else if (productResults.isEmpty)
-                        const SliverFillRemaining(
+                        SliverFillRemaining(
                           child: Center(
-                            child: Text('No auctions match your search.'),
+                            child: Text(context.l10n.noSearchResults),
                           ),
                         )
                       else
@@ -212,8 +218,8 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                           },
                         ),
                       ),
-                      SliverPadding(
-                        padding: const EdgeInsets.fromLTRB(16, 64, 16, 120),
+                      const SliverPadding(
+                        padding: EdgeInsets.fromLTRB(16, 64, 16, 120),
                         sliver: SliverToBoxAdapter(child: _FeaturedCurators()),
                       ),
                     ],
@@ -223,7 +229,6 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
             ],
           ),
         ),
-        bottomNavigationBar: const _ExploreBottomNav(),
       ),
     );
   }
@@ -292,7 +297,12 @@ class _ProductSearchCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    product.category?.name ?? 'Auction',
+                    product.category == null
+                        ? context.l10n.auctionEnglish
+                        : localizedCategory(
+                            product.category!.name,
+                            context.l10n,
+                          ),
                     style: const TextStyle(
                       color: _ExploreColors.onSurfaceVariant,
                       fontSize: 13,
@@ -300,7 +310,9 @@ class _ProductSearchCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 9),
                   Text(
-                    'Current bid: ${formatRon(product.currentPrice)}',
+                    context.l10n.currentBidAmount(
+                      formatRon(product.currentPrice),
+                    ),
                     style: const TextStyle(
                       color: _ExploreColors.primary,
                       fontSize: 13,
@@ -361,50 +373,11 @@ class _TopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-      decoration: BoxDecoration(
-        color: _ExploreColors.background.withValues(alpha: 0.88),
-        border: Border(
-          bottom: BorderSide(
-            color: _ExploreColors.outlineVariant.withValues(alpha: 0.3),
-          ),
-        ),
-      ),
-      child: Column(
-        children: [
-          SizedBox(
-            height: 56,
-            child: Row(
-              children: [
-                IconButton(
-                  tooltip: 'Sell',
-                  onPressed: () => context.go('/seller'),
-                  icon: const Icon(Icons.menu, color: _ExploreColors.primary),
-                ),
-                const SizedBox(width: 8),
-                const Text(
-                  'Licit',
-                  style: TextStyle(
-                    color: _ExploreColors.primary,
-                    fontSize: 36,
-                    height: 1.2,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const Spacer(),
-                IconButton(
-                  tooltip: 'Profile',
-                  onPressed: () => context.go('/account'),
-                  icon: const Icon(
-                    Icons.shopping_bag_outlined,
-                    color: _ExploreColors.primary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          TextField(
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+          child: TextField(
             controller: searchController,
             onChanged: onSearchChanged,
             style: const TextStyle(
@@ -413,7 +386,7 @@ class _TopBar extends StatelessWidget {
               fontWeight: FontWeight.w500,
             ),
             decoration: InputDecoration(
-              hintText: 'Search categories...',
+              hintText: context.l10n.searchHint,
               hintStyle: TextStyle(
                 color: _ExploreColors.onSurfaceVariant.withValues(alpha: 0.62),
               ),
@@ -434,8 +407,8 @@ class _TopBar extends StatelessWidget {
               ),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -525,7 +498,9 @@ class _CategoryCardState extends State<_CategoryCard> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              '${widget.category.activeCount} Active',
+                              context.l10n.activeCount(
+                                widget.category.activeCount,
+                              ),
                               style: TextStyle(
                                 color: Colors.white.withValues(alpha: 0.82),
                                 fontSize: 14,
@@ -552,35 +527,36 @@ class _CategoryCardState extends State<_CategoryCard> {
 class _FeaturedCurators extends StatelessWidget {
   const _FeaturedCurators();
 
-  final _curators = const [
+  List<_Curator> _localizedCurators(BuildContext context) => [
     _Curator(
       icon: Icons.auto_awesome,
       title: 'The Modernist',
-      description: 'Focusing on Bauhaus and Mid-Century aesthetics.',
+      description: context.l10n.modernistDescription,
     ),
     _Curator(
       icon: Icons.diamond_outlined,
       title: 'Heritage Vault',
-      description: 'Rare timepieces and high jewelry selections.',
+      description: context.l10n.heritageDescription,
     ),
     _Curator(
       icon: Icons.palette_outlined,
       title: 'Canvas Select',
-      description: 'A curated eye for emerging contemporary art.',
+      description: context.l10n.canvasDescription,
     ),
   ];
 
   @override
   Widget build(BuildContext context) {
+    final curators = _localizedCurators(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            const Expanded(
+            Expanded(
               child: Text(
-                'Featured Curators',
-                style: TextStyle(
+                context.l10n.featuredCurators,
+                style: const TextStyle(
                   color: _ExploreColors.primary,
                   fontSize: 24,
                   height: 1.4,
@@ -588,7 +564,7 @@ class _FeaturedCurators extends StatelessWidget {
                 ),
               ),
             ),
-            TextButton(onPressed: () {}, child: const Text('View All')),
+            TextButton(onPressed: () {}, child: Text(context.l10n.viewAll)),
           ],
         ),
         const SizedBox(height: 24),
@@ -596,10 +572,10 @@ class _FeaturedCurators extends StatelessWidget {
           height: 204,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
-            itemCount: _curators.length,
+            itemCount: curators.length,
             separatorBuilder: (context, index) => const SizedBox(width: 16),
             itemBuilder: (context, index) =>
-                _CuratorCard(curator: _curators[index]),
+                _CuratorCard(curator: curators[index]),
           ),
         ),
       ],
@@ -668,8 +644,8 @@ class _CuratorCard extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: OutlinedButton(
-              onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Following ${curator.title} soon.')),
+              onPressed: () => context.notifier.info(
+                context.l10n.followComingSoon(curator.title),
               ),
               style: OutlinedButton.styleFrom(
                 foregroundColor: _ExploreColors.primary,
@@ -678,117 +654,10 @@ class _CuratorCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              child: const Text('Follow'),
+              child: Text(context.l10n.follow),
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _ExploreBottomNav extends StatelessWidget {
-  const _ExploreBottomNav();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 80 + MediaQuery.paddingOf(context).bottom,
-      padding: EdgeInsets.fromLTRB(
-        8,
-        8,
-        8,
-        8 + MediaQuery.paddingOf(context).bottom,
-      ),
-      decoration: BoxDecoration(
-        color: _ExploreColors.background,
-        border: Border(
-          top: BorderSide(
-            color: _ExploreColors.outlineVariant.withValues(alpha: 0.2),
-          ),
-        ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _BottomItem(
-            icon: Icons.play_circle_outline,
-            label: 'Feed',
-            onTap: () => context.go('/'),
-          ),
-          _BottomItem(
-            icon: Icons.search,
-            label: 'Explore',
-            active: true,
-            onTap: () => context.go('/explore'),
-          ),
-          _BottomItem(
-            icon: Icons.add_circle_outline,
-            label: 'Sell',
-            onTap: () => context.go('/seller'),
-          ),
-          _BottomItem(
-            icon: Icons.notifications_outlined,
-            label: 'Activity',
-            onTap: () => context.go('/activity'),
-          ),
-          _BottomItem(
-            icon: Icons.person_outline,
-            label: 'Profile',
-            onTap: () => context.go('/account'),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _BottomItem extends StatelessWidget {
-  const _BottomItem({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    this.active = false,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  final bool active;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = active
-        ? _ExploreColors.primary
-        : _ExploreColors.onSurfaceVariant;
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-        decoration: BoxDecoration(
-          color: active
-              ? _ExploreColors.secondaryContainer.withValues(alpha: 0.5)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: color.withValues(alpha: active ? 1 : 0.62)),
-            Text(
-              label,
-              style: TextStyle(
-                color: color.withValues(alpha: active ? 1 : 0.62),
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.6,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

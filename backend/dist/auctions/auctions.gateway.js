@@ -35,23 +35,23 @@ let AuctionsGateway = class AuctionsGateway {
     async leave(client, body) {
         await client.leave(this.room(body.productId));
     }
-    async place(client, body) {
-        try {
-            const result = await this.bidsService.placeBid(body.productId, body.userId, body.amount);
-            client.emit("bid:accepted", result);
-        }
-        catch (error) {
-            client.emit("bid:rejected", {
-                message: error?.message || "Bid rejected.",
-            });
-        }
+    place(client) {
+        client.emit("bid:rejected", {
+            message: "Use the authenticated HTTP bidding endpoint.",
+        });
     }
     broadcastBid(product, bid, extended) {
-        const payload = { product, bid };
+        const publicBid = {
+            _id: bid._id,
+            amount: bid.amount,
+            createdAt: bid.createdAt,
+            bidder: { _id: bid.bidder?._id, name: bid.bidder?.name },
+        };
+        const payload = { product, bid: publicBid };
         this.server.to(this.room(product._id.toString())).emit("bid:new", payload);
         this.server.to(this.room(product._id.toString())).emit("auction:update", {
             product,
-            bids: [bid],
+            bids: [publicBid],
         });
         if (extended) {
             this.server
@@ -93,13 +93,11 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AuctionsGateway.prototype, "leave", null);
 __decorate([
-    (0, common_1.UsePipes)(new common_1.ValidationPipe({ transform: true, whitelist: true })),
     (0, websockets_1.SubscribeMessage)("bid:place"),
     __param(0, (0, websockets_1.ConnectedSocket)()),
-    __param(1, (0, websockets_1.MessageBody)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [socket_io_1.Socket, Object]),
-    __metadata("design:returntype", Promise)
+    __metadata("design:paramtypes", [socket_io_1.Socket]),
+    __metadata("design:returntype", void 0)
 ], AuctionsGateway.prototype, "place", null);
 exports.AuctionsGateway = AuctionsGateway = __decorate([
     (0, websockets_1.WebSocketGateway)({ cors: { origin: true, credentials: true } }),

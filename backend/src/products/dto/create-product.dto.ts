@@ -2,7 +2,7 @@ import { Type } from "class-transformer";
 import {
   IsDateString,
   IsMongoId,
-  IsNumber,
+  IsInt,
   IsOptional,
   IsString,
   Min,
@@ -32,23 +32,23 @@ export class CreateProductDto {
   thumbnailUrl?: string;
 
   @Type(() => Number)
-  @IsNumber()
+  @IsInt()
   @Min(1)
   startingPrice: number;
 
   @IsOptional()
   @Type(() => Number)
-  @IsNumber()
+  @IsInt()
   @Min(1)
   reservePrice?: number;
 
   @Type(() => Number)
-  @IsNumber()
+  @IsInt()
   @Min(1)
   minBidIncrement: number;
 
   @Type(() => Number)
-  @IsNumber()
+  @IsInt()
   @Min(1)
   buyNowPrice: number;
 

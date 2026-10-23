@@ -1,3 +1,4 @@
+import 'package:licit/l10n/l10n.dart';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
@@ -9,6 +10,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../shared/models/category.dart';
 import '../../shared/state/session_controller.dart';
+import '../../shared/notifications/app_notifier.dart';
+import '../../shared/state/catalog_updates.dart';
 import '../../shared/utils/money.dart';
 
 class CreateProductScreen extends ConsumerStatefulWidget {
@@ -66,13 +69,12 @@ class _CreateProductScreenState extends ConsumerState<CreateProductScreen> {
 
     return Theme(
       data: theme,
-      child: Scaffold(
-        backgroundColor: _PostColors.background,
-        body: SafeArea(
+      child: ColoredBox(
+        color: _PostColors.background,
+        child: SafeArea(
           bottom: false,
           child: Column(
             children: [
-              const _CreateListingTopBar(),
               Expanded(
                 child: _loading
                     ? const _CreateListingLoading()
@@ -99,30 +101,33 @@ class _CreateProductScreenState extends ConsumerState<CreateProductScreen> {
                                     ),
                                     const SizedBox(height: 40),
                                     _FormSection(
-                                      title: 'Basic Information',
+                                      title: context.l10n.basicInformation,
                                       children: [
                                         _LabeledField(
-                                          label: 'Listing Title',
+                                          label: context.l10n.listingTitle,
                                           child: TextFormField(
                                             controller: _title,
                                             style: _fieldTextStyle,
                                             decoration: _inputDecoration(
-                                              "e.g. 'Ethereal Synthesis #04'",
+                                              context.l10n.listingTitleExample,
                                             ),
                                             validator: (value) =>
                                                 value == null ||
                                                     value.trim().length < 3
-                                                ? 'Minim 3 caractere'
+                                                ? context
+                                                      .l10n
+                                                      .minimumThreeCharacters
                                                 : null,
                                           ),
                                         ),
                                         _ResponsivePair(
                                           left: _LabeledField(
-                                            label: 'Category',
+                                            label: context.l10n.category,
                                             child:
                                                 DropdownButtonFormField<
                                                   ProductCategory
                                                 >(
+                                                  isExpanded: true,
                                                   initialValue: _category,
                                                   dropdownColor: _PostColors
                                                       .surfaceContainer,
@@ -134,13 +139,17 @@ class _CreateProductScreenState extends ConsumerState<CreateProductScreen> {
                                                   style: _fieldTextStyle,
                                                   items: _categories
                                                       .map(
-                                                        (category) =>
-                                                            DropdownMenuItem(
-                                                              value: category,
-                                                              child: Text(
-                                                                category.name,
-                                                              ),
+                                                        (
+                                                          category,
+                                                        ) => DropdownMenuItem(
+                                                          value: category,
+                                                          child: Text(
+                                                            localizedCategory(
+                                                              category.name,
+                                                              context.l10n,
                                                             ),
+                                                          ),
+                                                        ),
                                                       )
                                                       .toList(),
                                                   onChanged: (value) =>
@@ -148,39 +157,43 @@ class _CreateProductScreenState extends ConsumerState<CreateProductScreen> {
                                                         () => _category = value,
                                                       ),
                                                   decoration: _inputDecoration(
-                                                    'Select Category',
+                                                    context.l10n.selectCategory,
                                                   ),
                                                   validator: (value) =>
                                                       value == null
-                                                      ? 'Alege categoria'
+                                                      ? context
+                                                            .l10n
+                                                            .chooseCategory
                                                       : null,
                                                 ),
                                           ),
                                           right: _LabeledField(
-                                            label: 'Media/Materials',
+                                            label: context.l10n.materials,
                                             child: TextFormField(
                                               controller: _materials,
                                               style: _fieldTextStyle,
                                               decoration: _inputDecoration(
-                                                'e.g. Acrylic on Canvas',
+                                                context.l10n.materialsExample,
                                               ),
                                             ),
                                           ),
                                         ),
                                         _LabeledField(
-                                          label: 'Description',
+                                          label: context.l10n.description,
                                           child: TextFormField(
                                             controller: _description,
                                             minLines: 5,
                                             maxLines: 8,
                                             style: _fieldTextStyle,
                                             decoration: _inputDecoration(
-                                              'Share the story, provenance, and soul of this piece...',
+                                              context.l10n.descriptionHint,
                                             ),
                                             validator: (value) =>
                                                 value == null ||
                                                     value.trim().length < 10
-                                                ? 'Minim 10 caractere'
+                                                ? context
+                                                      .l10n
+                                                      .minimumTenCharacters
                                                 : null,
                                           ),
                                         ),
@@ -188,44 +201,49 @@ class _CreateProductScreenState extends ConsumerState<CreateProductScreen> {
                                     ),
                                     const SizedBox(height: 40),
                                     _FormSection(
-                                      title: 'Auction Rules',
+                                      title: context.l10n.auctionRules,
                                       trailingIcon: Icons.gavel_outlined,
                                       children: [
                                         _ResponsivePair(
                                           left: _LabeledField(
-                                            label: 'Starting Price (RON)',
+                                            label:
+                                                context.l10n.startingPriceRon,
                                             child: _MoneyField(
                                               controller: _startingPrice,
                                               placeholder: '0.00',
                                             ),
                                           ),
                                           right: _LabeledField(
-                                            label: 'Reserve Price (RON)',
+                                            label: context.l10n.reservePriceRon,
                                             child: _MoneyField(
                                               controller: _reservePrice,
-                                              placeholder: 'Minimum accepted',
+                                              placeholder:
+                                                  context.l10n.minimumAccepted,
                                             ),
                                           ),
                                         ),
                                         _ResponsivePair(
                                           left: _LabeledField(
-                                            label: 'Min. Increment (RON)',
+                                            label: context
+                                                .l10n
+                                                .minimumIncrementRon,
                                             child: _MoneyField(
                                               controller: _minIncrement,
                                               placeholder: '50.00',
                                             ),
                                           ),
                                           right: _LabeledField(
-                                            label: 'Buy It Now (Optional)',
+                                            label: context.l10n.buyNowOptional,
                                             child: _MoneyField(
                                               controller: _buyNow,
-                                              placeholder: 'Set price',
+                                              placeholder:
+                                                  context.l10n.setPrice,
                                             ),
                                           ),
                                         ),
                                         _ResponsivePair(
                                           left: _LabeledField(
-                                            label: 'Auction Duration',
+                                            label: context.l10n.auctionDuration,
                                             child: DropdownButtonFormField<int>(
                                               initialValue: _durationDays,
                                               dropdownColor:
@@ -240,7 +258,11 @@ class _CreateProductScreenState extends ConsumerState<CreateProductScreen> {
                                                   .map(
                                                     (days) => DropdownMenuItem(
                                                       value: days,
-                                                      child: Text('$days Days'),
+                                                      child: Text(
+                                                        context.l10n.daysCount(
+                                                          days,
+                                                        ),
+                                                      ),
                                                     ),
                                                   )
                                                   .toList(),
@@ -251,7 +273,7 @@ class _CreateProductScreenState extends ConsumerState<CreateProductScreen> {
                                                 );
                                               },
                                               decoration: _inputDecoration(
-                                                '7 Days',
+                                                context.l10n.sevenDays,
                                               ),
                                             ),
                                           ),
@@ -279,7 +301,6 @@ class _CreateProductScreenState extends ConsumerState<CreateProductScreen> {
             ],
           ),
         ),
-        bottomNavigationBar: const _CreateListingBottomNav(),
       ),
     );
   }
@@ -335,7 +356,7 @@ class _CreateProductScreenState extends ConsumerState<CreateProductScreen> {
       });
     } catch (error) {
       if (!mounted) return;
-      setState(() => _message = error.toString());
+      setState(() => _message = localizedError(error, context.l10n));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -354,9 +375,7 @@ class _CreateProductScreenState extends ConsumerState<CreateProductScreen> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     if (_video == null && _devVideoUrl.text.trim().isEmpty) {
-      setState(
-        () => _message = 'Alege un video sau completeaza un URL de dezvoltare.',
-      );
+      setState(() => _message = context.l10n.chooseVideo);
       return;
     }
 
@@ -365,6 +384,7 @@ class _CreateProductScreenState extends ConsumerState<CreateProductScreen> {
       _message = null;
     });
 
+    final l10n = context.l10n;
     try {
       var videoKey = 'dev/${DateTime.now().millisecondsSinceEpoch}.mp4';
       var videoUrl = _devVideoUrl.text.trim();
@@ -384,7 +404,7 @@ class _CreateProductScreenState extends ConsumerState<CreateProductScreen> {
       final now = DateTime.now().toUtc();
       final materials = _materials.text.trim();
       final description = [
-        if (materials.isNotEmpty) 'Media/Materials: $materials',
+        if (materials.isNotEmpty) l10n.materialsValue(materials),
         _description.text.trim(),
       ].join('\n\n');
 
@@ -401,23 +421,22 @@ class _CreateProductScreenState extends ConsumerState<CreateProductScreen> {
         'startsAt': now.toIso8601String(),
         'endsAt': now.add(Duration(days: _durationDays)).toIso8601String(),
       });
-      if (mounted) context.go('/seller');
+      if (mounted) {
+        ref.read(catalogUpdatesProvider.notifier).listingPublished();
+        context.notifier.success(context.l10n.listingPublished);
+        context.go('/activity?section=sales');
+      }
     } on DioException catch (error) {
       setState(() => _message = _messageFrom(error));
     } catch (error) {
-      setState(() => _message = error.toString());
+      setState(() => _message = localizedError(error, context.l10n));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
   }
 
-  String _messageFrom(DioException error) {
-    final data = error.response?.data;
-    if (data is Map && data['message'] != null) {
-      return data['message'].toString();
-    }
-    return error.message ?? 'Publicarea a esuat.';
-  }
+  String _messageFrom(DioException error) =>
+      localizedError(error, context.l10n);
 }
 
 class _PostColors {
@@ -434,81 +453,27 @@ class _PostColors {
   static const error = Color(0xffba1a1a);
 }
 
-class _CreateListingTopBar extends StatelessWidget {
-  const _CreateListingTopBar();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 64,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: _PostColors.background.withValues(alpha: 0.88),
-        border: Border(
-          bottom: BorderSide(
-            color: _PostColors.outlineVariant.withValues(alpha: 0.3),
-          ),
-        ),
-      ),
-      child: Row(
-        children: [
-          IconButton(
-            tooltip: 'Close',
-            onPressed: () => context.go('/seller'),
-            icon: const Icon(Icons.close, color: _PostColors.primary),
-          ),
-          const Expanded(
-            child: Center(
-              child: Text(
-                'Licit',
-                style: TextStyle(
-                  color: _PostColors.primary,
-                  fontSize: 36,
-                  height: 1.2,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ),
-          ),
-          IconButton(
-            tooltip: 'Help',
-            onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Seller help va fi adaugat in urmatorul pas.'),
-              ),
-            ),
-            icon: const Icon(
-              Icons.help_outline,
-              color: _PostColors.onSurfaceVariant,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _PageHeader extends StatelessWidget {
   const _PageHeader();
 
   @override
   Widget build(BuildContext context) {
-    return const Column(
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Create New Listing',
-          style: TextStyle(
+          context.l10n.createListing,
+          style: const TextStyle(
             color: _PostColors.primary,
             fontSize: 30,
             height: 1.3,
             fontWeight: FontWeight.w700,
           ),
         ),
-        SizedBox(height: 8),
+        const SizedBox(height: 8),
         Text(
-          'Introduce your masterpiece to the global Licit audience.',
-          style: TextStyle(
+          context.l10n.createListingDescription,
+          style: const TextStyle(
             color: _PostColors.onSurfaceVariant,
             fontSize: 16,
             height: 1.6,
@@ -598,7 +563,7 @@ class _VideoUploadPanel extends StatelessWidget {
                             fit: BoxFit.scaleDown,
                             child: Text(
                               video == null
-                                  ? 'Upload Exhibition Video'
+                                  ? context.l10n.uploadVideo
                                   : video!.name,
                               textAlign: TextAlign.center,
                               maxLines: 1,
@@ -613,7 +578,7 @@ class _VideoUploadPanel extends StatelessWidget {
                           ),
                           SizedBox(height: compact ? 6 : 8),
                           Text(
-                            'MP4 or MOV, max 500MB. High-quality motion reveals the true essence of your work.',
+                            context.l10n.videoRequirements,
                             textAlign: TextAlign.center,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
@@ -638,7 +603,7 @@ class _VideoUploadPanel extends StatelessWidget {
           controller: devVideoUrl,
           style: const TextStyle(color: _PostColors.onSurface),
           decoration: InputDecoration(
-            hintText: 'Video URL pentru dezvoltare, optional',
+            hintText: context.l10n.developmentVideoUrl,
             hintStyle: TextStyle(
               color: _PostColors.outlineVariant.withValues(alpha: 0.85),
             ),
@@ -760,9 +725,9 @@ class _AuctionRulesHint extends StatelessWidget {
         color: _PostColors.secondaryContainer.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: const Text(
-        'Bidders enter their maximum price. Licit only raises the public bid enough to keep the leader winning.',
-        style: TextStyle(
+      child: Text(
+        context.l10n.auctionRulesExplanation,
+        style: const TextStyle(
           color: _PostColors.onSurfaceVariant,
           fontSize: 13,
           height: 1.4,
@@ -841,8 +806,8 @@ class _MoneyField extends StatelessWidget {
       ),
       validator: (value) {
         if (value == null || value.trim().isEmpty) return null;
-        final parsed = double.tryParse(value.replaceAll(',', '.'));
-        if (parsed == null || parsed < 0) return 'Suma invalida';
+        final parsed = parseRon(value);
+        if (parsed == null || parsed < 0) return context.l10n.invalidAmount;
         return null;
       },
     );
@@ -918,12 +883,14 @@ class _PublishButton extends StatelessWidget {
                     ),
                   )
                 : const Icon(Icons.send_outlined),
-            label: Text(saving ? 'Publishing...' : 'Publish Listing'),
+            label: Text(
+              saving ? context.l10n.publishing : context.l10n.publishListing,
+            ),
           ),
         ),
         const SizedBox(height: 16),
         Text(
-          "By publishing, you agree to Licit's Seller Terms & Commission Policy.",
+          context.l10n.publishingTerms,
           textAlign: TextAlign.center,
           style: TextStyle(
             color: _PostColors.onSurfaceVariant.withValues(alpha: 0.6),
@@ -933,111 +900,6 @@ class _PublishButton extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _CreateListingBottomNav extends StatelessWidget {
-  const _CreateListingBottomNav();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 80 + MediaQuery.paddingOf(context).bottom,
-      padding: EdgeInsets.fromLTRB(
-        8,
-        8,
-        8,
-        8 + MediaQuery.paddingOf(context).bottom,
-      ),
-      decoration: BoxDecoration(
-        color: _PostColors.background,
-        border: Border(
-          top: BorderSide(
-            color: _PostColors.outlineVariant.withValues(alpha: 0.2),
-          ),
-        ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _BottomItem(
-            icon: Icons.play_circle_outline,
-            label: 'Feed',
-            onTap: () => context.go('/'),
-          ),
-          _BottomItem(
-            icon: Icons.search,
-            label: 'Explore',
-            onTap: () => context.go('/explore'),
-          ),
-          _BottomItem(
-            icon: Icons.add_circle,
-            label: 'Sell',
-            active: true,
-            onTap: () => context.go('/seller'),
-          ),
-          _BottomItem(
-            icon: Icons.notifications_outlined,
-            label: 'Activity',
-            onTap: () => context.go('/activity'),
-          ),
-          _BottomItem(
-            icon: Icons.person_outline,
-            label: 'Profile',
-            onTap: () => context.go('/account'),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _BottomItem extends StatelessWidget {
-  const _BottomItem({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    this.active = false,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  final bool active;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = active ? _PostColors.primary : _PostColors.onSurfaceVariant;
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-        decoration: BoxDecoration(
-          color: active
-              ? _PostColors.secondaryContainer.withValues(alpha: 0.5)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: color.withValues(alpha: active ? 1 : 0.62)),
-            Text(
-              label,
-              style: TextStyle(
-                color: color.withValues(alpha: active ? 1 : 0.62),
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.6,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

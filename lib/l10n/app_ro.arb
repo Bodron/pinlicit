@@ -1,0 +1,498 @@
+{
+  "@@locale": "ro",
+  "dismissNotification": "Închide notificarea",
+  "listingPublished": "Anunțul a fost publicat.",
+  "activityPurchases": "Cumpărări",
+  "activitySales": "Vânzări",
+  "previousPage": "Pagina anterioară",
+  "nextPage": "Pagina următoare",
+  "salesPage": "{page} din {total}",
+  "@salesPage": {"placeholders": {"page": {"type": "int"}, "total": {"type": "int"}}},
+  "myListings": "Anunțurile mele",
+  "noCompletedSales": "Nu ai încă produse vândute.",
+  "navFeed": "Acasă",
+  "navExplore": "Explorează",
+  "navSell": "Vinde",
+  "navActivity": "Activitate",
+  "navProfile": "Profil",
+  "navAdmin": "Administrare",
+  "fullName": "Nume complet",
+  "yourName": "Numele tău",
+  "emailAddress": "Adresă de e-mail",
+  "emailExample": "nume@exemplu.ro",
+  "invalidEmail": "Introdu o adresă de e-mail validă.",
+  "minimumTwoCharacters": "Minimum 2 caractere",
+  "minimumThreeCharacters": "Minimum 3 caractere",
+  "minimumEightCharacters": "Minimum 8 caractere",
+  "minimumTenCharacters": "Minimum 10 caractere",
+  "phoneNumber": "Număr de telefon",
+  "createAccountAction": "CREEAZĂ CONT",
+  "signInAction": "AUTENTIFICARE",
+  "password": "Parolă",
+  "forgotPassword": "Ai uitat parola?",
+  "showPassword": "Arată parola",
+  "hidePassword": "Ascunde parola",
+  "continueWith": "SAU CONTINUĂ CU",
+  "alreadyHaveAccount": "Ai deja cont pe Pinbind? ",
+  "newToPinbind": "Ești nou pe Pinbind? ",
+  "signIn": "Autentifică-te",
+  "createAccount": "Creează cont",
+  "search": "Caută",
+  "forYou": "Pentru tine",
+  "reload": "Reîncarcă",
+  "noActiveListings": "Nu există anunțuri active.",
+  "videoLoadFailed": "Videoclipul nu poate fi încărcat.",
+  "shareComingSoon": "Distribuirea va fi disponibilă în curând.",
+  "newLiveBid": "A fost primită o ofertă nouă.",
+  "auctionExtended": "Licitația a fost prelungită.",
+  "bidSubmitted": "Oferta a fost trimisă.",
+  "productReservedContact": "Produs rezervat. Vânzătorul va vedea datele tale de contact.",
+  "productReserved": "Produs rezervat.",
+  "addedToFavorites": "Adăugat la favorite.",
+  "removedFromFavorites": "Eliminat din favorite.",
+  "collapseAuction": "Restrânge licitația",
+  "expandAuction": "Extinde licitația",
+  "showLess": "Mai puțin",
+  "bidDetails": "Licitează / Detalii",
+  "currentBidUpper": "OFERTA CURENTĂ",
+  "minimumBidUpper": "OFERTA MINIMĂ",
+  "buyNowUpper": "CUMPĂRĂ ACUM",
+  "reserveMet": "Preț de rezervă atins",
+  "reserveNotMet": "Preț de rezervă neatins",
+  "yourMaxBidUpper": "OFERTA TA MAXIMĂ",
+  "minimumMaxBid": "Oferta maximă minimă",
+  "yourMaxBid": "Oferta ta maximă",
+  "placeMaxBid": "PLASEAZĂ OFERTA",
+  "proxyBidExplanation": "Licităm doar cât este necesar ca să rămâi în frunte. Limita ta maximă rămâne privată.",
+  "bidTerms": "Plasând o ofertă, accepți condițiile licitației.",
+  "all": "Toate",
+  "bids": "Oferte",
+  "watching": "Urmărite",
+  "wins": "Câștigate",
+  "noWatchedProducts": "Nu ai produse urmărite încă.",
+  "watchlistEmpty": "Produsele pe care le adaugi la favorite vor apărea aici.",
+  "noWonAuctions": "Nu ai nicio licitație câștigată încă.",
+  "noActivity": "Nu există activitate de afișat.",
+  "activityLoadFailed": "Activitatea nu a putut fi încărcată.",
+  "auction": "Licitație",
+  "auctionEnglish": "Licitație",
+  "auctionBid": "Ofertă la licitație",
+  "success": "Câștigată",
+  "outbidAlert": "Ofertă depășită",
+  "activeBid": "Ofertă activă",
+  "bidActivity": "Activitatea ofertelor",
+  "yourBidPrefix": "Oferta ta: ",
+  "currentBidBullet": "  •  Oferta curentă: ",
+  "viewUpper": "VEZI",
+  "rebidUpper": "LICITEAZĂ DIN NOU",
+  "openUpper": "DESCHIDE",
+  "justNow": "Chiar acum",
+  "savedItem": "Produs salvat",
+  "currentBidPrefix": "Oferta curentă: ",
+  "buyNowBullet": "  •  Cumpără acum: ",
+  "auctionActive": "Licitație activă",
+  "tryAgain": "Încearcă din nou",
+  "adminRequired": "Ai nevoie de drepturi de administrare.",
+  "sellerApplications": "Cereri de vânzător",
+  "noPendingApplications": "Nu există cereri în așteptare.",
+  "approve": "Aprobă",
+  "reject": "Respinge",
+  "quickModeration": "Moderare rapidă",
+  "hideProductId": "ID-ul produsului de ascuns",
+  "hideProduct": "Ascunde produsul",
+  "blockUserId": "ID-ul utilizatorului de blocat",
+  "blockUser": "Blochează utilizatorul",
+  "actionApplied": "Acțiunea a fost aplicată.",
+  "defaultUserName": "Utilizator Pinbind",
+  "defaultSellerName": "Vânzător Pinbind",
+  "defaultSeller": "Vânzător Pinbind",
+  "editProfile": "Editează profilul",
+  "curatorCollector": "Curator și colecționar",
+  "activeBids": "Oferte active",
+  "wonItems": "Produse câștigate",
+  "paymentMethods": "Metode de plată",
+  "accountSettings": "Setările contului",
+  "supportCenter": "Centrul de asistență",
+  "logout": "Deconectare",
+  "verifiedSeller": "Vânzător verificat",
+  "collector": "Colecționar",
+  "sellerStatus": "Statut de vânzător",
+  "becomeSeller": "Devino vânzător",
+  "requestSellerApproval": "Solicită aprobarea ca vânzător",
+  "adminPremium": "Administrator Premium",
+  "verifiedPremium": "Verificat Premium",
+  "bidHistoryComingSoon": "Istoricul ofertelor va fi disponibil în curând.",
+  "viewHistory": "Vezi istoricul",
+  "bidsLoadFailed": "Ofertele nu au putut fi încărcate",
+  "noBids": "Nu ai încă oferte",
+  "noBidsDescription": "Licitațiile active vor apărea aici după ce plasezi o ofertă.",
+  "currentBid": "Oferta curentă",
+  "endsIn": "Se încheie în",
+  "ended": "Încheiată",
+  "topBidder": "În frunte",
+  "outbid": "Ofertă depășită",
+  "discoverCollection": "Descoperă produse pentru colecția ta",
+  "collectionDescription": "Am selectat produse pe baza activității tale recente la licitații.",
+  "exploreSelection": "Explorează selecția",
+  "categoryWatches": "Ceasuri",
+  "categoryArt": "Artă",
+  "categoryFashion": "Modă",
+  "categoryFurniture": "Mobilier",
+  "categoryCollectibles": "Obiecte de colecție",
+  "categoryElectronics": "Electronice",
+  "exploreCurated": "Descoperă selecția",
+  "exploreDescription": "Descoperă produse deosebite din categoriile noastre.",
+  "searchingAuctions": "Se caută licitații…",
+  "noSearchResults": "Nicio licitație nu corespunde căutării.",
+  "searchHint": "Caută categorii sau produse…",
+  "modernistDescription": "Selecție inspirată de estetica Bauhaus și de designul modernist.",
+  "heritageDescription": "Ceasuri rare și bijuterii deosebite.",
+  "canvasDescription": "O selecție atentă de artă contemporană emergentă.",
+  "featuredCurators": "Curatori recomandați",
+  "viewAll": "Vezi toate",
+  "follow": "Urmărește",
+  "sellerApprovalRequired": "Ai nevoie de aprobarea ca vânzător înainte de a crea un anunț.",
+  "overview": "PREZENTARE GENERALĂ",
+  "performance": "Performanță",
+  "requestSellerAccess": "Solicită acces ca vânzător pentru a publica anunțuri.",
+  "newListing": "Anunț nou",
+  "approved": "aprobată",
+  "rejected": "respinsă",
+  "pending": "în așteptare",
+  "trendTwelvePercent": "+12% față de luna trecută",
+  "trendEightPercent": "+8% față de luna trecută",
+  "activeAuctions": "Licitații active",
+  "itemsSold": "Produse vândute",
+  "totalRevenue": "Venit total",
+  "createFirstListing": "Creează primul anunț",
+  "addFirstProduct": "Adaugă primul produs pentru a vedea date reale.",
+  "demoBidsTwentyFour": "24 de oferte · Maxim 32.400 RON",
+  "demoBidsTwelve": "12 oferte · Maxim 8.200 RON",
+  "more": "Mai multe",
+  "inventory": "Inventar",
+  "drafts": "Ciorne",
+  "demoDrafts": "4 produse pregătite pentru verificare",
+  "unsoldItems": "Produse nevândute",
+  "recentlySold": "Vândute recent",
+  "recent": "Recent",
+  "salesReport": "Raport de vânzări",
+  "downloadSalesReport": "Descarcă raportul de vânzări",
+  "demoSold450": "Vândut cu 450 RON",
+  "demoSold180": "Vândut cu 180 RON",
+  "demoSold1200": "Vândut cu 1.200 RON",
+  "demoTwoHoursAgo": "Acum 2 ore",
+  "demoFiveHoursAgo": "Acum 5 ore",
+  "yesterday": "Ieri",
+  "paid": "Plătit",
+  "pendingUpper": "În așteptare",
+  "sellerApplicationDescription": "Trimite cererea pentru aprobare. După acceptare poți publica anunțuri video și licitații.",
+  "sellerName": "Nume vânzător",
+  "contactPhone": "Telefon de contact",
+  "whatDoYouSell": "Ce vinzi?",
+  "submitApplication": "Trimite cererea",
+  "basicInformation": "Informații de bază",
+  "listingTitle": "Titlul anunțului",
+  "category": "Categorie",
+  "selectCategory": "Selectează categoria",
+  "chooseCategory": "Alege o categorie",
+  "materials": "Tehnică / Materiale",
+  "description": "Descriere",
+  "materialsExample": "De exemplu, acrilic pe pânză",
+  "descriptionHint": "Descrie produsul, proveniența și starea acestuia…",
+  "auctionRules": "Regulile licitației",
+  "startingPriceRon": "Preț de pornire (RON)",
+  "reservePriceRon": "Preț de rezervă (RON)",
+  "minimumAccepted": "Minimum acceptat",
+  "minimumIncrementRon": "Pas minim (RON)",
+  "buyNowOptional": "Cumpără acum (opțional)",
+  "setPrice": "Stabilește prețul",
+  "auctionDuration": "Durata licitației",
+  "sevenDays": "7 zile",
+  "chooseVideo": "Alege un videoclip pentru anunț.",
+  "createListing": "Creează un anunț nou",
+  "createListingDescription": "Prezintă produsul tău comunității Pinbind.",
+  "uploadVideo": "Încarcă videoclipul produsului",
+  "videoRequirements": "MP4 sau MOV, maximum 500 MB. Folosește un videoclip clar care prezintă produsul.",
+  "developmentVideoUrl": "URL video pentru dezvoltare (opțional)",
+  "auctionRulesExplanation": "Cumpărătorii introduc suma maximă. Pinbind mărește oferta publică doar cât este necesar pentru a păstra ofertantul în frunte.",
+  "invalidAmount": "Sumă invalidă",
+  "publishing": "Se publică…",
+  "publishListing": "Publică anunțul",
+  "publishingTerms": "Publicând anunțul, accepți condițiile pentru vânzători și politica de comisioane Pinbind.",
+  "productNotFound": "Produsul nu a fost găsit.",
+  "liveAuction": "LICITAȚIE ÎN DESFĂȘURARE",
+  "seller": "Vânzător",
+  "startingPrice": "Preț de pornire",
+  "reserve": "Preț de rezervă",
+  "met": "Atins",
+  "notMet": "Neatins",
+  "auctionEnds": "Licitația se încheie",
+  "verified": "Verificat",
+  "insured": "Asigurat",
+  "premium": "Premium",
+  "endedUpper": "ÎNCHEIATĂ",
+  "endsInUpper": "SE ÎNCHEIE ÎN",
+  "bidHistory": "Istoricul ofertelor",
+  "providerLoginComingSoon": "Autentificarea cu {provider} va fi disponibilă după configurare.",
+  "@providerLoginComingSoon": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "featureComingSoon": "{feature} va fi disponibil în curând.",
+  "@featureComingSoon": {
+    "placeholders": {
+      "feature": {
+        "type": "String"
+      }
+    }
+  },
+  "maxBidAmount": "OFERTĂ MAXIMĂ {amount}",
+  "@maxBidAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "remainingTime": "{time} RĂMAS",
+  "@remainingTime": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "currentBidAmount": "Oferta curentă: {amount}",
+  "@currentBidAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "minimumBidAmount": "Oferta minimă este {amount}.",
+  "@minimumBidAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "youWon": "Ai câștigat {title}",
+  "@youWon": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "youWereOutbid": "Oferta ta pentru {title} a fost depășită",
+  "@youWereOutbid": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "yourBidFor": "Oferta ta pentru {title}",
+  "@yourBidFor": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "minutesAgo": "Acum {count, plural, =1{o minută} few{{count} minute} other{{count} de minute}}",
+  "@minutesAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "hoursAgo": "Acum {count, plural, =1{o oră} few{{count} ore} other{{count} de ore}}",
+  "@hoursAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "daysAgo": "Acum {count, plural, =1{o zi} few{{count} zile} other{{count} de zile}}",
+  "@daysAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "resultCount": "{count, plural, =1{Un rezultat} few{{count} rezultate} other{{count} de rezultate}}",
+  "@resultCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "activeCount": "{count, plural, =1{O licitație activă} few{{count} licitații active} other{{count} de licitații active}}",
+  "@activeCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "daysCount": "{count, plural, =1{O zi} few{{count} zile} other{{count} de zile}}",
+  "@daysCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "followComingSoon": "Urmărirea curatorului {name} va fi disponibilă în curând.",
+  "@followComingSoon": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "sellerDashboard": "Panoul de vânzător al lui {name}",
+  "@sellerDashboard": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "sellerApplicationStatus": "Cererea ta de vânzător este {status}.",
+  "@sellerApplicationStatus": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "statusHighest": "{status} · Oferta maximă: {amount}",
+  "@statusHighest": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "expiredItemCount": "{count, plural, =1{Un produs expirat} few{{count} produse expirate} other{{count} de produse expirate}}",
+  "@expiredItemCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "soldFor": "Vândut cu {amount}",
+  "@soldFor": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "memberStatus": "Membru {status}",
+  "@memberStatus": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "sellerBy": "Vândut de {name}",
+  "@sellerBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "buyAmount": "CUMPĂRĂ {amount}",
+  "@buyAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "liveBidsPrice": "Ofertele live sunt reflectate în prețul curent: {amount}.",
+  "@liveBidsPrice": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "materialsValue": "Tehnică / Materiale: {materials}",
+  "@materialsValue": {
+    "placeholders": {
+      "materials": {
+        "type": "String"
+      }
+    }
+  },
+  "daysHours": "{days}z {hours}h",
+  "@daysHours": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "hoursMinutes": "{hours}h {minutes}min",
+  "@hoursMinutes": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "listingTitleExample": "De exemplu, tablou abstract pe pânză",
+  "networkUnavailable": "Nu ne putem conecta la server. Verifică conexiunea la internet și încearcă din nou.",
+  "requestTimeout": "Serverul răspunde prea greu. Încearcă din nou.",
+  "invalidCredentials": "Adresa de e-mail sau parola este incorectă.",
+  "requestCancelled": "Cererea a fost anulată.",
+  "untrustedCertificate": "Conexiunea securizată nu a putut fi verificată.",
+  "requestFailed": "Acțiunea nu a putut fi finalizată. Încearcă din nou.",
+  "secureStorageUnavailable": "Stocarea securizată nu este disponibilă. Închide și redeschide aplicația.",
+  "accountBlocked": "Contul tău este blocat.",
+  "emailAlreadyRegistered": "Această adresă de e-mail este deja înregistrată.",
+  "ownProductBid": "Nu poți licita pentru propriul produs.",
+  "auctionInactive": "Licitația nu mai este activă.",
+  "cannotBuyNow": "Produsul nu poate fi cumpărat acum.",
+  "cannotFavoriteOwnProduct": "Nu poți adăuga propriul produs la favorite.",
+  "invalidForm": "Verifică informațiile completate și încearcă din nou.",
+  "notAuthorized": "Nu ai permisiunea de a efectua această acțiune.",
+  "notFound": "Elementul căutat nu a fost găsit.",
+  "statusActive": "Activă",
+  "statusReserved": "Rezervat",
+  "statusSold": "Vândut",
+  "statusHidden": "Ascuns",
+  "statusExpired": "Expirat",
+  "statusClosed": "Încheiată",
+  "unknownStatus": "Necunoscut",
+  "categoryHome": "Casă",
+  "categoryAuto": "Auto",
+  "demoSunglasses": "Ochelari de soare cu ramă în carapace",
+  "demoSilkShirt": "Tricou din mătase",
+  "demoAudioMonitor": "Monitor audio profesional H1"
+}

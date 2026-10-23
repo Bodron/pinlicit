@@ -1,9 +1,9 @@
 import { Type } from "class-transformer";
-import { IsNumber, Min } from "class-validator";
+import { IsInt, Min } from "class-validator";
 
 export class PlaceBidDto {
   @Type(() => Number)
-  @IsNumber()
+  @IsInt()
   @Min(1)
   amount: number;
 }

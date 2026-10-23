@@ -29,7 +29,7 @@ class SessionController extends ChangeNotifier {
   AppUser? user;
   bool busy = false;
   bool restoring = true;
-  String? error;
+  Object? error;
   bool _restoreStarted = false;
 
   bool get isAuthenticated => user != null && _api.token != null;
@@ -117,49 +117,14 @@ class SessionController extends ChangeNotifier {
     try {
       await action();
     } on DioException catch (exception) {
-      error = _extractError(exception);
+      error = exception;
       rethrow;
     } catch (exception) {
-      error = _extractUnexpectedError(exception);
+      error = exception;
       rethrow;
     } finally {
       busy = false;
       notifyListeners();
     }
-  }
-
-  String _extractError(DioException exception) {
-    final data = exception.response?.data;
-    if (data is Map && data['message'] != null) {
-      final message = data['message'];
-      return message is List ? message.join(', ') : message.toString();
-    }
-    switch (exception.type) {
-      case DioExceptionType.connectionError:
-        return 'Cannot reach the API. Check that the backend is running and API_BASE_URL is correct.';
-      case DioExceptionType.connectionTimeout:
-      case DioExceptionType.receiveTimeout:
-      case DioExceptionType.sendTimeout:
-        return 'The API took too long to respond. Check your connection and backend server.';
-      case DioExceptionType.badResponse:
-        return 'Login failed. Please check your credentials and try again.';
-      case DioExceptionType.cancel:
-        return 'Request was cancelled.';
-      case DioExceptionType.badCertificate:
-        return 'The server certificate is not trusted.';
-      case DioExceptionType.unknown:
-        break;
-    }
-    return exception.message ?? 'Request failed.';
-  }
-
-  String _extractUnexpectedError(Object exception) {
-    final message = exception.toString();
-    if (message.contains('MissingPluginException')) {
-      return 'Secure storage is not ready. Stop and start the app again, not only hot reload.';
-    }
-    return message.isEmpty
-        ? 'Something went wrong. Please try again.'
-        : message;
   }
 }

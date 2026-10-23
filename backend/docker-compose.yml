@@ -1,11 +1,13 @@
 services:
-  mongo:
-    image: mongo:7
+  backend:
+    build: .
     restart: unless-stopped
+    init: true
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      MONGODB_URI: ${MONGODB_URI:?Configure MONGODB_URI in backend/.env}
     ports:
-      - "27017:27017"
-    volumes:
-      - mongo-data:/data/db
-
-volumes:
-  mongo-data:
+      - "3000:3000"

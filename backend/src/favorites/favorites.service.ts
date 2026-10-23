@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model, Types } from "mongoose";
+import { ClientSession, Model, Types } from "mongoose";
 import {
   ProductDocument,
   ProductStatus,
@@ -58,68 +58,82 @@ export class FavoritesService {
       throw new BadRequestException("Invalid product id.");
     }
 
-    const productModel = this.productsService.getModel();
-    const product = await productModel.findOne({
-      _id: productId,
-      status: { $ne: ProductStatus.Hidden },
-    });
-    if (!product) {
-      throw new NotFoundException("Product not found.");
-    }
-    if (product.seller.toString() === userId) {
-      throw new BadRequestException("You cannot favorite your own product.");
-    }
+    return this.inTransaction(async (session) => {
+      const productModel = this.productsService.getModel();
+      const product = await productModel.findOne({
+        _id: productId,
+        status: { $ne: ProductStatus.Hidden },
+      }).session(session);
+      if (!product) {
+        throw new NotFoundException("Product not found.");
+      }
+      if (product.seller.toString() === userId) {
+        throw new BadRequestException("You cannot favorite your own product.");
+      }
 
-    const result = await this.favoriteModel.updateOne(
-      {
-        user: new Types.ObjectId(userId),
-        product: new Types.ObjectId(productId),
-      },
-      {
-        $setOnInsert: {
+      const result = await this.favoriteModel.updateOne(
+        { user: new Types.ObjectId(userId), product: new Types.ObjectId(productId) },
+        { $setOnInsert: {
           user: new Types.ObjectId(userId),
           product: new Types.ObjectId(productId),
-        },
-      },
-      { upsert: true },
-    );
-
-    if (result.upsertedCount > 0) {
-      product.favoriteCount = (product.favoriteCount || 0) + 1;
-      await product.save();
-    } else if (!product.favoriteCount) {
-      product.favoriteCount = await this.favoriteModel.countDocuments({
-        product: product._id,
-      });
-      await product.save();
-    }
-
-    const populated = await product.populate([
-      { path: "category", select: "name slug" },
-      { path: "seller", select: "name email phone role" },
-      { path: "reservedBy", select: "name email phone role" },
-    ]);
-    return this.withFavoriteFlag(populated);
+        } },
+        { upsert: true, session },
+      );
+      if (result.upsertedCount > 0) {
+        await productModel.updateOne(
+          { _id: productId },
+          { $inc: { favoriteCount: 1 } },
+          { session },
+        );
+      }
+      const populated = await productModel.findById(productId).session(session).populate([
+        { path: "category", select: "name slug" },
+        { path: "seller", select: "name email phone role" },
+        { path: "reservedBy", select: "name email phone role" },
+      ]);
+      return this.withFavoriteFlag(populated);
+    });
   }
 
   async remove(userId: string, productId: string) {
     if (!Types.ObjectId.isValid(productId)) {
       throw new BadRequestException("Invalid product id.");
     }
-
-    const result = await this.favoriteModel.deleteOne({
-      user: new Types.ObjectId(userId),
-      product: new Types.ObjectId(productId),
-    });
-    if (result.deletedCount > 0) {
-      await this.productsService
-        .getModel()
-        .updateOne(
+    return this.inTransaction(async (session) => {
+      const result = await this.favoriteModel.deleteOne(
+        { user: new Types.ObjectId(userId), product: new Types.ObjectId(productId) },
+        { session },
+      );
+      const productModel = this.productsService.getModel();
+      if (result.deletedCount > 0) {
+        await productModel.updateOne(
           { _id: productId, favoriteCount: { $gt: 0 } },
           { $inc: { favoriteCount: -1 } },
+          { session },
         );
+      }
+      const product = await productModel.findById(productId)
+        .select("favoriteCount").session(session);
+      return { productId, isFavorite: false, favoriteCount: product?.favoriteCount || 0 };
+    });
+  }
+
+  // The favorite and its denormalized count commit together. MongoDB retries
+  // transient write conflicts; a unique-index upsert race gets a fresh snapshot.
+  private async inTransaction<T>(action: (session: ClientSession) => Promise<T>): Promise<T> {
+    const session = await this.favoriteModel.db.startSession();
+    try {
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          return await session.withTransaction(() => action(session));
+        } catch (error) {
+          if (error?.code !== 11000 || attempt > 0) throw error;
+        }
+      }
+      throw new Error("Favorite transaction did not complete.");
+    } finally {
+      await session.endSession();
     }
-    return { productId, isFavorite: false };
   }
 
   private withFavoriteFlag(product: ProductDocument) {

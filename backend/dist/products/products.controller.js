@@ -14,6 +14,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ProductsController = void 0;
 const common_1 = require("@nestjs/common");
+const commerce_orders_service_1 = require("../commerce/commerce-orders.service");
 const auctions_gateway_1 = require("../auctions/auctions.gateway");
 const jwt_auth_guard_1 = require("../auth/jwt-auth.guard");
 const current_user_decorator_1 = require("../common/current-user.decorator");
@@ -21,18 +22,23 @@ const bids_service_1 = require("../bids/bids.service");
 const place_bid_dto_1 = require("../bids/dto/place-bid.dto");
 const create_product_dto_1 = require("./dto/create-product.dto");
 const feed_query_dto_1 = require("./dto/feed-query.dto");
+const catalog_query_dto_1 = require("./dto/catalog-query.dto");
 const products_service_1 = require("./products.service");
 let ProductsController = class ProductsController {
-    constructor(productsService, bidsService, auctionsGateway) {
+    constructor(productsService, bidsService, auctionsGateway, commerceOrders) {
         this.productsService = productsService;
         this.bidsService = bidsService;
         this.auctionsGateway = auctionsGateway;
+        this.commerceOrders = commerceOrders;
     }
     create(user, dto) {
         return this.productsService.create(user, dto);
     }
     feed(query) {
         return this.productsService.feed(query);
+    }
+    catalog(query) {
+        return this.productsService.catalog(query);
     }
     find(id) {
         return this.productsService.findPublic(id);
@@ -42,6 +48,9 @@ let ProductsController = class ProductsController {
     }
     async buyNow(id, user) {
         const product = await this.productsService.reserveByBuyNow(id, user._id.toString());
+        if (product.commerceVersion === 1) {
+            await this.commerceOrders.create(String(product._id), String(user._id));
+        }
         this.auctionsGateway.broadcastClosed(product);
         return product;
     }
@@ -63,6 +72,13 @@ __decorate([
     __metadata("design:paramtypes", [feed_query_dto_1.FeedQueryDto]),
     __metadata("design:returntype", void 0)
 ], ProductsController.prototype, "feed", null);
+__decorate([
+    (0, common_1.Get)("catalog"),
+    __param(0, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [catalog_query_dto_1.CatalogQueryDto]),
+    __metadata("design:returntype", void 0)
+], ProductsController.prototype, "catalog", null);
 __decorate([
     (0, common_1.Get)(":id"),
     __param(0, (0, common_1.Param)("id")),
@@ -91,8 +107,10 @@ __decorate([
 ], ProductsController.prototype, "buyNow", null);
 exports.ProductsController = ProductsController = __decorate([
     (0, common_1.Controller)("products"),
+    __param(3, (0, common_1.Optional)()),
     __metadata("design:paramtypes", [products_service_1.ProductsService,
         bids_service_1.BidsService,
-        auctions_gateway_1.AuctionsGateway])
+        auctions_gateway_1.AuctionsGateway,
+        commerce_orders_service_1.CommerceOrdersService])
 ], ProductsController);
 //# sourceMappingURL=products.controller.js.map

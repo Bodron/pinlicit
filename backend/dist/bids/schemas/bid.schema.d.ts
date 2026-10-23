@@ -1,4 +1,4 @@
-import { HydratedDocument, Types } from "mongoose";
+import { HydratedDocument, Types, Schema as MongooseSchema } from "mongoose";
 export type BidDocument = HydratedDocument<Bid>;
 export declare class Bid {
     product: Types.ObjectId;
@@ -6,7 +6,7 @@ export declare class Bid {
     maxAmount: number;
     amount: number;
 }
-export declare const BidSchema: import("mongoose").Schema<Bid, import("mongoose").Model<Bid, any, any, any, import("mongoose").Document<unknown, any, Bid, any, {}> & Bid & {
+export declare const BidSchema: MongooseSchema<Bid, import("mongoose").Model<Bid, any, any, any, import("mongoose").Document<unknown, any, Bid, any, {}> & Bid & {
     _id: Types.ObjectId;
 } & {
     __v: number;

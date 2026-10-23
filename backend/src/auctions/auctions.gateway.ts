@@ -1,4 +1,4 @@
-import { UsePipes, ValidationPipe, forwardRef, Inject } from "@nestjs/common";
+import { forwardRef, Inject } from "@nestjs/common";
 import {
   ConnectedSocket,
   MessageBody,
@@ -45,32 +45,27 @@ export class AuctionsGateway implements OnGatewayConnection {
     await client.leave(this.room(body.productId));
   }
 
-  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+  // Socket clients may observe auctions. Financial writes use the JWT-guarded
+  // HTTP endpoint, whose buyer identity comes from the validated token.
   @SubscribeMessage("bid:place")
-  async place(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() body: { productId: string; userId: string; amount: number },
-  ) {
-    try {
-      const result = await this.bidsService.placeBid(
-        body.productId,
-        body.userId,
-        body.amount,
-      );
-      client.emit("bid:accepted", result);
-    } catch (error) {
-      client.emit("bid:rejected", {
-        message: error?.message || "Bid rejected.",
-      });
-    }
+  place(@ConnectedSocket() client: Socket) {
+    client.emit("bid:rejected", {
+      message: "Use the authenticated HTTP bidding endpoint.",
+    });
   }
 
   broadcastBid(product: any, bid: any, extended: boolean) {
-    const payload = { product, bid };
+    const publicBid = {
+      _id: bid._id,
+      amount: bid.amount,
+      createdAt: bid.createdAt,
+      bidder: { _id: bid.bidder?._id, name: bid.bidder?.name },
+    };
+    const payload = { product, bid: publicBid };
     this.server.to(this.room(product._id.toString())).emit("bid:new", payload);
     this.server.to(this.room(product._id.toString())).emit("auction:update", {
       product,
-      bids: [bid],
+      bids: [publicBid],
     });
     if (extended) {
       this.server

@@ -9,6 +9,8 @@ export declare class FavoritesService {
     mine(userId: string): Promise<{
         isFavorite: boolean;
         seller: Types.ObjectId;
+        reservedAt?: Date;
+        commerceVersion?: number;
         reservedBy?: Types.ObjectId;
         category: Types.ObjectId;
         title: string;
@@ -32,6 +34,8 @@ export declare class FavoritesService {
     add(userId: string, productId: string): Promise<{
         isFavorite: boolean;
         seller: Types.ObjectId;
+        reservedAt?: Date;
+        commerceVersion?: number;
         reservedBy?: Types.ObjectId;
         category: Types.ObjectId;
         title: string;
@@ -55,6 +59,8 @@ export declare class FavoritesService {
     remove(userId: string, productId: string): Promise<{
         productId: string;
         isFavorite: boolean;
+        favoriteCount: number;
     }>;
+    private inTransaction;
     private withFavoriteFlag;
 }

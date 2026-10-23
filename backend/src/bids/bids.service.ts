@@ -4,10 +4,12 @@ import {
   Inject,
   Injectable,
   forwardRef,
+  Optional,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model, Types } from "mongoose";
+import { CommerceAccountsService } from "../commerce/commerce-accounts.service";
+import { ClientSession, Model, Types } from "mongoose";
 import { AuctionsGateway } from "../auctions/auctions.gateway";
 import { ProductStatus } from "../products/schemas/product.schema";
 import { ProductsService } from "../products/products.service";
@@ -21,96 +23,102 @@ export class BidsService {
     private readonly config: ConfigService,
     @Inject(forwardRef(() => AuctionsGateway))
     private readonly auctionsGateway: AuctionsGateway,
+    @Optional() private readonly commerceAccounts?: CommerceAccountsService,
   ) {}
 
-  async placeBid(productId: string, bidderId: string, maxAmount: number) {
-    const productModel = this.productsService.getModel();
-    const product = await productModel.findById(productId);
-    if (!product) {
-      throw new BadRequestException("Product not found.");
-    }
-    if (product.seller.toString() === bidderId) {
+  private validateBid(product: any, bidderId: string, maxAmount: number) {
+    if (!product) throw new BadRequestException("Product not found.");
+    if (String(product.seller) === bidderId)
       throw new ForbiddenException("You cannot bid on your own product.");
-    }
-
-    const requiredAmount = product.currentPrice + product.minBidIncrement;
-    if (maxAmount < requiredAmount) {
-      throw new BadRequestException(`Bid must be at least ${requiredAmount}.`);
-    }
-
-    const now = new Date();
-    if (product.status !== ProductStatus.Active || product.endsAt <= now) {
-      throw new BadRequestException("Auction is not active.");
-    }
-
-    const antiSnipeWindowMs =
-      (this.config.get<number>("ANTI_SNIPE_WINDOW_SECONDS") || 60) * 1000;
-    const antiSnipeExtensionMs =
-      (this.config.get<number>("ANTI_SNIPE_EXTENSION_SECONDS") || 60) * 1000;
-    const shouldExtend =
-      product.endsAt.getTime() - now.getTime() <= antiSnipeWindowMs;
-    const nextEndsAt = shouldExtend
-      ? new Date(product.endsAt.getTime() + antiSnipeExtensionMs)
-      : product.endsAt;
-
-    const currentLeader = await this.bidModel
-      .findOne({ product: new Types.ObjectId(productId) })
-      .sort({ maxAmount: -1, createdAt: 1 });
-    const currentLeaderMax =
-      currentLeader?.maxAmount ?? currentLeader?.amount ?? 0;
-    const currentLeaderId = currentLeader?.bidder?.toString();
-    const bidderAlreadyLeads = currentLeaderId === bidderId;
-    const bidderWillLead =
-      !currentLeader || bidderAlreadyLeads || maxAmount > currentLeaderMax;
-    const visibleAmount = this.publicAmount({
-      currentPrice: product.currentPrice,
-      increment: product.minBidIncrement,
-      maxAmount,
-      currentLeaderMax,
-      bidderWillLead,
-      bidderAlreadyLeads,
-    });
-
-    const bid = await this.bidModel.create({
-      product: new Types.ObjectId(productId),
-      bidder: new Types.ObjectId(bidderId),
-      maxAmount,
-      amount: bidderWillLead ? visibleAmount : maxAmount,
-    });
-
-    const updated = await productModel
-      .findOneAndUpdate(
-        {
-          _id: productId,
-          status: ProductStatus.Active,
-          endsAt: { $gt: now },
-        },
-        {
-          currentPrice: visibleAmount,
-          endsAt: nextEndsAt,
-          ...(bidderWillLead ? { highestBid: bid._id } : {}),
-        },
-        { new: true },
-      )
-      .populate("category", "name slug")
-      .populate("seller", "name email phone role");
-
-    if (!updated) {
-      await bid.deleteOne();
+    if (
+      !Number.isSafeInteger(maxAmount) ||
+      maxAmount < product.currentPrice + product.minBidIncrement
+    ) {
       throw new BadRequestException(
-        "Bid was not accepted. Auction state changed.",
+        `Bid must be at least ${product.currentPrice + product.minBidIncrement}.`,
       );
     }
-
-    if (!bidderWillLead && currentLeader) {
-      await productModel.findByIdAndUpdate(productId, {
-        highestBid: currentLeader._id,
-      });
+    const now = new Date();
+    if (
+      product.status !== ProductStatus.Active ||
+      product.endsAt <= now ||
+      (product.startsAt && product.startsAt > now)
+    ) {
+      throw new BadRequestException("Auction is not active.");
     }
-
-    const populatedBid = await bid.populate("bidder", "name email role");
-    this.auctionsGateway.broadcastBid(updated, populatedBid, shouldExtend);
-    return { product: updated, bid: populatedBid, extended: shouldExtend };
+  }
+  async placeBid(productId: string, bidderId: string, maxAmount: number) {
+    const model = this.productsService.getModel();
+    const initial = await model.findById(productId);
+    this.validateBid(initial, bidderId, maxAmount);
+    if (initial.commerceVersion === 1) {
+      if (!this.commerceAccounts)
+        throw new ForbiddenException("Identity verification is required.");
+      await this.commerceAccounts.requireBuyer(bidderId);
+    }
+    // Proxy maxima, bid insertion, anti-snipe extension and the leader pointer
+    // commit together. MongoDB retries write conflicts, then validation runs on
+    // the new price. Transactions require a replica set (Atlas supports this).
+    const result = await model.db.transaction(async (session) => {
+      const product = await model.findById(productId).session(session);
+      this.validateBid(product, bidderId, maxAmount);
+      const now = new Date();
+      const window =
+        (this.config.get<number>("ANTI_SNIPE_WINDOW_SECONDS") || 60) * 1000;
+      const extension =
+        (this.config.get<number>("ANTI_SNIPE_EXTENSION_SECONDS") || 60) * 1000;
+      const shouldExtend = product.endsAt.getTime() - now.getTime() <= window;
+      const leader = await this.bidModel
+        .findOne({ product: new Types.ObjectId(productId) })
+        .sort({ maxAmount: -1, createdAt: 1, _id: 1 })
+        .session(session);
+      const leaderMax = leader?.maxAmount ?? leader?.amount ?? 0;
+      const alreadyLeads = String(leader?.bidder) === bidderId;
+      const willLead = !leader || alreadyLeads || maxAmount > leaderMax;
+      if (alreadyLeads && maxAmount <= leaderMax)
+        throw new BadRequestException("Maximum bid must increase.");
+      const quoted = this.publicAmount({
+        currentPrice: product.currentPrice,
+        increment: product.minBidIncrement,
+        maxAmount,
+        currentLeaderMax: leaderMax,
+        bidderWillLead: willLead,
+        bidderAlreadyLeads: alreadyLeads,
+      });
+      const winningMax = willLead ? maxAmount : leaderMax;
+      const visible =
+        product.reservePrice && winningMax >= product.reservePrice
+          ? Math.max(quoted, product.reservePrice)
+          : quoted;
+      const [bid] = await this.bidModel.create(
+        [
+          {
+            product: product._id,
+            bidder: new Types.ObjectId(bidderId),
+            maxAmount,
+            amount: willLead ? visible : maxAmount,
+          },
+        ],
+        { session },
+      );
+      product.currentPrice = visible;
+      if (shouldExtend)
+        product.endsAt = new Date(product.endsAt.getTime() + extension);
+      product.highestBid = willLead ? bid._id : leader._id;
+      await product.save({ session });
+      await product.populate([
+        { path: "category", select: "name slug" },
+        { path: "seller", select: "name role" },
+      ]);
+      await bid.populate("bidder", "name role");
+      return { product, bid, extended: shouldExtend };
+    });
+    this.auctionsGateway.broadcastBid(
+      result.product,
+      result.bid,
+      result.extended,
+    );
+    return result;
   }
 
   private publicAmount({
@@ -155,7 +163,8 @@ export class BidsService {
   latestForProduct(productId: string, limit = 5) {
     return this.bidModel
       .find({ product: productId })
-      .populate("bidder", "name email role")
+      .select("amount createdAt bidder")
+      .populate("bidder", "name role")
       .sort({ createdAt: -1 })
       .limit(limit);
   }

@@ -6,7 +6,9 @@ import {
   Post,
   Query,
   UseGuards,
+  Optional,
 } from "@nestjs/common";
+import { CommerceOrdersService } from "../commerce/commerce-orders.service";
 import { AuctionsGateway } from "../auctions/auctions.gateway";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { CurrentUser } from "../common/current-user.decorator";
@@ -14,6 +16,7 @@ import { BidsService } from "../bids/bids.service";
 import { PlaceBidDto } from "../bids/dto/place-bid.dto";
 import { CreateProductDto } from "./dto/create-product.dto";
 import { FeedQueryDto } from "./dto/feed-query.dto";
+import { CatalogQueryDto } from "./dto/catalog-query.dto";
 import { ProductsService } from "./products.service";
 
 @Controller("products")
@@ -22,6 +25,7 @@ export class ProductsController {
     private readonly productsService: ProductsService,
     private readonly bidsService: BidsService,
     private readonly auctionsGateway: AuctionsGateway,
+    @Optional() private readonly commerceOrders?: CommerceOrdersService,
   ) {}
 
   @UseGuards(JwtAuthGuard)
@@ -33,6 +37,11 @@ export class ProductsController {
   @Get("feed")
   feed(@Query() query: FeedQueryDto) {
     return this.productsService.feed(query);
+  }
+
+  @Get("catalog")
+  catalog(@Query() query: CatalogQueryDto) {
+    return this.productsService.catalog(query);
   }
 
   @Get(":id")
@@ -57,6 +66,9 @@ export class ProductsController {
       id,
       user._id.toString(),
     );
+    if (product.commerceVersion === 1) {
+      await this.commerceOrders.create(String(product._id), String(user._id));
+    }
     this.auctionsGateway.broadcastClosed(product);
     return product;
   }

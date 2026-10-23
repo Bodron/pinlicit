@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { HydratedDocument, Types } from "mongoose";
+import { HydratedDocument, Types, Schema as MongooseSchema } from "mongoose";
 
 export type ProductDocument = HydratedDocument<Product>;
 
@@ -8,17 +8,26 @@ export enum ProductStatus {
   Reserved = "reserved",
   Sold = "sold",
   Hidden = "hidden",
+  Expired = "expired",
 }
 
 @Schema({ timestamps: true })
 export class Product {
-  @Prop({ type: Types.ObjectId, ref: "User", required: true })
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: "User", required: true })
   seller: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: "User" })
+  @Prop() reservedAt?: Date;
+
+  @Prop() commerceVersion?: number;
+
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: "User" })
   reservedBy?: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: "Category", required: true })
+  @Prop({
+    type: MongooseSchema.Types.ObjectId,
+    ref: "Category",
+    required: true,
+  })
   category: Types.ObjectId;
 
   @Prop({ required: true, trim: true })
@@ -63,7 +72,7 @@ export class Product {
   @Prop({ required: true })
   endsAt: Date;
 
-  @Prop({ type: Types.ObjectId, ref: "Bid" })
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: "Bid" })
   highestBid?: Types.ObjectId;
 }
 

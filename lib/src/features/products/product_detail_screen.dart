@@ -1,3 +1,5 @@
+import 'package:intl/intl.dart';
+import 'package:licit/l10n/l10n.dart';
 import 'dart:async';
 
 import 'package:dio/dio.dart';
@@ -8,6 +10,7 @@ import 'package:video_player/video_player.dart';
 
 import '../../shared/models/product.dart';
 import '../../shared/state/session_controller.dart';
+import '../../shared/widgets/app_layout.dart';
 import '../../shared/utils/money.dart';
 
 /// Flutter implementation of the productdetails.html design.
@@ -25,6 +28,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
   Product? _product;
   VideoPlayerController? _video;
   Timer? _clock;
+  bool _visible = false;
   bool _loading = true;
   String? _message;
 
@@ -32,9 +36,25 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
   void initState() {
     super.initState();
     _clock = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted) setState(() {});
+      if (mounted && _visible) setState(() {});
     });
     _load();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _visible =
+        AppLayoutVisibility.locationOf(context) ==
+        '/products/${widget.productId}';
+    final video = _video;
+    if (video?.value.isInitialized == true) {
+      if (_visible) {
+        video!.play();
+      } else {
+        video!.pause();
+      }
+    }
   }
 
   @override
@@ -51,37 +71,14 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
     );
     return Theme(
       data: Theme.of(context).copyWith(textTheme: textTheme),
-      child: Scaffold(
-        backgroundColor: const Color(0xfffcfcfd),
-        appBar: AppBar(
-          backgroundColor: const Color(0xfffcfcfd).withValues(alpha: 0.92),
-          foregroundColor: const Color(0xff363a34),
-          elevation: 0,
-          surfaceTintColor: Colors.transparent,
-          leading: IconButton(
-            tooltip: 'Back',
-            onPressed: () => Navigator.of(context).maybePop(),
-            icon: const Icon(Icons.arrow_back),
-          ),
-          title: const Text(
-            'Licit',
-            style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800),
-          ),
-          actions: [
-            IconButton(
-              tooltip: 'Account',
-              onPressed: () {},
-              icon: const Icon(Icons.shopping_bag_outlined),
-            ),
-            const SizedBox(width: 8),
-          ],
-        ),
-        body: _loading
+      child: ColoredBox(
+        color: const Color(0xfffcfcfd),
+        child: _loading
             ? const Center(
                 child: CircularProgressIndicator(color: Color(0xff363a34)),
               )
             : _product == null
-            ? Center(child: Text(_message ?? 'Produsul nu a fost gasit.'))
+            ? Center(child: Text(_message ?? context.l10n.productNotFound))
             : _ProductDetailsBody(
                 product: _product!,
                 video: _video,
@@ -102,7 +99,9 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
       setState(() => _product = product);
       await _initVideo(product.videoUrl);
     } catch (error) {
-      if (mounted) setState(() => _message = error.toString());
+      if (mounted) {
+        setState(() => _message = localizedError(error, context.l10n));
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -116,12 +115,12 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
     try {
       await controller.initialize();
       await controller.setLooping(true);
-      await controller.play();
+      if (_visible) await controller.play();
       if (mounted) setState(() {});
     } catch (_) {
       await controller.dispose();
       if (identical(_video, controller)) _video = null;
-      if (mounted) setState(() => _message = 'Video-ul nu poate fi incarcat.');
+      if (mounted) setState(() => _message = context.l10n.videoLoadFailed);
     }
   }
 
@@ -135,7 +134,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
       if (mounted) {
         setState(() {
           _product = updated;
-          _message = 'Oferta trimisa.';
+          _message = context.l10n.bidSubmitted;
         });
       }
     } on DioException catch (error) {
@@ -151,7 +150,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
       if (mounted) {
         setState(() {
           _product = updated;
-          _message = 'Produs rezervat.';
+          _message = context.l10n.productReserved;
         });
       }
     } on DioException catch (error) {
@@ -159,13 +158,8 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
     }
   }
 
-  String _messageFrom(DioException error) {
-    final data = error.response?.data;
-    if (data is Map && data['message'] != null) {
-      return data['message'].toString();
-    }
-    return error.message ?? 'Actiunea a esuat.';
-  }
+  String _messageFrom(DioException error) =>
+      localizedError(error, context.l10n);
 }
 
 class _ProductDetailsBody extends StatelessWidget {
@@ -224,8 +218,8 @@ class _ProductDetailsBody extends StatelessWidget {
                   left: 12,
                   child: _Badge(
                     label: product.isActive
-                        ? 'LIVE AUCTION'
-                        : product.status.toUpperCase(),
+                        ? context.l10n.liveAuction
+                        : localizedStatus(product.status, context.l10n),
                   ),
                 ),
                 Center(
@@ -268,7 +262,7 @@ class _ProductDetailsBody extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 30),
-        const _SectionTitle('Description'),
+        _SectionTitle(context.l10n.description),
         const SizedBox(height: 10),
         Text(
           product.description,
@@ -285,20 +279,30 @@ class _ProductDetailsBody extends StatelessWidget {
               runSpacing: 18,
               children: [
                 _Metadata(
-                  label: 'Category',
-                  value: product.category?.name ?? '-',
+                  label: context.l10n.category,
+                  value: product.category == null
+                      ? '-'
+                      : localizedCategory(product.category!.name, context.l10n),
                 ),
-                _Metadata(label: 'Seller', value: product.seller?.name ?? '-'),
                 _Metadata(
-                  label: 'Starting price',
+                  label: context.l10n.seller,
+                  value: product.seller?.name ?? '-',
+                ),
+                _Metadata(
+                  label: context.l10n.startingPrice,
                   value: formatRon(product.startingPrice),
                 ),
                 if (product.hasReserve)
                   _Metadata(
-                    label: 'Reserve',
-                    value: product.reserveMet ? 'Met' : 'Not met',
+                    label: context.l10n.reserve,
+                    value: product.reserveMet
+                        ? context.l10n.met
+                        : context.l10n.notMet,
                   ),
-                _Metadata(label: 'Auction ends', value: _date(product.endsAt)),
+                _Metadata(
+                  label: context.l10n.auctionEnds,
+                  value: _date(product.endsAt),
+                ),
               ],
             ),
           ),
@@ -313,23 +317,26 @@ class _ProductDetailsBody extends StatelessWidget {
         const SizedBox(height: 18),
         _BidHistoryCard(currentBid: product.currentPrice),
         const SizedBox(height: 18),
-        const Row(
+        Row(
           children: [
             Expanded(
-              child: _Feature(icon: Icons.verified_outlined, label: 'Verified'),
+              child: _Feature(
+                icon: Icons.verified_outlined,
+                label: context.l10n.verified,
+              ),
             ),
-            SizedBox(width: 10),
+            const SizedBox(width: 10),
             Expanded(
               child: _Feature(
                 icon: Icons.local_shipping_outlined,
-                label: 'Insured',
+                label: context.l10n.insured,
               ),
             ),
-            SizedBox(width: 10),
+            const SizedBox(width: 10),
             Expanded(
               child: _Feature(
                 icon: Icons.workspace_premium_outlined,
-                label: 'Premium',
+                label: context.l10n.premium,
               ),
             ),
           ],
@@ -339,7 +346,7 @@ class _ProductDetailsBody extends StatelessWidget {
   }
 
   String _date(DateTime value) =>
-      '${value.day.toString().padLeft(2, '0')}/${value.month.toString().padLeft(2, '0')}/${value.year}';
+      DateFormat('dd.MM.yyyy HH:mm', 'ro').format(value.toLocal());
 }
 
 class _PricingCard extends StatelessWidget {
@@ -359,7 +366,7 @@ class _PricingCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final remaining = product.endsAt.difference(DateTime.now());
     final time = remaining.isNegative
-        ? 'ENDED'
+        ? context.l10n.endedUpper
         : '${remaining.inHours.toString().padLeft(2, '0')}:${remaining.inMinutes.remainder(60).toString().padLeft(2, '0')}:${remaining.inSeconds.remainder(60).toString().padLeft(2, '0')}';
     return Container(
       padding: const EdgeInsets.all(20),
@@ -383,7 +390,9 @@ class _PricingCard extends StatelessWidget {
           ),
           const SizedBox(height: 5),
           Text(
-            'By ${product.seller?.name ?? 'Licit seller'}',
+            context.l10n.sellerBy(
+              product.seller?.name ?? context.l10n.defaultSeller,
+            ),
             style: const TextStyle(color: Color(0xff454842)),
           ),
           const SizedBox(height: 22),
@@ -392,12 +401,12 @@ class _PricingCard extends StatelessWidget {
             children: [
               Expanded(
                 child: _PriceBlock(
-                  label: 'CURRENT BID',
+                  label: context.l10n.currentBidUpper,
                   value: formatRon(product.currentPrice),
                 ),
               ),
               _PriceBlock(
-                label: 'ENDS IN',
+                label: context.l10n.endsInUpper,
                 value: time,
                 alignEnd: true,
                 compact: true,
@@ -414,7 +423,7 @@ class _PricingCard extends StatelessWidget {
                     backgroundColor: const Color(0xff363a34),
                     foregroundColor: Colors.white,
                   ),
-                  child: const Text('PLACE MAX BID'),
+                  child: Text(context.l10n.placeMaxBid),
                 ),
               ),
               const SizedBox(width: 12),
@@ -429,7 +438,7 @@ class _PricingCard extends StatelessWidget {
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
                     child: Text(
-                      'BUY ${formatRon(product.buyNowPrice)}',
+                      context.l10n.buyAmount(formatRon(product.buyNowPrice)),
                       maxLines: 1,
                       textAlign: TextAlign.center,
                     ),
@@ -470,9 +479,9 @@ class _BidHistoryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Bid History',
-            style: TextStyle(
+          Text(
+            context.l10n.bidHistory,
+            style: const TextStyle(
               color: Color(0xff4d514a),
               fontSize: 20,
               fontWeight: FontWeight.w700,
@@ -480,7 +489,7 @@ class _BidHistoryCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Live bids are reflected in the current price: ${formatRon(currentBid)}.',
+            context.l10n.liveBidsPrice(formatRon(currentBid)),
             style: const TextStyle(color: Color(0xff454842), height: 1.45),
           ),
         ],

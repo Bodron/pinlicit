@@ -1,3 +1,4 @@
+import 'package:licit/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -6,6 +7,9 @@ import 'package:go_router/go_router.dart';
 import '../../shared/models/category.dart';
 import '../../shared/models/product.dart';
 import '../../shared/state/session_controller.dart';
+import '../../shared/state/catalog_updates.dart';
+import '../../shared/widgets/app_layout.dart';
+import '../../shared/video/feed_playback.dart';
 import 'widgets/auction_video_card.dart';
 
 class FeedScreen extends ConsumerStatefulWidget {
@@ -15,47 +19,87 @@ class FeedScreen extends ConsumerStatefulWidget {
   ConsumerState<FeedScreen> createState() => _FeedScreenState();
 }
 
-class _FeedScreenState extends ConsumerState<FeedScreen> {
+class _FeedScreenState extends ConsumerState<FeedScreen>
+    with WidgetsBindingObserver {
+  final _playback = FeedPlayback();
+  bool _feedVisible = false;
+  bool _foreground = true;
+  int _loadRevision = 0;
   List<ProductCategory> _categories = [];
   List<Product> _products = [];
   String? _categoryId;
+  int _currentIndex = 0;
   bool _loading = true;
   String? _error;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _load();
   }
 
   @override
-  Widget build(BuildContext context) {
-    final user = ref.watch(sessionControllerProvider).user;
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _feedVisible = AppLayoutVisibility.isFeedVisible(context);
+    _syncPlayback();
+  }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _foreground = state == AppLifecycleState.resumed;
+    _syncPlayback();
+  }
+
+  void _syncPlayback() {
+    final active =
+        _feedVisible &&
+        _foreground &&
+        !_loading &&
+        _currentIndex < _products.length;
+    final product = active ? _products[_currentIndex] : null;
+    _playback.select(product?.id, product?.videoUrl);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _playback.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ref.listen(catalogUpdatesProvider, (_, _) => _load());
     return Theme(
       data: Theme.of(context).copyWith(
         textTheme: GoogleFonts.montserratTextTheme(Theme.of(context).textTheme),
       ),
-      child: Scaffold(
-        backgroundColor: const Color(0xfff9f9fa),
-        extendBody: true,
-        body: Stack(
+      child: ColoredBox(
+        color: const Color(0xfff9f9fa),
+        child: Stack(
           children: [
             if (_loading)
               const _FeedLoading()
             else if (_error != null)
               _FeedError(message: _error!, onRetry: _load)
             else if (_products.isEmpty)
-              _FeedError(
-                message: 'Nu exista produse active in feed.',
-                onRetry: _load,
-              )
+              _FeedError(message: context.l10n.noActiveListings, onRetry: _load)
             else
               PageView.builder(
                 scrollDirection: Axis.vertical,
                 itemCount: _products.length,
+                onPageChanged: (index) {
+                  setState(() => _currentIndex = index);
+                  _syncPlayback();
+                },
                 itemBuilder: (context, index) => AuctionVideoCard(
+                  key: ValueKey(_products[index].id),
                   product: _products[index],
+                  isActive:
+                      _feedVisible && _foreground && index == _currentIndex,
+                  playback: _playback,
                   onOpenDetails: () =>
                       context.push('/products/${_products[index].id}'),
                   onFavoriteChanged: _updateProduct,
@@ -69,23 +113,27 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
             ),
           ],
         ),
-        bottomNavigationBar: _FeedBottomBar(isAdmin: user?.isAdmin == true),
       ),
     );
   }
 
   Future<void> _load() async {
+    final revision = ++_loadRevision;
+    final categoryId = _categoryId;
     setState(() {
       _loading = true;
+      _currentIndex = 0;
       _error = null;
     });
+    _syncPlayback();
     try {
       final api = ref.read(apiClientProvider);
       final results = await Future.wait([
         api.categories(),
-        api.feed(categoryId: _categoryId),
+        api.feed(categoryId: categoryId),
         api.myFavorites(),
       ]);
+      if (!mounted || revision != _loadRevision) return;
       final favoritesById = {
         for (final product in results[2] as List<Product>) product.id: product,
       };
@@ -103,15 +151,18 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
             .toList();
       });
     } catch (error) {
-      setState(() => _error = error.toString());
+      if (!mounted || revision != _loadRevision) return;
+      setState(() => _error = localizedError(error, context.l10n));
     } finally {
-      if (mounted) {
+      if (mounted && revision == _loadRevision) {
         setState(() => _loading = false);
+        _syncPlayback();
       }
     }
   }
 
   void _selectCategory(String? id) {
+    if (id == _categoryId) return;
     setState(() => _categoryId = id);
     _load();
   }
@@ -145,7 +196,7 @@ class _FeedTopBar extends StatelessWidget {
             child: Row(
               children: [
                 IconButton(
-                  tooltip: 'Search',
+                  tooltip: context.l10n.search,
                   onPressed: onSearch,
                   icon: const Icon(Icons.search, color: Colors.white),
                 ),
@@ -182,13 +233,13 @@ class _CategoryRail extends StatelessWidget {
           scrollDirection: Axis.horizontal,
           children: [
             _CategoryChip(
-              label: 'For You',
+              label: context.l10n.forYou,
               selected: selectedCategoryId == null,
               onTap: () => onSelected(null),
             ),
             for (final category in categories)
               _CategoryChip(
-                label: category.name,
+                label: localizedCategory(category.name, context.l10n),
                 selected: selectedCategoryId == category.id,
                 onTap: () => onSelected(category.id),
               ),
@@ -249,114 +300,6 @@ class _CategoryChip extends StatelessWidget {
   }
 }
 
-class _FeedBottomBar extends StatelessWidget {
-  const _FeedBottomBar({required this.isAdmin});
-
-  final bool isAdmin;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 80 + MediaQuery.paddingOf(context).bottom,
-      padding: EdgeInsets.fromLTRB(
-        8,
-        8,
-        8,
-        8 + MediaQuery.paddingOf(context).bottom,
-      ),
-      decoration: BoxDecoration(
-        color: const Color(0xfff9f9fa),
-        border: Border(
-          top: BorderSide(
-            color: const Color(0xffc5c7c0).withValues(alpha: 0.22),
-          ),
-        ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _FeedNavItem(
-            icon: Icons.play_circle_fill,
-            label: 'Feed',
-            active: true,
-            onTap: () => context.go('/'),
-          ),
-          _FeedNavItem(
-            icon: Icons.search,
-            label: 'Explore',
-            onTap: () => context.go('/explore'),
-          ),
-          _FeedNavItem(
-            icon: Icons.add_circle,
-            label: 'Sell',
-            onTap: () => context.go('/seller'),
-          ),
-          _FeedNavItem(
-            icon: Icons.notifications,
-            label: isAdmin ? 'Admin' : 'Activity',
-            onTap: () =>
-                isAdmin ? context.go('/admin') : context.go('/activity'),
-          ),
-          _FeedNavItem(
-            icon: Icons.person,
-            label: 'Profile',
-            onTap: () => context.go('/account'),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _FeedNavItem extends StatelessWidget {
-  const _FeedNavItem({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    this.active = false,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  final bool active;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = active ? const Color(0xff363a34) : const Color(0xff454842);
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-        decoration: BoxDecoration(
-          color: active
-              ? const Color(0xffe4e3d8).withValues(alpha: 0.5)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: color.withValues(alpha: active ? 1 : 0.62)),
-            Text(
-              label,
-              style: TextStyle(
-                color: color.withValues(alpha: active ? 1 : 0.62),
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.6,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _FeedLoading extends StatelessWidget {
   const _FeedLoading();
 
@@ -388,7 +331,7 @@ class _FeedError extends StatelessWidget {
             OutlinedButton.icon(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh),
-              label: const Text('Reincarca'),
+              label: Text(context.l10n.reload),
             ),
           ],
         ),

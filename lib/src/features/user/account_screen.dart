@@ -1,3 +1,4 @@
+import 'package:licit/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -6,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../shared/models/bid.dart';
 import '../../shared/models/product.dart';
 import '../../shared/state/session_controller.dart';
+import '../../shared/notifications/app_notifier.dart';
 import '../../shared/utils/money.dart';
 
 class AccountScreen extends ConsumerStatefulWidget {
@@ -36,16 +38,12 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
 
     return Theme(
       data: theme,
-      child: Scaffold(
-        backgroundColor: _AccountColors.background,
-        body: SafeArea(
+      child: ColoredBox(
+        color: _AccountColors.background,
+        child: SafeArea(
           bottom: false,
           child: Column(
             children: [
-              _TopBar(
-                onMenu: () => context.go('/seller'),
-                onBag: () => context.go('/account'),
-              ),
               Expanded(
                 child: RefreshIndicator(
                   color: _AccountColors.primaryContainer,
@@ -61,13 +59,19 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 _ProfileColumn(
-                                  name: user?.name ?? 'Licit User',
+                                  name:
+                                      user?.name ??
+                                      context.l10n.defaultUserName,
                                   email: user?.email ?? '',
                                   role: user?.role ?? 'user',
                                   activeBidCount: _bids.length,
                                   wonItemCount: _wonItemsCount,
                                   onLogout: () => _logout(session),
-                                  onSellerTap: () => context.go('/seller'),
+                                  onSellerTap: () => context.go(
+                                    user?.isSeller == true
+                                        ? '/activity?section=sales'
+                                        : '/seller',
+                                  ),
                                 ),
                                 const SizedBox(height: 32),
                                 _BidsColumn(
@@ -86,13 +90,19 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                               SizedBox(
                                 width: constraints.maxWidth * 0.33,
                                 child: _ProfileColumn(
-                                  name: user?.name ?? 'Licit User',
+                                  name:
+                                      user?.name ??
+                                      context.l10n.defaultUserName,
                                   email: user?.email ?? '',
                                   role: user?.role ?? 'user',
                                   activeBidCount: _bids.length,
                                   wonItemCount: _wonItemsCount,
                                   onLogout: () => _logout(session),
-                                  onSellerTap: () => context.go('/seller'),
+                                  onSellerTap: () => context.go(
+                                    user?.isSeller == true
+                                        ? '/activity?section=sales'
+                                        : '/seller',
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 64),
@@ -115,7 +125,6 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
             ],
           ),
         ),
-        bottomNavigationBar: const _AccountBottomNav(),
       ),
     );
   }
@@ -141,7 +150,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
       setState(() => _bids = bids);
     } catch (error) {
       if (!mounted) return;
-      setState(() => _message = error.toString());
+      setState(() => _message = localizedError(error, context.l10n));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -170,57 +179,6 @@ class _AccountColors {
   static const primaryContainer = Color(0xff4d514a);
   static const onSurfaceVariant = Color(0xff454842);
   static const error = Color(0xffba1a1a);
-}
-
-class _TopBar extends StatelessWidget {
-  const _TopBar({required this.onMenu, required this.onBag});
-
-  final VoidCallback onMenu;
-  final VoidCallback onBag;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 64,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: _AccountColors.background.withValues(alpha: 0.86),
-        border: Border(
-          bottom: BorderSide(
-            color: _AccountColors.outlineVariant.withValues(alpha: 0.3),
-          ),
-        ),
-      ),
-      child: Row(
-        children: [
-          IconButton(
-            tooltip: 'Seller',
-            onPressed: onMenu,
-            icon: const Icon(Icons.menu, color: _AccountColors.primary),
-          ),
-          const SizedBox(width: 8),
-          const Text(
-            'Licit',
-            style: TextStyle(
-              color: _AccountColors.primary,
-              fontSize: 36,
-              height: 1.2,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const Spacer(),
-          IconButton(
-            tooltip: 'My activity',
-            onPressed: onBag,
-            icon: const Icon(
-              Icons.shopping_bag_outlined,
-              color: _AccountColors.primary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 class _ProfileColumn extends StatelessWidget {
@@ -283,8 +241,9 @@ class _ProfileColumn extends StatelessWidget {
                   right: 4,
                   bottom: 4,
                   child: IconButton.filled(
-                    tooltip: 'Edit profile',
-                    onPressed: () => _showComingSoon(context, 'Edit profile'),
+                    tooltip: context.l10n.editProfile,
+                    onPressed: () =>
+                        _showComingSoon(context, context.l10n.editProfile),
                     icon: const Icon(Icons.edit, size: 18),
                     style: IconButton.styleFrom(
                       backgroundColor: _AccountColors.primary,
@@ -309,8 +268,8 @@ class _ProfileColumn extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               email.isEmpty
-                  ? 'Curator & Collector'
-                  : '$email · ${_roleLabel(role)}',
+                  ? context.l10n.curatorCollector
+                  : '$email · ${_roleLabel(context, role)}',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: _AccountColors.onSurfaceVariant.withValues(alpha: 0.7),
@@ -332,11 +291,11 @@ class _ProfileColumn extends StatelessWidget {
           ),
           children: [
             _StatTile(
-              label: 'Active Bids',
+              label: context.l10n.activeBids,
               value: activeBidCount.toString().padLeft(2, '0'),
             ),
             _StatTile(
-              label: 'Won Items',
+              label: context.l10n.wonItems,
               value: wonItemCount.toString().padLeft(2, '0'),
             ),
           ],
@@ -346,22 +305,22 @@ class _ProfileColumn extends StatelessWidget {
         const SizedBox(height: 28),
         _QuickLink(
           icon: Icons.payments_outlined,
-          label: 'Payment Methods',
-          onTap: () => _showComingSoon(context, 'Payment Methods'),
+          label: context.l10n.paymentMethods,
+          onTap: () => _showComingSoon(context, context.l10n.paymentMethods),
         ),
         _QuickLink(
           icon: Icons.settings_outlined,
-          label: 'Account Settings',
-          onTap: () => _showComingSoon(context, 'Account Settings'),
+          label: context.l10n.accountSettings,
+          onTap: () => _showComingSoon(context, context.l10n.accountSettings),
         ),
         _QuickLink(
           icon: Icons.help_outline,
-          label: 'Support Center',
-          onTap: () => _showComingSoon(context, 'Support Center'),
+          label: context.l10n.supportCenter,
+          onTap: () => _showComingSoon(context, context.l10n.supportCenter),
         ),
         _QuickLink(
           icon: Icons.logout,
-          label: 'Logout',
+          label: context.l10n.logout,
           destructive: true,
           onTap: onLogout,
         ),
@@ -383,21 +342,19 @@ class _ProfileColumn extends StatelessWidget {
         .toUpperCase();
   }
 
-  static String _roleLabel(String role) {
+  static String _roleLabel(BuildContext context, String role) {
     switch (role) {
       case 'admin':
-        return 'Admin';
+        return context.l10n.navAdmin;
       case 'seller':
-        return 'Verified Seller';
+        return context.l10n.verifiedSeller;
       default:
-        return 'Collector';
+        return context.l10n.collector;
     }
   }
 
   void _showComingSoon(BuildContext context, String label) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('$label va fi adaugat in urmatorul pas.')),
-    );
+    context.notifier.info(context.l10n.featureComingSoon(label));
   }
 }
 
@@ -475,7 +432,9 @@ class _SellerStatusCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    seller ? 'Seller Status' : 'Become a Seller',
+                    seller
+                        ? context.l10n.sellerStatus
+                        : context.l10n.becomeSeller,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 24,
@@ -486,8 +445,8 @@ class _SellerStatusCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     seller
-                        ? '${_sellerLabel(role)} Member'
-                        : 'Request seller approval',
+                        ? context.l10n.memberStatus(_sellerLabel(context, role))
+                        : context.l10n.requestSellerApproval,
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.78),
                       fontSize: 12,
@@ -508,9 +467,9 @@ class _SellerStatusCard extends StatelessWidget {
     );
   }
 
-  String _sellerLabel(String role) {
-    if (role == 'admin') return 'Admin Premium';
-    return 'Verified Premium';
+  String _sellerLabel(BuildContext context, String role) {
+    if (role == 'admin') return context.l10n.adminPremium;
+    return context.l10n.verifiedPremium;
   }
 }
 
@@ -587,10 +546,10 @@ class _BidsColumn extends StatelessWidget {
       children: [
         Row(
           children: [
-            const Expanded(
+            Expanded(
               child: Text(
-                'Active Bids',
-                style: TextStyle(
+                context.l10n.activeBids,
+                style: const TextStyle(
                   color: _AccountColors.primary,
                   fontSize: 24,
                   height: 1.4,
@@ -599,12 +558,9 @@ class _BidsColumn extends StatelessWidget {
               ),
             ),
             TextButton(
-              onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Bid history va fi adaugat in urmatorul pas.'),
-                ),
-              ),
-              child: const Text('View History'),
+              onPressed: () =>
+                  context.notifier.info(context.l10n.bidHistoryComingSoon),
+              child: Text(context.l10n.viewHistory),
             ),
           ],
         ),
@@ -624,14 +580,14 @@ class _BidsColumn extends StatelessWidget {
         else if (message != null)
           _AccountEmptyState(
             icon: Icons.error_outline,
-            title: 'Could not load bids',
+            title: context.l10n.bidsLoadFailed,
             subtitle: message!,
           )
         else if (bids.isEmpty)
-          const _AccountEmptyState(
+          _AccountEmptyState(
             icon: Icons.gavel_outlined,
-            title: 'No bids yet',
-            subtitle: 'When you place bids, active auctions will appear here.',
+            title: context.l10n.noBids,
+            subtitle: context.l10n.noBidsDescription,
           )
         else
           for (final bid in bids)
@@ -682,7 +638,7 @@ class _BidCard extends StatelessWidget {
                         children: [
                           Expanded(
                             child: Text(
-                              product?.title ?? 'Auction Bid',
+                              product?.title ?? context.l10n.auctionBid,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
@@ -729,15 +685,15 @@ class _BidCard extends StatelessWidget {
                           children: [
                             Expanded(
                               child: _BidMetric(
-                                label: 'Current Bid',
+                                label: context.l10n.currentBid,
                                 value: formatRon(
                                   product?.currentPrice ?? bid.amount,
                                 ),
                               ),
                             ),
                             _BidMetric(
-                              label: 'Ends In',
-                              value: _remaining(product?.endsAt),
+                              label: context.l10n.endsIn,
+                              value: _remaining(context, product?.endsAt),
                               alignEnd: true,
                               valueColor: product?.isActive == true
                                   ? _AccountColors.primary
@@ -757,14 +713,20 @@ class _BidCard extends StatelessWidget {
     );
   }
 
-  String _remaining(DateTime? endsAt) {
+  String _remaining(BuildContext context, DateTime? endsAt) {
     if (endsAt == null) return '--';
     final remaining = endsAt.difference(DateTime.now());
-    if (remaining.isNegative) return 'Ended';
+    if (remaining.isNegative) return context.l10n.ended;
     if (remaining.inDays > 0) {
-      return '${remaining.inDays}d ${remaining.inHours.remainder(24)}h';
+      return context.l10n.daysHours(
+        remaining.inDays,
+        remaining.inHours.remainder(24),
+      );
     }
-    return '${remaining.inHours}h ${remaining.inMinutes.remainder(60)}m';
+    return context.l10n.hoursMinutes(
+      remaining.inHours,
+      remaining.inMinutes.remainder(60),
+    );
   }
 }
 
@@ -776,7 +738,7 @@ class _BidArtwork extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final thumbnail = product?.thumbnailUrl;
-    final title = product?.title ?? 'Auction';
+    final title = product?.title ?? context.l10n.auctionEnglish;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),
@@ -834,7 +796,7 @@ class _BidStatus extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
         child: Text(
-          topBidder ? 'Top Bidder' : 'Outbid',
+          topBidder ? context.l10n.topBidder : context.l10n.outbid,
           style: const TextStyle(
             color: _AccountColors.onSurfaceVariant,
             fontSize: 12,
@@ -951,9 +913,9 @@ class _SuggestionBanner extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Discover more items for your collection',
-            style: TextStyle(
+          Text(
+            context.l10n.discoverCollection,
+            style: const TextStyle(
               color: _AccountColors.primary,
               fontSize: 24,
               height: 1.3,
@@ -961,9 +923,9 @@ class _SuggestionBanner extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
-            'Our curators have selected pieces based on your recent auction activity.',
-            style: TextStyle(
+          Text(
+            context.l10n.collectionDescription,
+            style: const TextStyle(
               color: _AccountColors.onSurfaceVariant,
               fontSize: 16,
               height: 1.5,
@@ -979,116 +941,9 @@ class _SuggestionBanner extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
-            child: const Text('Explore Curation'),
+            child: Text(context.l10n.exploreSelection),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _AccountBottomNav extends StatelessWidget {
-  const _AccountBottomNav();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 80 + MediaQuery.paddingOf(context).bottom,
-      padding: EdgeInsets.fromLTRB(
-        8,
-        8,
-        8,
-        8 + MediaQuery.paddingOf(context).bottom,
-      ),
-      decoration: BoxDecoration(
-        color: _AccountColors.background,
-        border: Border(
-          top: BorderSide(
-            color: _AccountColors.outlineVariant.withValues(alpha: 0.2),
-          ),
-        ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _BottomItem(
-            icon: Icons.play_circle_outline,
-            label: 'Feed',
-            onTap: () => context.go('/'),
-          ),
-          _BottomItem(
-            icon: Icons.search,
-            label: 'Explore',
-            onTap: () => context.go('/explore'),
-          ),
-          _BottomItem(
-            icon: Icons.add_circle_outline,
-            label: 'Sell',
-            onTap: () => context.go('/seller'),
-          ),
-          _BottomItem(
-            icon: Icons.notifications_outlined,
-            label: 'Activity',
-            onTap: () => context.go('/activity'),
-          ),
-          _BottomItem(
-            icon: Icons.person,
-            label: 'Profile',
-            active: true,
-            onTap: () => context.go('/account'),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _BottomItem extends StatelessWidget {
-  const _BottomItem({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    this.active = false,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  final bool active;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = active
-        ? _AccountColors.primary
-        : _AccountColors.onSurfaceVariant;
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-        decoration: BoxDecoration(
-          color: active
-              ? _AccountColors.secondaryContainer.withValues(alpha: 0.5)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: color.withValues(alpha: active ? 1 : 0.62)),
-            Text(
-              label,
-              style: TextStyle(
-                color: color.withValues(alpha: active ? 1 : 0.62),
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.6,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

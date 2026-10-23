@@ -1,3 +1,4 @@
+import 'package:licit/l10n/l10n.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,6 +6,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../shared/state/session_controller.dart';
+import '../../shared/notifications/app_notifier.dart';
+import '../../shared/widgets/app_logo.dart';
 
 enum AuthMode { login, register }
 
@@ -49,7 +52,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
             SafeArea(
               child: Column(
                 children: [
-                  const _AuthHeader(),
                   Expanded(
                     child: Center(
                       child: SingleChildScrollView(
@@ -61,32 +63,32 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
-                                _NarrativeHeader(isRegister: _isRegister),
+                                const _AuthLogo(),
                                 const SizedBox(height: 40),
                                 if (_isRegister) ...[
                                   _AuthTextField(
                                     controller: _nameController,
-                                    label: 'Full Name',
-                                    hint: 'Your name',
+                                    label: context.l10n.fullName,
+                                    hint: context.l10n.yourName,
                                     icon: Icons.person_outline,
                                     textInputAction: TextInputAction.next,
                                     validator: (value) =>
                                         value == null || value.length < 2
-                                        ? 'Minim 2 caractere'
+                                        ? context.l10n.minimumTwoCharacters
                                         : null,
                                   ),
                                   const SizedBox(height: 16),
                                 ],
                                 _AuthTextField(
                                   controller: _emailController,
-                                  label: 'Email Address',
-                                  hint: 'name@example.com',
+                                  label: context.l10n.emailAddress,
+                                  hint: context.l10n.emailExample,
                                   icon: Icons.alternate_email,
                                   keyboardType: TextInputType.emailAddress,
                                   textInputAction: TextInputAction.next,
                                   validator: (value) =>
                                       value == null || !value.contains('@')
-                                      ? 'Email invalid'
+                                      ? context.l10n.invalidEmail
                                       : null,
                                 ),
                                 const SizedBox(height: 16),
@@ -98,14 +100,14 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                                   ),
                                   validator: (value) =>
                                       value == null || value.length < 8
-                                      ? 'Minim 8 caractere'
+                                      ? context.l10n.minimumEightCharacters
                                       : null,
                                 ),
                                 if (_isRegister) ...[
                                   const SizedBox(height: 16),
                                   _AuthTextField(
                                     controller: _phoneController,
-                                    label: 'Phone Number',
+                                    label: context.l10n.phoneNumber,
                                     hint: '+40 700 000 000',
                                     icon: Icons.phone_outlined,
                                     keyboardType: TextInputType.phone,
@@ -114,14 +116,19 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                                 ],
                                 if (session.error != null) ...[
                                   const SizedBox(height: 16),
-                                  _ErrorBanner(message: session.error!),
+                                  _ErrorBanner(
+                                    message: localizedError(
+                                      session.error,
+                                      context.l10n,
+                                    ),
+                                  ),
                                 ],
                                 const SizedBox(height: 24),
                                 _PrimaryAuthButton(
                                   busy: session.busy || session.restoring,
                                   label: _isRegister
-                                      ? 'CREATE ACCOUNT'
-                                      : 'SIGN IN',
+                                      ? context.l10n.createAccountAction
+                                      : context.l10n.signInAction,
                                   onPressed: session.busy || session.restoring
                                       ? null
                                       : _submit,
@@ -196,14 +203,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   }
 
   void _showComingSoon(String provider) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          '$provider login va fi adaugat dupa configurarea providerului.',
-        ),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    context.notifier.info(context.l10n.providerLoginComingSoon(provider));
   }
 }
 
@@ -218,64 +218,12 @@ class _AuthColors {
   static const errorContainer = Color(0xffffdad6);
 }
 
-class _AuthHeader extends StatelessWidget {
-  const _AuthHeader();
+class _AuthLogo extends StatelessWidget {
+  const _AuthLogo();
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 80,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: _AuthColors.surfaceLowest.withValues(alpha: 0.86),
-      ),
-      child: const Text(
-        'Licit',
-        style: TextStyle(
-          color: _AuthColors.primary,
-          fontSize: 36,
-          height: 1.2,
-          fontWeight: FontWeight.w800,
-        ),
-      ),
-    );
-  }
-}
-
-class _NarrativeHeader extends StatelessWidget {
-  const _NarrativeHeader({required this.isRegister});
-
-  final bool isRegister;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(
-          isRegister ? 'Create Account' : 'Welcome Back',
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            color: _AuthColors.primaryContainer,
-            fontSize: 30,
-            height: 1.3,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          isRegister
-              ? 'Join live video auctions and discover curated products.'
-              : 'Step into your curated auction experience.',
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            color: _AuthColors.onSurfaceVariant,
-            fontSize: 16,
-            height: 1.6,
-            fontWeight: FontWeight.w400,
-          ),
-        ),
-      ],
-    );
+    return const Center(child: AppLogo(width: 198));
   }
 }
 
@@ -356,12 +304,12 @@ class _PasswordField extends StatelessWidget {
       children: [
         Row(
           children: [
-            const Expanded(
+            Expanded(
               child: Padding(
-                padding: EdgeInsets.only(left: 4, bottom: 6),
+                padding: const EdgeInsets.only(left: 4, bottom: 6),
                 child: Text(
-                  'Password',
-                  style: TextStyle(
+                  context.l10n.password,
+                  style: const TextStyle(
                     color: _AuthColors.primaryContainer,
                     fontSize: 14,
                     height: 1.2,
@@ -379,9 +327,12 @@ class _PasswordField extends StatelessWidget {
                 minimumSize: Size.zero,
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
-              child: const Text(
-                'Forgot password?',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+              child: Text(
+                context.l10n.forgotPassword,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ],
@@ -403,7 +354,9 @@ class _PasswordField extends StatelessWidget {
               color: _AuthColors.onSurfaceVariant,
             ),
             suffixIcon: IconButton(
-              tooltip: obscure ? 'Show password' : 'Hide password',
+              tooltip: obscure
+                  ? context.l10n.showPassword
+                  : context.l10n.hidePassword,
               onPressed: onToggle,
               icon: Icon(
                 obscure
@@ -529,7 +482,7 @@ class _AuthDivider extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
-              'OR CONTINUE WITH',
+              context.l10n.continueWith,
               style: TextStyle(
                 color: _AuthColors.onSurfaceVariant.withValues(alpha: 0.62),
                 fontSize: 12,
@@ -607,7 +560,9 @@ class _FooterSwitch extends StatelessWidget {
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         Text(
-          isRegister ? 'Already on Licit? ' : 'New to Licit? ',
+          isRegister
+              ? context.l10n.alreadyHaveAccount
+              : context.l10n.newToPinbind,
           style: const TextStyle(
             color: _AuthColors.onSurfaceVariant,
             fontSize: 16,
@@ -623,7 +578,7 @@ class _FooterSwitch extends StatelessWidget {
             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
           child: Text(
-            isRegister ? 'Sign In' : 'Create Account',
+            isRegister ? context.l10n.signIn : context.l10n.createAccount,
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
           ),
         ),

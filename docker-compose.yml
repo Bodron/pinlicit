@@ -1,0 +1,24 @@
+# Reuse the existing backend Compose project so port 3000 is not duplicated.
+name: backend
+services:
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    init: true
+    env_file:
+      - ./backend/.env
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+    ports:
+      - "3000:3000"
+  site:
+    build: ./site
+    restart: unless-stopped
+    init: true
+    depends_on:
+      - backend
+    environment:
+      API_INTERNAL_URL: http://backend:3000
+    ports:
+      - "3002:3002"

@@ -3,12 +3,16 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  Optional,
 } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { CommerceAccountsService } from "../commerce/commerce-accounts.service";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model, Types } from "mongoose";
 import { UserRole } from "../users/schemas/user.schema";
 import { CreateProductDto } from "./dto/create-product.dto";
 import { FeedQueryDto } from "./dto/feed-query.dto";
+import { CatalogQueryDto } from "./dto/catalog-query.dto";
 import {
   Product,
   ProductDocument,
@@ -20,6 +24,8 @@ export class ProductsService {
   constructor(
     @InjectModel(Product.name)
     private readonly productModel: Model<ProductDocument>,
+    @Optional() private readonly config?: ConfigService,
+    @Optional() private readonly commerceAccounts?: CommerceAccountsService,
   ) {}
 
   async create(seller: any, dto: CreateProductDto) {
@@ -47,7 +53,10 @@ export class ProductsService {
       throw new BadRequestException("Auction end must be after start.");
     }
 
+    const commerce = this.config?.get<string>("STRIPE_ENABLED") === "true";
+    if (commerce) await this.commerceAccounts.requireSeller(String(seller._id));
     return this.productModel.create({
+      ...(commerce ? { commerceVersion: 1 } : {}),
       seller: seller._id,
       category: new Types.ObjectId(dto.categoryId),
       title: dto.title,
@@ -83,6 +92,89 @@ export class ProductsService {
       .limit(query.limit);
   }
 
+  async catalog(query: CatalogQueryDto) {
+    const now = new Date();
+    const base = { status: ProductStatus.Active, endsAt: { $gt: now } };
+    const filter: Record<string, any> = { ...base };
+    if (query.categoryId) filter.category = query.categoryId;
+    if (query.q?.trim()) {
+      const text = Array.from(query.q.trim(), (char) =>
+        ".*+?^${}()|[]".includes(char) || char.charCodeAt(0) === 92
+          ? String.fromCharCode(92) + char
+          : char,
+      ).join("");
+      filter.$or = [
+        { title: { $regex: text, $options: "i" } },
+        { description: { $regex: text, $options: "i" } },
+      ];
+    }
+    if (query.minPrice != null || query.maxPrice != null) {
+      if (
+        query.minPrice != null &&
+        query.maxPrice != null &&
+        query.minPrice > query.maxPrice
+      ) {
+        throw new BadRequestException(
+          "Minimum price cannot exceed maximum price.",
+        );
+      }
+      filter.currentPrice = {
+        ...(query.minPrice != null ? { $gte: query.minPrice } : {}),
+        ...(query.maxPrice != null ? { $lte: query.maxPrice } : {}),
+      };
+    }
+    if (query.stage === "live") filter.startsAt = { $lte: now };
+    if (query.stage === "ending")
+      filter.endsAt = {
+        $gt: now,
+        $lte: new Date(now.getTime() + 12 * 3600000),
+      };
+    if (query.stage === "upcoming") filter.startsAt = { $gt: now };
+    if (query.stage === "reserve")
+      filter.$and = [
+        {
+          $or: [
+            { reservePrice: { $exists: false } },
+            { reservePrice: null },
+            { $expr: { $lte: ["$reservePrice", "$startingPrice"] } },
+            { $expr: { $gte: ["$currentPrice", "$reservePrice"] } },
+          ],
+        },
+      ];
+    const sort: Record<string, 1 | -1> =
+      query.sort === "newest"
+        ? { createdAt: -1, _id: -1 }
+        : query.sort === "price-desc"
+          ? { currentPrice: -1, _id: -1 }
+          : query.sort === "price-asc"
+            ? { currentPrice: 1, _id: 1 }
+            : { endsAt: 1, _id: 1 };
+    const [items, total, activeTotal, endingToday] = await Promise.all([
+      this.productModel
+        .find(filter)
+        .populate("category", "name slug")
+        .populate("seller", "name role")
+        .sort(sort)
+        .skip((query.page - 1) * query.limit)
+        .limit(query.limit)
+        .lean(),
+      this.productModel.countDocuments(filter),
+      this.productModel.countDocuments(base),
+      this.productModel.countDocuments({
+        ...base,
+        endsAt: { $gt: now, $lte: new Date(now.getTime() + 24 * 3600000) },
+      }),
+    ]);
+    return {
+      items,
+      total,
+      page: query.page,
+      pageSize: query.limit,
+      pages: Math.ceil(total / query.limit),
+      stats: { activeTotal, endingToday },
+    };
+  }
+
   async findPublic(productId: string) {
     const product = await this.productModel
       .findById(productId)
@@ -115,12 +207,21 @@ export class ProductsService {
   }
 
   async reserveByBuyNow(productId: string, buyerId: string) {
+    const candidate = await this.productModel
+      .findById(productId)
+      .select("commerceVersion");
+    if (candidate?.commerceVersion === 1) {
+      if (!this.commerceAccounts)
+        throw new ForbiddenException("Identity verification is required.");
+      await this.commerceAccounts.requireBuyer(buyerId);
+    }
     const now = new Date();
     const product = await this.productModel.findOneAndUpdate(
       {
         _id: productId,
         status: ProductStatus.Active,
         endsAt: { $gt: now },
+        startsAt: { $lte: now },
         seller: { $ne: buyerId },
         $or: [
           { reservePrice: { $exists: false } },
@@ -129,18 +230,23 @@ export class ProductsService {
           { $expr: { $lt: ["$currentPrice", "$reservePrice"] } },
         ],
       },
-      {
-        status: ProductStatus.Reserved,
-        reservedBy: new Types.ObjectId(buyerId),
-      },
+      [
+        {
+          $set: {
+            status: ProductStatus.Reserved,
+            reservedBy: new Types.ObjectId(buyerId),
+            reservedAt: now,
+            currentPrice: "$buyNowPrice",
+            __v: { $add: [{ $ifNull: ["$__v", 0] }, 1] },
+          },
+        },
+      ],
       { new: true },
     );
 
     if (!product) {
       throw new BadRequestException("Product cannot be bought now.");
     }
-    product.currentPrice = product.buyNowPrice;
-    await product.save();
     return product.populate([
       { path: "seller", select: "name email phone role" },
       { path: "reservedBy", select: "name email phone role" },

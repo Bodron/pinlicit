@@ -18,20 +18,33 @@ var ProductStatus;
     ProductStatus["Reserved"] = "reserved";
     ProductStatus["Sold"] = "sold";
     ProductStatus["Hidden"] = "hidden";
+    ProductStatus["Expired"] = "expired";
 })(ProductStatus || (exports.ProductStatus = ProductStatus = {}));
 let Product = class Product {
 };
 exports.Product = Product;
 __decorate([
-    (0, mongoose_1.Prop)({ type: mongoose_2.Types.ObjectId, ref: "User", required: true }),
+    (0, mongoose_1.Prop)({ type: mongoose_2.Schema.Types.ObjectId, ref: "User", required: true }),
     __metadata("design:type", mongoose_2.Types.ObjectId)
 ], Product.prototype, "seller", void 0);
 __decorate([
-    (0, mongoose_1.Prop)({ type: mongoose_2.Types.ObjectId, ref: "User" }),
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", Date)
+], Product.prototype, "reservedAt", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", Number)
+], Product.prototype, "commerceVersion", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ type: mongoose_2.Schema.Types.ObjectId, ref: "User" }),
     __metadata("design:type", mongoose_2.Types.ObjectId)
 ], Product.prototype, "reservedBy", void 0);
 __decorate([
-    (0, mongoose_1.Prop)({ type: mongoose_2.Types.ObjectId, ref: "Category", required: true }),
+    (0, mongoose_1.Prop)({
+        type: mongoose_2.Schema.Types.ObjectId,
+        ref: "Category",
+        required: true,
+    }),
     __metadata("design:type", mongoose_2.Types.ObjectId)
 ], Product.prototype, "category", void 0);
 __decorate([
@@ -91,7 +104,7 @@ __decorate([
     __metadata("design:type", Date)
 ], Product.prototype, "endsAt", void 0);
 __decorate([
-    (0, mongoose_1.Prop)({ type: mongoose_2.Types.ObjectId, ref: "Bid" }),
+    (0, mongoose_1.Prop)({ type: mongoose_2.Schema.Types.ObjectId, ref: "Bid" }),
     __metadata("design:type", mongoose_2.Types.ObjectId)
 ], Product.prototype, "highestBid", void 0);
 exports.Product = Product = __decorate([

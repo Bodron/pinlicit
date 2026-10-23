@@ -1,14 +1,14 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { HydratedDocument, Types } from "mongoose";
+import { HydratedDocument, Types, Schema as MongooseSchema } from "mongoose";
 
 export type BidDocument = HydratedDocument<Bid>;
 
 @Schema({ timestamps: true })
 export class Bid {
-  @Prop({ type: Types.ObjectId, ref: "Product", required: true })
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: "Product", required: true })
   product: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: "User", required: true })
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: "User", required: true })
   bidder: Types.ObjectId;
 
   @Prop({ required: true, min: 1 })

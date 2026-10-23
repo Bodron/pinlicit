@@ -1,3 +1,4 @@
+import { CommerceModule } from "./commerce/commerce.module";
 import { Module } from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { MongooseModule } from "@nestjs/mongoose";
@@ -24,6 +25,7 @@ import { UsersModule } from "./users/users.module";
           "mongodb://localhost:27017/licit",
       }),
     }),
+    CommerceModule,
     UsersModule,
     AuthModule,
     CategoriesModule,

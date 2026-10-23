@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 
 import '../config/app_config.dart';
+import '../performance/async_request_cache.dart';
+import '../performance/performance_metrics.dart';
 import '../models/app_user.dart';
 import '../models/bid.dart';
 import '../models/category.dart';
@@ -47,12 +49,18 @@ class ApiClient {
           connectTimeout: const Duration(seconds: 12),
           receiveTimeout: const Duration(seconds: 20),
         ),
-      );
+      ) {
+    if (PerformanceMetrics.enabled) {
+      dio.interceptors.add(PerformanceMetrics.requests());
+    }
+  }
 
   final Dio dio;
+  final _reads = AsyncRequestCache();
   String? _accessToken;
 
   void setToken(String? token) {
+    if (_accessToken != token) _reads.clear();
     _accessToken = token;
     dio.options.headers[HttpHeaders.authorizationHeader] = token == null
         ? null
@@ -95,27 +103,29 @@ class ApiClient {
     return AppUser.fromJson(response.data!);
   }
 
-  Future<List<ProductCategory>> categories() async {
-    final response = await dio.get<List<dynamic>>('/categories');
-    return response.data!
-        .whereType<Map<String, dynamic>>()
-        .map(ProductCategory.fromJson)
-        .toList();
-  }
+  Future<List<ProductCategory>> categories() =>
+      _reads.read('categories', () async {
+        final response = await dio.get<List<dynamic>>('/categories');
+        return response.data!
+            .whereType<Map<String, dynamic>>()
+            .map(ProductCategory.fromJson)
+            .toList();
+      }, ttl: const Duration(minutes: 5));
 
-  Future<List<Product>> feed({String? categoryId}) async {
-    final response = await dio.get<List<dynamic>>(
-      '/products/feed',
-      queryParameters: {
-        if (categoryId != null) 'categoryId': categoryId,
-        'limit': 30,
-      },
-    );
-    return response.data!
-        .whereType<Map<String, dynamic>>()
-        .map(Product.fromJson)
-        .toList();
-  }
+  Future<List<Product>> feed({String? categoryId}) =>
+      _reads.read('feed:${categoryId ?? 'all'}', () async {
+        final response = await dio.get<List<dynamic>>(
+          '/products/feed',
+          queryParameters: {
+            if (categoryId != null) 'categoryId': categoryId,
+            'limit': 30,
+          },
+        );
+        return response.data!
+            .whereType<Map<String, dynamic>>()
+            .map(Product.fromJson)
+            .toList();
+      });
 
   Future<Product> product(String id) async {
     final response = await dio.get<Map<String, dynamic>>('/products/$id');
@@ -127,6 +137,7 @@ class ApiClient {
       '/products/$productId/bids',
       data: {'amount': amount},
     );
+    _reads.invalidate('my-bids');
     return Product.fromJson(response.data!['product'] as Map<String, dynamic>);
   }
 
@@ -180,31 +191,37 @@ class ApiClient {
         .toList();
   }
 
-  Future<List<Bid>> myBids() async {
+  Future<List<Bid>> myBids() => _reads.read('my-bids', () async {
     final response = await dio.get<List<dynamic>>('/me/bids');
     return response.data!
         .whereType<Map<String, dynamic>>()
         .map(Bid.fromJson)
         .toList();
-  }
+  });
 
-  Future<List<Product>> myFavorites() async {
+  Future<List<Product>> myFavorites() => _reads.read('favorites', () async {
     final response = await dio.get<List<dynamic>>('/me/favorites');
     return response.data!
         .whereType<Map<String, dynamic>>()
         .map(Product.fromJson)
         .toList();
-  }
+  });
 
   Future<Product> addFavorite(String productId) async {
     final response = await dio.post<Map<String, dynamic>>(
       '/me/favorites/$productId',
     );
+    _reads.invalidate('favorites');
     return Product.fromJson(response.data!);
   }
 
-  Future<void> removeFavorite(String productId) async {
-    await dio.delete<void>('/me/favorites/$productId');
+  Future<int?> removeFavorite(String productId) async {
+    final response = await dio.delete<Map<String, dynamic>>(
+      '/me/favorites/$productId',
+    );
+    _reads.invalidate('favorites');
+    final count = response.data?['favoriteCount'];
+    return count is num ? count.toInt() : null;
   }
 
   Future<List<SellerApplication>> mySellerApplications() async {
