@@ -1,3 +1,4 @@
+import { CommerceReturnController } from "./commerce-return.controller";
 import { Global, Module } from "@nestjs/common";
 import { MongooseModule } from "@nestjs/mongoose";
 import { User, UserSchema } from "../users/schemas/user.schema";
@@ -44,7 +45,11 @@ import { CommerceWorker } from "./commerce.worker";
     CommerceWorker,
     StripeHttpFilter,
   ],
-  controllers: [CommerceController, CommerceWebhooksController],
+  controllers: [
+    CommerceController,
+    CommerceWebhooksController,
+    CommerceReturnController,
+  ],
   exports: [
     CommerceAccountsService,
     CommerceOrdersService,

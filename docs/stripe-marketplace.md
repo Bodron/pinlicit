@@ -2,7 +2,7 @@
 
 ## Decizia de produs
 
-Model confirmat: cumpărătorul plătește, vânzătorul primește suma după livrare, Pinbind reține comisionul. Implementarea din această etapă este backend pentru sandbox, dezactivată implicit. Aplicația Flutter și site-ul nu au încă ecranele Stripe, iar cheile live sunt refuzate explicit. Baza cloud și anunțurile existente nu sunt folosite pentru teste sau migrate automat.
+Model confirmat: cumpărătorul plătește, vânzătorul primește suma după livrare, Pinbind reține comisionul. Implementarea din această etapă este backend pentru sandbox, dezactivată implicit. Rulează cu MongoDB-ul configurat în `MONGODB_URI`, inclusiv cloud Atlas; baza locală este necesară doar testelor automate de integrare. Ghidul de server este în [backend-server-stripe.md](backend-server-stripe.md). Aplicația Flutter și site-ul nu au încă ecranele Stripe, iar cheile live sunt refuzate explicit. Anunțurile existente nu sunt migrate automat. Pregătirea cloud adaugă numai colecțiile și indexurile commerce.
 
 ```mermaid
 flowchart LR
@@ -113,7 +113,7 @@ STRIPE_ENABLED=false
 STRIPE_AUTOMATIC_TRANSFERS_ENABLED=false
 ```
 
-Pentru sandbox, într-o bază de test separată, trebuie configurate o cheie `sk_test_...`/`rk_test_...`, webhook-urile și URL-urile fixe de revenire. Contul Stripe trebuie să aibă Identity aprobat și Connect configurat. Alegerea contului Connect, capabilitățile și condițiile comerciale trebuie validate pentru entitatea reală Pinbind înainte de live.
+Pentru sandbox, în baza configurată prin `MONGODB_URI`, trebuie configurate o cheie `sk_test_...`/`rk_test_...`, webhook-urile și URL-urile fixe de revenire. Contul Stripe trebuie să aibă Identity aprobat și Connect configurat. Alegerea contului Connect, capabilitățile și condițiile comerciale trebuie validate pentru entitatea reală Pinbind înainte de live.
 
 Politici obligatorii, fără valori presupuse:
 

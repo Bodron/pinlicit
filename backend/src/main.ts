@@ -5,6 +5,7 @@ import { AppModule } from "./app.module";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { rawBody: true });
+  app.enableShutdownHooks();
   const config = app.get(ConfigService);
   const appOrigin = config.get<string>("APP_ORIGIN");
   const allowedOrigins = appOrigin

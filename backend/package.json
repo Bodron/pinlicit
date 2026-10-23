@@ -10,7 +10,10 @@
     "test:watch": "jest --watch",
     "seed": "ts-node -r tsconfig-paths/register src/seed.ts",
     "test:integration:favorites": "node test/favorites.integration.cjs",
-    "test:integration:commerce": "npm run build && node test/commerce.integration.cjs"
+    "test:integration:commerce": "npm run build && node test/commerce.integration.cjs",
+    "start:prod": "node dist/main.js",
+    "check:env": "npm run build && node scripts/check-env.cjs",
+    "db:prepare:commerce": "npm run build && node scripts/prepare-commerce-db.cjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.758.0",
@@ -34,7 +37,8 @@
     "rxjs": "^7.8.1",
     "socket.io": "^4.8.1",
     "stripe": "23.0.0",
-    "uuid": "^11.1.0"
+    "uuid": "^11.1.0",
+    "dotenv": "17.4.1"
   },
   "devDependencies": {
     "@nestjs/cli": "^11.0.4",
