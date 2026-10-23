@@ -54,6 +54,7 @@ let CommerceAccountsService = class CommerceAccountsService {
             },
             sellerPayments: {
                 connected: Boolean(profile?.connectedAccountId),
+                businessType: profile?.connectBusinessType || null,
                 detailsSubmitted: profile?.detailsSubmitted || false,
                 transfersEnabled: profile?.transfersEnabled || false,
                 payoutsEnabled: profile?.payoutsEnabled || false,
@@ -105,26 +106,35 @@ let CommerceAccountsService = class CommerceAccountsService {
             return { status: session.status, url: session.url };
         });
     }
-    async startConnect(user) {
+    async startConnect(user, businessType) {
         if (!["seller", "admin"].includes(user.role))
             throw new common_1.ForbiddenException("Seller approval is required.");
+        await this.requireEligibleSeller(String(user._id));
         const sdk = this.stripe.sdk;
         const refreshUrl = this.stripe.returnUrl("STRIPE_CONNECT_REFRESH_URL");
-        const returnUrl = this.stripe.returnUrl("STRIPE_CONNECT_RETURN_URL");
+        const returnUrl = new URL(this.stripe.returnUrl("STRIPE_CONNECT_RETURN_URL"));
+        returnUrl.searchParams.set("flow", "seller");
         return this.locks.run(`connect:${user._id}`, async () => {
             const profile = await this.profile(String(user._id));
-            if (profile.identityStatus !== "verified")
-                throw new common_1.ForbiddenException("Verify your identity first.");
+            if (!["individual", "company"].includes(businessType))
+                throw new common_1.ConflictException("Choose individual or company.");
+            if (profile.connectBusinessType &&
+                profile.connectBusinessType !== businessType)
+                throw new common_1.ConflictException("The Stripe account type cannot be changed here. Contact support.");
             if (!profile.connectedAccountId) {
+                if (profile.connectAttempt && !profile.connectBusinessType)
+                    throw new common_1.ConflictException("Unresolved Stripe creation requires reconciliation. No duplicate will be created.");
                 if (!profile.connectAttempt) {
                     profile.connectAttempt = (0, crypto_1.randomUUID)();
                     profile.connectAttemptAt = new Date();
+                    profile.connectBusinessType = businessType;
                     await profile.save();
                 }
                 this.requireFreshAttempt(profile.connectAttemptAt);
                 const account = await sdk.accounts.create({
                     type: "express",
                     country: "RO",
+                    business_type: profile.connectBusinessType,
                     email: user.email,
                     capabilities: { transfers: { requested: true } },
                     metadata: {
@@ -136,11 +146,13 @@ let CommerceAccountsService = class CommerceAccountsService {
                 await profile.save();
             }
             const account = await sdk.accounts.retrieve(profile.connectedAccountId);
+            if (account.business_type && account.business_type !== businessType)
+                throw new common_1.ConflictException("The Stripe account type cannot be changed here. Contact support.");
             await this.applyConnect(account);
             const link = await sdk.accountLinks.create({
                 account: profile.connectedAccountId,
                 type: "account_onboarding",
-                return_url: returnUrl,
+                return_url: returnUrl.toString(),
                 refresh_url: refreshUrl,
             });
             return { url: link.url, expiresAt: link.expires_at };
@@ -241,6 +253,9 @@ let CommerceAccountsService = class CommerceAccountsService {
         await this.accounts.updateOne({ _id: profile._id, connectAttempt: profile.connectAttempt }, {
             $set: {
                 connectedAccountId: account.id,
+                ...(account.business_type
+                    ? { connectBusinessType: account.business_type }
+                    : {}),
                 transfersEnabled: account.capabilities?.transfers === "active",
                 payoutsEnabled: account.payouts_enabled === true,
                 detailsSubmitted: account.details_submitted === true,
@@ -254,7 +269,7 @@ let CommerceAccountsService = class CommerceAccountsService {
         })))
             throw new common_1.ForbiddenException("Identity verification is required before payment.");
     }
-    async requireSeller(userId) {
+    async requireEligibleSeller(userId) {
         if (!(await this.users.exists({
             _id: userId,
             blocked: false,
@@ -262,20 +277,24 @@ let CommerceAccountsService = class CommerceAccountsService {
         }))) {
             throw new common_1.ForbiddenException("Seller account is not eligible for transfers.");
         }
-        const profile = await this.accounts.findOne({
-            user: userId,
-            identityStatus: "verified",
-            transfersEnabled: true,
-            payoutsEnabled: true,
-        });
+    }
+    async payoutDestination(userId) {
+        await this.requireEligibleSeller(userId);
+        const profile = await this.accounts.findOne({ user: userId });
         if (!profile?.connectedAccountId)
-            throw new common_1.ConflictException("Seller payment onboarding is incomplete.");
+            return null;
         const account = await this.stripe.sdk.accounts.retrieve(profile.connectedAccountId);
         await this.applyConnect(account);
         if (account.capabilities?.transfers !== "active" ||
             !account.payouts_enabled)
-            throw new common_1.ConflictException("Seller cannot receive funds currently.");
+            return null;
         return profile.connectedAccountId;
+    }
+    async requireSeller(userId) {
+        const destination = await this.payoutDestination(userId);
+        if (!destination)
+            throw new common_1.ConflictException("Seller payment onboarding is incomplete.");
+        return destination;
     }
 };
 exports.CommerceAccountsService = CommerceAccountsService;

@@ -83,13 +83,13 @@ După modificarea `.env`, aplică setările cu `docker compose up -d --force-rec
 ## Prima verificare funcțională
 
 1. Autentifică două conturi de test și păstrează JWT-urile separat. `GET /commerce/me` trebuie să arate `enabled: true` și `mode: test`.
-2. Pentru fiecare, `POST /commerce/identity/session`, deschide URL-ul returnat și finalizează scenariul de test Stripe; verifică rezultatul din `GET /commerce/me` după procesarea webhook-ului.
-3. Un vânzător aprobat în aplicație apelează `POST /commerce/seller/onboarding`, finalizează configurarea de test și verifică eligibilitatea din `/commerce/me`.
+2. Pentru cumpărător, `POST /commerce/identity/session`, deschide URL-ul returnat și finalizează scenariul de test Stripe; verifică rezultatul din `GET /commerce/me` după procesarea webhook-ului.
+3. Vânzătorul poate publica și primi plata fără Connect. La încasare apelează `POST /commerce/seller/onboarding` cu `businessType: individual` sau `company`, finalizează configurarea și verifică eligibilitatea din `/commerce/me`.
 4. Creează un anunț nou după activarea Stripe. Anunțurile vechi rămân pe fluxul vechi. Folosește un cumpărător verificat și rezervă/câștigă produsul.
 5. Creează comanda prin `POST /commerce/products/:id/order`, apoi plata prin `POST /commerce/orders/:id/payment`. Backend-ul returnează `clientSecret`; confirmarea interactivă a cardului/SCA necesită integrarea Stripe din client. Nu introduce date de card în API-ul nostru.
 6. După confirmarea Stripe: vânzătorul trimite expedierea, cumpărătorul confirmă primirea, apoi verifică transferul după intervalul configurat. Rulează separat reclamație, refund și expirare. Consultă rutele și body-urile în [documentația API](stripe-marketplace.md#api).
 
-Worker-ul procesează la aproximativ 15 secunde. Ecranele Flutter/Next.js pentru plata cardului, verificare și comenzi rămân de implementat; backend-ul poate fi configurat și testat prin API acum, dar testul interactiv complet al cumpărării necesită clientul Stripe. Această versiune acceptă numai chei test și nu este activare cu bani reali.
+Worker-ul procesează la aproximativ 15 secunde. Flutter are PaymentSheet, verificare și comenzi; formularul Stripe pe site-ul Next.js rămâne de implementat. Această versiune acceptă numai chei test și nu este activare cu bani reali.
 
 ## Actualizare mobilă: garanții și PaymentSheet
 

@@ -317,6 +317,11 @@ class _ProfileColumn extends StatelessWidget {
         _SellerStatusCard(seller: _isSeller, role: role, onTap: onSellerTap),
         const SizedBox(height: 28),
         _QuickLink(
+          icon: Icons.account_balance_outlined,
+          label: 'Metode de plată și încasare',
+          onTap: () => context.push('/payment-methods'),
+        ),
+        _QuickLink(
           icon: Icons.payments_outlined,
           label: 'Plăți și comenzi',
           onTap: () => context.push('/commerce'),

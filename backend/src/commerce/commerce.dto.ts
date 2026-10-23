@@ -21,3 +21,7 @@ export class OrderRefundDto {
 export class BidGuaranteeDto {
   @IsInt() @Min(3000) @Max(99999999) maximum: number;
 }
+
+export class SellerOnboardingDto {
+  @IsIn(["individual", "company"]) businessType: "individual" | "company";
+}

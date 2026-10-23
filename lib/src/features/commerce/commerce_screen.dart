@@ -1,3 +1,4 @@
+import 'package:go_router/go_router.dart';
 import '../../shared/models/product.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -384,13 +385,10 @@ class _CommerceScreenState extends ConsumerState<CommerceScreen>
                                     : 'Configurează contul Stripe și datele bancare',
                               ),
                               FilledButton(
-                                onPressed:
-                                    _busy ||
-                                        identity != 'verified' ||
-                                        _config?['enabled'] != true
+                                onPressed: _busy || _config?['enabled'] != true
                                     ? null
-                                    : () => _hosted('seller/onboarding'),
-                                child: const Text('Configurează încasările'),
+                                    : () => context.push('/payment-methods'),
+                                child: const Text('Gestionează încasările'),
                               ),
                             ],
                           ),
@@ -496,6 +494,11 @@ class _CommerceScreenState extends ConsumerState<CommerceScreen>
                               if (order.status == 'completed')
                                 const Text(
                                   'Suma a fost transferată în contul Stripe al vânzătorului. Intrarea în bancă are un termen separat.',
+                                ),
+                              if (order.sellerId == user?.id &&
+                                  order.payoutSetupRequired)
+                                const Text(
+                                  'Plata cumpărătorului este confirmată. Configurează încasările din profil pentru a primi banii.',
                                 ),
                               if (order.buyerId == user?.id && order.canPay)
                                 FilledButton(

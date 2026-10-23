@@ -11,3 +11,6 @@ export declare class OrderRefundDto {
 export declare class BidGuaranteeDto {
     maximum: number;
 }
+export declare class SellerOnboardingDto {
+    businessType: "individual" | "company";
+}

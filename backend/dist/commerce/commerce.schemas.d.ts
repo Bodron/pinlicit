@@ -9,6 +9,7 @@ export declare class CommerceAccount {
     identityErrorCode?: string;
     connectAttempt?: string;
     connectAttemptAt?: Date;
+    connectBusinessType?: string;
     connectedAccountId?: string;
     transfersEnabled: boolean;
     payoutsEnabled: boolean;
@@ -45,6 +46,7 @@ export declare class CommerceOrder {
     chargeId?: string;
     connectedAccountId?: string;
     transferId?: string;
+    payoutSetupRequired: boolean;
     transferStartedAt?: Date;
     refundedAmount: number;
     carrier?: string;

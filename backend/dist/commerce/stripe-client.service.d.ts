@@ -9,6 +9,7 @@ export declare class StripeClientService {
         enabled: boolean;
         ready: boolean;
         mode: string;
+        deferredSellerOnboarding: boolean;
         publishableKey: string;
         merchantDisplayName: string;
         guaranteeBps: number;

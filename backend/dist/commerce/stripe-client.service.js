@@ -26,6 +26,7 @@ let StripeClientService = class StripeClientService {
             enabled: this.enabled,
             ready: this.enabled && /^pk_test_/.test(key),
             mode: "test",
+            deferredSellerOnboarding: true,
             publishableKey: /^pk_test_/.test(key) ? key : null,
             merchantDisplayName: "Pinbind",
             guaranteeBps: 1000,

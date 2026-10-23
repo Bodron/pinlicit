@@ -1,4 +1,4 @@
 export declare class CommerceReturnController {
-    returned(): string;
+    returned(flow?: string): string;
     refresh(): string;
 }

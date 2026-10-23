@@ -57,6 +57,10 @@ __decorate([
     __metadata("design:type", Date)
 ], CommerceAccount.prototype, "connectAttemptAt", void 0);
 __decorate([
+    (0, mongoose_1.Prop)({ enum: ["individual", "company"] }),
+    __metadata("design:type", String)
+], CommerceAccount.prototype, "connectBusinessType", void 0);
+__decorate([
     (0, mongoose_1.Prop)(),
     __metadata("design:type", String)
 ], CommerceAccount.prototype, "connectedAccountId", void 0);
@@ -171,6 +175,10 @@ __decorate([
     (0, mongoose_1.Prop)(),
     __metadata("design:type", String)
 ], CommerceOrder.prototype, "transferId", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ default: false }),
+    __metadata("design:type", Boolean)
+], CommerceOrder.prototype, "payoutSetupRequired", void 0);
 __decorate([
     (0, mongoose_1.Prop)(),
     __metadata("design:type", Date)

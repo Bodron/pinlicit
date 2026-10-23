@@ -91,6 +91,7 @@ function fakeStripe() {
           const item = {
             id: `acct_${n}`,
             metadata: params.metadata,
+            business_type: params.business_type,
             capabilities: { transfers: "active" },
             payouts_enabled: true,
             details_submitted: true,
@@ -175,6 +176,7 @@ function fakeStripe() {
   return {
     sdk,
     sessions,
+    accounts,
     intents,
     charges,
     transfers,
@@ -325,9 +327,15 @@ async function main() {
         "verified",
       );
     }
-    await post("seller/onboarding", buyer).expect(403);
-    await post("seller/onboarding", seller).expect(201);
-    await post("seller/onboarding", seller).expect(201);
+    await post("seller/onboarding", buyer, {
+      businessType: "individual",
+    }).expect(403);
+    await post("seller/onboarding", seller, {
+      businessType: "individual",
+    }).expect(201);
+    await post("seller/onboarding", seller, {
+      businessType: "individual",
+    }).expect(201);
     assert.equal(fake.calls.account, 1);
     const productBase = {
       seller: seller._id,
@@ -795,6 +803,161 @@ async function main() {
     assert.equal(
       (await model("Product").findById(legacy._id)).status,
       "active",
+    );
+    // Late onboarding: no separate Identity or Connect prerequisite for selling.
+    const lateSeller = await model("User").create({
+      name: "Late seller",
+      email: "late@example.invalid",
+      passwordHash: "unused",
+      role: "seller",
+    });
+    const lateAssetKey = `images/v1/${"c".repeat(64)}/960x640.webp`;
+    await model("ImageAsset").create({
+      _id: "late-fixture",
+      owner: String(lateSeller._id),
+      status: "ready",
+      processingStartedAt: new Date(),
+      imageKey: lateAssetKey,
+      variants: [
+        {
+          key: lateAssetKey,
+          width: 960,
+          height: 640,
+          url: "https://example.invalid/late.webp",
+          bytes: 500,
+          contentType: "image/webp",
+        },
+      ],
+    });
+    const createdLate = await api
+      .post("/products")
+      .set(auth(lateSeller))
+      .send({
+        title: "Late onboarding lot",
+        description: "A local late onboarding test listing",
+        categoryId: String(productBase.category),
+        imageKey: lateAssetKey,
+        imageUrl: "https://example.invalid/late.webp",
+        startingPrice: 5000,
+        minBidIncrement: 500,
+        buyNowPrice: 20000,
+        startsAt: productBase.startsAt.toISOString(),
+        endsAt: productBase.endsAt.toISOString(),
+      })
+      .expect(201);
+    const lateProductId = createdLate.body._id || createdLate.body.id;
+    assert(lateProductId);
+    assert.equal(createdLate.body.commerceVersion, 1);
+    await api
+      .post(`/products/${lateProductId}/buy-now`)
+      .set(auth(buyer))
+      .expect(201);
+    let late = await orders.findOne({ product: lateProductId });
+    await post(`orders/${late._id}/payment`, buyer).expect(201);
+    late = await orders.findById(late._id);
+    assert.equal(late.connectedAccountId, undefined);
+    assert.equal(
+      fake.intents.get(late.paymentIntentId).on_behalf_of,
+      undefined,
+    );
+    fake.paid(late.paymentIntentId);
+    await webhook("payment_intent.succeeded", late.paymentIntentId);
+    await post(`orders/${late._id}/receipt`, buyer).expect(201);
+    await orders.updateOne(
+      { _id: late._id },
+      { $set: { releaseAfter: new Date(0), nextCheckAt: new Date(0) } },
+    );
+    const transfersWithoutConnect = fake.calls.transfer;
+    await paymentService.maintain();
+    late = await orders.findById(late._id);
+    assert.equal(late.status, "delivered");
+    assert.equal(late.payoutSetupRequired, true);
+    assert.equal(late.transferStartedAt, undefined);
+    assert.equal(fake.calls.transfer, transfersWithoutConnect);
+    assert.equal(
+      (
+        await api
+          .get("/commerce/seller/earnings")
+          .set(auth(lateSeller))
+          .expect(200)
+      ).body.readyForRelease,
+      19000,
+    );
+    await api.get("/commerce/seller/earnings").set(auth(buyer)).expect(403);
+    await post("seller/withdraw", lateSeller).expect(409);
+    await post("seller/onboarding", lateSeller).expect(400);
+    await post("seller/onboarding", lateSeller, {
+      businessType: "unsupported",
+    }).expect(400);
+    const callsBeforeLateConnect = fake.calls.account;
+    fake.loseResponse("account");
+    await post("seller/onboarding", lateSeller, {
+      businessType: "company",
+    }).expect(503);
+    await post("seller/onboarding", lateSeller, {
+      businessType: "individual",
+    }).expect(409);
+    await post("seller/onboarding", lateSeller, {
+      businessType: "company",
+    }).expect(201);
+    assert.equal(fake.calls.account, callsBeforeLateConnect + 1);
+    const lateProfile = await profiles.findOne({ user: lateSeller._id });
+    assert.equal(lateProfile.identityStatus, "unverified");
+    assert.equal(lateProfile.connectBusinessType, "company");
+    assert.equal(
+      fake.accounts.get(lateProfile.connectedAccountId).business_type,
+      "company",
+    );
+    // A stale cached flag is refreshed, but incomplete Stripe KYC never transfers.
+    fake.accounts.get(lateProfile.connectedAccountId).payouts_enabled = false;
+    await profiles.updateOne(
+      { _id: lateProfile._id },
+      { $set: { payoutsEnabled: true } },
+    );
+    await post("seller/withdraw", lateSeller).expect(409);
+    fake.accounts.get(lateProfile.connectedAccountId).payouts_enabled = true;
+    await post("seller/withdraw", lateSeller).expect(201);
+    await post("seller/withdraw", lateSeller).expect(201);
+    late = await orders.findById(late._id);
+    assert.equal(late.status, "completed");
+    assert.equal(late.payoutSetupRequired, false);
+    assert.equal(late.connectedAccountId, lateProfile.connectedAccountId);
+    assert.equal(fake.calls.transfer, transfersWithoutConnect + 1);
+    assert.equal(
+      (await api.get("/commerce/seller/earnings").set(auth(lateSeller))).body
+        .transferred,
+      19000,
+    );
+    // A never-onboarded seller still reaches the existing funds-review deadline.
+    const neverSeller = await model("User").create({
+      name: "Never seller",
+      email: "never@example.invalid",
+      passwordHash: "unused",
+      role: "seller",
+    });
+    const neverProduct = await model("Product").create({
+      ...productBase,
+      seller: neverSeller._id,
+    });
+    await api
+      .post(`/products/${neverProduct._id}/buy-now`)
+      .set(auth(buyer))
+      .expect(201);
+    let never = await orders.findOne({ product: neverProduct._id });
+    await post(`orders/${never._id}/payment`, buyer).expect(201);
+    never = await orders.findById(never._id);
+    fake.paid(never.paymentIntentId);
+    await webhook("payment_intent.succeeded", never.paymentIntentId);
+    await orders.updateOne(
+      { _id: never._id },
+      { $set: { fundsReviewAt: new Date(0), nextCheckAt: new Date(0) } },
+    );
+    await paymentService.maintain();
+    never = await orders.findById(never._id);
+    assert.equal(never.status, "review_required");
+    assert.equal(never.issueOpen, true);
+    console.log(
+      "PASS: checkout before Connect, company/individual validation, durable onboarding retries, held funds, refreshed KYC, one-time release, funds deadline",
     );
     console.log(
       "PASS: local commerce integration — auth, identity, Connect, payment idempotency, signed/deduplicated webhooks, delivery/issue/refund, delayed transfer, disputes, expiry, concurrent bids, settlement, 10% guarantees, loser refunds, winner credit, split transfers, excess refunds, legacy isolation",

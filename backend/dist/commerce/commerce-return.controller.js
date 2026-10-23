@@ -8,15 +8,19 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CommerceReturnController = void 0;
 const common_1 = require("@nestjs/common");
 let CommerceReturnController = class CommerceReturnController {
-    returned() {
-        return '<!doctype html><html lang="ro"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Pinbind — Stripe</title><body><h1>Poți reveni în aplicație</h1><p><a href="pinbind://commerce">Deschide Pinbind</a></p><p>Starea verificării și a contului va fi actualizată după confirmarea Stripe. Revenirea pe această pagină nu confirmă finalizarea.</p></body></html>';
+    returned(flow) {
+        const link = flow === "seller" ? "pinbind://payment-methods" : "pinbind://commerce";
+        return `<!doctype html><html lang="ro"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Pinbind — Stripe</title><body><h1>Poți reveni în aplicație</h1><p><a href="${link}">Deschide Pinbind</a></p><p>Starea verificării și a contului va fi actualizată după confirmarea Stripe. Revenirea pe această pagină nu confirmă finalizarea.</p></body></html>`;
     }
     refresh() {
-        return '<!doctype html><html lang="ro"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Pinbind — Link expirat</title><body><h1>Solicită un link nou</h1><p>Linkul de configurare Stripe a expirat sau a fost folosit. Revino în aplicație și pornește din nou configurarea încasărilor.</p></body></html>';
+        return '<!doctype html><html lang="ro"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Pinbind — Link expirat</title><body><h1>Solicită un link nou</h1><p>Linkul de configurare Stripe a expirat sau a fost folosit. Revino în aplicație și pornește din nou configurarea încasărilor.</p><p><a href="pinbind://payment-methods">Configurează încasările în Pinbind</a></p></body></html>';
     }
 };
 exports.CommerceReturnController = CommerceReturnController;
@@ -24,8 +28,9 @@ __decorate([
     (0, common_1.Get)("return"),
     (0, common_1.Header)("Content-Type", "text/html; charset=utf-8"),
     (0, common_1.Header)("Cache-Control", "no-store"),
+    __param(0, (0, common_1.Query)("flow")),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], CommerceReturnController.prototype, "returned", null);
 __decorate([

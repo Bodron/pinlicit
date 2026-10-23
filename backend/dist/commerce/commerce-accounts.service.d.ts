@@ -20,6 +20,7 @@ export declare class CommerceAccountsService {
         };
         sellerPayments: {
             connected: boolean;
+            businessType: string;
             detailsSubmitted: boolean;
             transfersEnabled: boolean;
             payoutsEnabled: boolean;
@@ -35,6 +36,7 @@ export declare class CommerceAccountsService {
         };
         sellerPayments: {
             connected: boolean;
+            businessType: string;
             detailsSubmitted: boolean;
             transfersEnabled: boolean;
             payoutsEnabled: boolean;
@@ -53,7 +55,7 @@ export declare class CommerceAccountsService {
         _id: unknown;
         role: string;
         email: string;
-    }): Promise<{
+    }, businessType: "individual" | "company"): Promise<{
         url: string;
         expiresAt: number;
     }>;
@@ -63,5 +65,7 @@ export declare class CommerceAccountsService {
     applyIdentity(session: Stripe.Identity.VerificationSession): Promise<void>;
     applyConnect(account: Stripe.Account): Promise<void>;
     requireBuyer(userId: string): Promise<void>;
+    requireEligibleSeller(userId: string): Promise<void>;
+    payoutDestination(userId: string): Promise<string | null>;
     requireSeller(userId: string): Promise<string>;
 }

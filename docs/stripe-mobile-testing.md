@@ -23,7 +23,7 @@ Nu există sold intern reutilizabil între licitații. Rambursările au timpi ba
 **Profil → Plăți și comenzi**, același acces din Activitate și din formularul de publicare:
 
 1. Cumpărător: verifică identitatea prin Stripe. În sandbox, pagina oferă alegerea unui rezultat simulat; nu este necesar un document real.
-2. Vânzător aprobat: verifică identitatea, apoi configurează încasările Connect cu date de test în sandbox.
+2. Vânzător aprobat: poate publica și primi plăți înainte de Connect. Din Profil → Metode de plată și încasare alege persoană fizică/juridică și completează Connect cu date de test când vrea încasarea. Connect colectează verificările vânzătorului; verificarea Identity separată rămâne pentru cumpărători.
 3. Publică un anunț nou. Pentru unul vechi, vânzătorul poate alege explicit „Activează Stripe”, numai dacă nu există oferte și anunțul este activ. Anunțurile cu oferte/rezervări vechi necesită revizuire; nu se debitează retroactiv.
 4. Înainte de ofertă, acceptă sumarul garanției și plătește în PaymentSheet. Oferta se trimite numai după verificarea plății pe server. Dacă prețul se modifică în timpul plății, oferta poate necesita reluare; garanția rămâne legată de această licitație.
 5. „Cumpără acum” creează rezervarea/comanda și deschide comenzile. Cumpărătorul vede prețul, garanția aplicată și restul, apoi apasă „Plătește prin Stripe”. Cumpărarea directă nu cere separat o nouă garanție.
@@ -96,4 +96,22 @@ Surse: [PaymentSheet Flutter](https://docs.page/flutter-stripe/flutter_stripe/sh
 - Build iOS simulator cu SDK-ul nativ Stripe reușit; pagina Plăți și comenzi verificată în simulator.
 - Cheile publică/secretă verificate cu Stripe sandbox real, fără afișarea lor. Testele RON, 3DS, card refuzat și refund au trecut folosind metode Stripe de test; toate plățile simulate reușite au fost rambursate.
 - Verificarea Identity a contului de test existent a fost simulată cu succes în pagina Stripe; aplicația a recitit rezultatul real. Nu s-au folosit documente reale.
-- Nu s-a făcut deploy pe server. Nu s-a finalizat o probă manuală cu un vânzător Connect și formularul PaymentSheet pe un produs în aplicație; aceasta rămâne necesară înainte de orice afirmație de validare completă cu providerul.
+- Verificările inițiale de mai sus nu includeau deploy pe server. Nu s-a finalizat o probă manuală cu un vânzător Connect și formularul PaymentSheet pe un produs în aplicație; aceasta rămâne necesară înainte de orice afirmație de validare completă cu providerul.
+
+## Încasarea vânzătorului după prima plată
+
+Publicarea, activarea unui anunț fără oferte și plata unei comenzi verifică rolul de vânzător și faptul că nu este blocat, fără să ceară cont Connect. PaymentIntent este pe platformă, fără `transfer_data` sau `on_behalf_of`. Suma vânzătorului rămâne fixată pe comandă, nu este un portofel reutilizabil.
+
+Profil → Metode de plată și încasare arată sumele după comision, separat: așteptare livrare/termen, eligibile pentru transfer, transfer în curs și transferate către Stripe. Configurează încasările cere `individual` sau `company` și deschide Stripe într-un browser securizat în aplicație (Safari View Controller / Custom Tabs, cu fallback browser extern). Datele bancare/documentele nu sunt colectate de Flutter. Tipul ales este păstrat înaintea creării contului și nu poate fi schimbat în timpul unei reluări cu aceeași cheie de idempotență.
+
+`POST /commerce/seller/onboarding` cere `{ "businessType": "individual" }` sau `{ "businessType": "company" }`. `GET /commerce/seller/earnings` returnează numai sumele contului autentificat. `POST /commerce/seller/withdraw` verifică Stripe și reia numai comenzile proprii eligibile; nu poate ocoli livrarea, intervalul de reclamații, disputele, termenul de revizuire sau flagul de transfer. Workerul reia și automat transferurile eligibile după finalizarea Connect.
+
+O comandă livrată fără Connect rămâne `delivered`, cu `payoutSetupRequired=true`; nu începe artificial tentativa de transfer și fereastra ei de idempotență. Destinația este fixată înainte de prima cerere de transfer. Se verifică în Stripe atât capabilitatea `transfers`, cât și `payouts_enabled`, inclusiv când cache-ul local este vechi. Termenul existent `fundsReviewAt` rămâne activ: după termen comanda intră în `review_required`, nu este transferată automat și necesită rezolvare prin suport/refund după caz. Acesta nu este un mecanism de păstrare nelimitată a fondurilor.
+
+Nu este necesară o cheie nouă sau o schimbare în `.env`. Backendul și Flutter trebuie actualizate împreună. `/commerce/config` anunță noul flux prin `deferredSellerOnboarding=true`. Rezervările și ofertele vechi rămân nemigrate. Cheile live continuă să fie refuzate.
+
+Verificări pentru acest flux: 53 teste unitare backend, 39 teste Flutter și integrarea pe replica set local cu Stripe simulat. Integrarea verifică publicarea și plata fără Connect, încasare blocată înainte de configurare, alegerea companie/persoană, reluare după răspuns pierdut, capabilități Stripe actualizate, transfer unic și termen de revizuire. Nu reprezintă o probă completă cu onboarding Stripe real și virament bancar.
+
+Referințe: [încasare și transferuri separate](https://docs.stripe.com/connect/separate-charges-and-transfers), [onboarding găzduit de Stripe](https://docs.stripe.com/connect/hosted-onboarding), [onboarding în browserul aplicației iOS](https://docs.stripe.com/connect/enable-payment-acceptance-guide?platform=ios&ui=payment-sheet).
+
+API-ul Stripe sandbox real a acceptat separat crearea Express RO pentru `individual` și `company`; cele două conturi tehnice temporare au fost șterse imediat. Nu au avut plăți sau documente reale.

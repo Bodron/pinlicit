@@ -1,3 +1,5 @@
+import 'package:licit/src/features/commerce/payment_methods_screen.dart';
+import 'package:licit/src/shared/models/app_user.dart';
 import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -80,6 +82,28 @@ class _StatusApi extends ApiClient {
   Future<List<Map<String, dynamic>>> commerceList(String path) async => [];
 }
 
+class _PayoutApi extends ApiClient {
+  Map<String, dynamic>? onboarding;
+  @override
+  Future<Map<String, dynamic>> commerceGet(String path) async => switch (path) {
+    'config' => {'enabled': true, 'ready': true},
+    'seller/earnings' => {'readyForRelease': 19000, 'awaitingDelivery': 10000},
+    _ => {
+      'identity': {'status': 'unverified'},
+      'sellerPayments': {'connected': false},
+    },
+  };
+  @override
+  Future<Map<String, dynamic>> commercePost(
+    String path, [
+    Map<String, dynamic>? data,
+  ]) async {
+    onboarding = data;
+    // Invalid external URL intentionally stops before any browser plugin call.
+    return {'url': 'https://example.invalid/onboard'};
+  }
+}
+
 void main() {
   Map<String, dynamic> order(String state) => {
     'id': 'order',
@@ -95,6 +119,46 @@ void main() {
         .add(const Duration(hours: 1))
         .toIso8601String(),
   };
+  for (final choice in {
+    'Persoană fizică': 'individual',
+    'Persoană juridică': 'company',
+  }.entries) {
+    testWidgets(
+      'unverified seller can choose ${choice.key} for payout onboarding',
+      (tester) async {
+        final api = _PayoutApi();
+        final session = SessionController(api, SecureTokenStore())
+          ..user = const AppUser(
+            id: 'seller',
+            name: 'Seller',
+            email: 'seller@example.invalid',
+            role: 'seller',
+            blocked: false,
+          );
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              apiClientProvider.overrideWithValue(api),
+              sessionControllerProvider.overrideWith((ref) => session),
+            ],
+            child: const MaterialApp(home: PaymentMethodsScreen()),
+          ),
+        );
+        await tester.pumpAndSettle();
+        final configure = find.text('Configurează încasările');
+        await tester.ensureVisible(configure);
+        await tester.tap(configure);
+        await tester.pumpAndSettle();
+        expect(find.text('Persoană fizică'), findsOneWidget);
+        expect(find.text('Persoană juridică'), findsOneWidget);
+        await tester.tap(find.text(choice.key));
+        await tester.pumpAndSettle();
+        expect(api.onboarding, {'businessType': choice.value});
+        expect(find.text('Link Stripe invalid.'), findsOneWidget);
+        await tester.pumpWidget(const SizedBox());
+      },
+    );
+  }
   test('order exposes only confirmed states and the remaining payment', () {
     final pending = CommerceOrder.fromJson(order('awaiting_payment'));
     expect(pending.amountDue, 9000);

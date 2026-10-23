@@ -18,6 +18,7 @@ export class CommerceAccount {
   @Prop() identityErrorCode?: string;
   @Prop() connectAttempt?: string;
   @Prop() connectAttemptAt?: Date;
+  @Prop({ enum: ["individual", "company"] }) connectBusinessType?: string;
   @Prop() connectedAccountId?: string;
   @Prop({ default: false }) transfersEnabled: boolean;
   @Prop({ default: false }) payoutsEnabled: boolean;
@@ -77,6 +78,7 @@ export class CommerceOrder {
   @Prop() chargeId?: string;
   @Prop() connectedAccountId?: string;
   @Prop() transferId?: string;
+  @Prop({ default: false }) payoutSetupRequired: boolean;
   @Prop() transferStartedAt?: Date;
   @Prop({ default: 0 }) refundedAmount: number;
   @Prop() carrier?: string;

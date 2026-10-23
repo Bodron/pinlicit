@@ -147,6 +147,82 @@ export class CommerceOrdersService {
     }
     return result;
   }
+  async sellerEarnings(sellerId: string) {
+    await this.accounts.requireEligibleSeller(sellerId);
+    const rows = await this.orders.find({ seller: sellerId }).lean();
+    const result = {
+      currency: "ron",
+      awaitingDelivery: 0,
+      readyForRelease: 0,
+      transferPending: 0,
+      transferred: 0,
+      reviewCount: 0,
+      reviewBy: null as Date | null,
+    };
+    for (const row of rows) {
+      if (row.status === "completed") result.transferred += row.sellerAmount;
+      else if (
+        row.issueOpen ||
+        ["review_required", "disputed"].includes(row.status) ||
+        (["paid", "shipped", "delivered"].includes(row.status) &&
+          row.fundsReviewAt &&
+          row.fundsReviewAt <= new Date())
+      )
+        result.reviewCount++;
+      else if (row.status === "transfer_pending")
+        result.transferPending += row.sellerAmount;
+      else if (
+        row.status === "delivered" &&
+        row.releaseAfter &&
+        row.releaseAfter <= new Date()
+      )
+        result.readyForRelease += row.sellerAmount;
+      else if (["paid", "shipped", "delivered"].includes(row.status))
+        result.awaitingDelivery += row.sellerAmount;
+      if (
+        ["paid", "shipped", "delivered"].includes(row.status) &&
+        row.fundsReviewAt &&
+        (!result.reviewBy || row.fundsReviewAt < result.reviewBy)
+      )
+        result.reviewBy = row.fundsReviewAt;
+    }
+    return result;
+  }
+  async releaseForSeller(sellerId: string) {
+    await this.accounts.requireSeller(sellerId);
+    if (!this.stripe.transfersEnabled)
+      throw new ConflictException("Seller transfers are disabled.");
+    const rows = await this.orders
+      .find({
+        seller: sellerId,
+        issueOpen: false,
+        status: { $in: ["delivered", "transfer_pending"] },
+        releaseAfter: { $lte: new Date() },
+      })
+      .limit(20);
+    for (const row of rows)
+      await this.locks.run(`order:${row._id}`, () =>
+        this.maintainOrder(String(row._id)),
+      );
+    return this.sellerEarnings(sellerId);
+  }
+  private async destinationForRelease(order: CommerceOrderDocument) {
+    const destination = await this.accounts.payoutDestination(
+      String(order.seller),
+    );
+    if (!destination) {
+      order.payoutSetupRequired = true;
+      await order.save();
+      return null;
+    }
+    if (order.connectedAccountId && order.connectedAccountId !== destination)
+      throw new ConflictException("Destination changed.");
+    // Pin the destination BEFORE the first transfer, including lost responses.
+    order.connectedAccountId = destination;
+    order.payoutSetupRequired = false;
+    await order.save();
+    return destination;
+  }
   private async requireOrder(id: string) {
     const order = await this.orders.findById(id);
     if (!order) throw new NotFoundException("Order not found.");
@@ -164,12 +240,9 @@ export class CommerceOrdersService {
       )
         throw new ConflictException("Order is not payable.");
       await this.accounts.requireBuyer(buyerId);
-      const destination = await this.accounts.requireSeller(
-        String(order.seller),
-      );
+      await this.accounts.requireEligibleSeller(String(order.seller));
       order = await this.deposits.allocate(order);
       await this.validateCreditCharges(order);
-      order.connectedAccountId = destination;
       if (this.due(order) === 0) {
         order.status = "paid";
         order.fundsReviewAt = new Date(
@@ -224,7 +297,6 @@ export class CommerceOrdersService {
           { idempotencyKey: `payment:${order.paymentAttempt}` },
         );
         order.paymentIntentId = intent.id;
-        order.connectedAccountId = destination;
         await order.save();
       }
       this.assertIntent(order, intent);
@@ -560,9 +632,8 @@ export class CommerceOrdersService {
       await this.syncCharge(charge);
       return;
     }
-    const destination = await this.accounts.requireSeller(String(order.seller));
-    if (order.connectedAccountId && order.connectedAccountId !== destination)
-      throw new ConflictException("Destination changed.");
+    const destination = await this.destinationForRelease(order);
+    if (!destination) return;
     if (order.status === "delivered") {
       order.status = "transfer_pending";
       order.transferStartedAt = new Date();
@@ -719,9 +790,8 @@ export class CommerceOrdersService {
       }
       sources.push({ chargeId, amount: this.due(order) });
     }
-    const destination = await this.accounts.requireSeller(String(order.seller));
-    if (order.connectedAccountId && order.connectedAccountId !== destination)
-      throw new ConflictException("Destination changed.");
+    const destination = await this.destinationForRelease(order);
+    if (!destination) return;
     order.connectedAccountId = destination;
     if (!order.payoutParts.length) {
       let remaining = order.sellerAmount;

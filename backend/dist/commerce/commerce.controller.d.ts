@@ -4,7 +4,7 @@ import { Request } from "express";
 import { CommerceAccountsService } from "./commerce-accounts.service";
 import { CommerceOrdersService } from "./commerce-orders.service";
 import { CommerceWorker } from "./commerce.worker";
-import { BidGuaranteeDto, OrderIssueDto, OrderRefundDto, ShipmentDto } from "./commerce.dto";
+import { BidGuaranteeDto, OrderIssueDto, OrderRefundDto, ShipmentDto, SellerOnboardingDto } from "./commerce.dto";
 import { StripeClientService } from "./stripe-client.service";
 export declare class StripeHttpFilter implements ExceptionFilter {
     catch(_: unknown, host: ArgumentsHost): void;
@@ -26,6 +26,7 @@ export declare class CommerceController {
         enabled: boolean;
         ready: boolean;
         mode: string;
+        deferredSellerOnboarding: boolean;
         publishableKey: string;
         merchantDisplayName: string;
         guaranteeBps: number;
@@ -69,6 +70,8 @@ export declare class CommerceController {
         amountDue: number;
         fee: any;
         sellerAmount: any;
+        payoutSetupRequired: boolean;
+        fundsReviewAt: any;
         currency: any;
         status: any;
         paymentDeadline: any;
@@ -87,6 +90,7 @@ export declare class CommerceController {
         };
         sellerPayments: {
             connected: boolean;
+            businessType: string;
             detailsSubmitted: boolean;
             transfersEnabled: boolean;
             payoutsEnabled: boolean;
@@ -101,9 +105,27 @@ export declare class CommerceController {
         status: import("stripe/cjs/resources/Identity").VerificationSession.Status;
         url: string;
     }>;
-    connect(user: any): Promise<{
+    connect(user: any, dto: SellerOnboardingDto): Promise<{
         url: string;
         expiresAt: number;
+    }>;
+    earnings(user: any): Promise<{
+        currency: string;
+        awaitingDelivery: number;
+        readyForRelease: number;
+        transferPending: number;
+        transferred: number;
+        reviewCount: number;
+        reviewBy: Date | null;
+    }>;
+    withdraw(user: any): Promise<{
+        currency: string;
+        awaitingDelivery: number;
+        readyForRelease: number;
+        transferPending: number;
+        transferred: number;
+        reviewCount: number;
+        reviewBy: Date | null;
     }>;
     reviewQueue(): Promise<{
         issueCode: string;
@@ -119,6 +141,8 @@ export declare class CommerceController {
         amountDue: number;
         fee: any;
         sellerAmount: any;
+        payoutSetupRequired: boolean;
+        fundsReviewAt: any;
         currency: any;
         status: any;
         paymentDeadline: any;
@@ -141,6 +165,8 @@ export declare class CommerceController {
         amountDue: number;
         fee: any;
         sellerAmount: any;
+        payoutSetupRequired: boolean;
+        fundsReviewAt: any;
         currency: any;
         status: any;
         paymentDeadline: any;
@@ -169,6 +195,8 @@ export declare class CommerceController {
         amountDue: number;
         fee: any;
         sellerAmount: any;
+        payoutSetupRequired: boolean;
+        fundsReviewAt: any;
         currency: any;
         status: any;
         paymentDeadline: any;
@@ -190,6 +218,8 @@ export declare class CommerceController {
         amountDue: number;
         fee: any;
         sellerAmount: any;
+        payoutSetupRequired: boolean;
+        fundsReviewAt: any;
         currency: any;
         status: any;
         paymentDeadline: any;
@@ -211,6 +241,8 @@ export declare class CommerceController {
         amountDue: number;
         fee: any;
         sellerAmount: any;
+        payoutSetupRequired: boolean;
+        fundsReviewAt: any;
         currency: any;
         status: any;
         paymentDeadline: any;
@@ -232,6 +264,8 @@ export declare class CommerceController {
         amountDue: number;
         fee: any;
         sellerAmount: any;
+        payoutSetupRequired: boolean;
+        fundsReviewAt: any;
         currency: any;
         status: any;
         paymentDeadline: any;

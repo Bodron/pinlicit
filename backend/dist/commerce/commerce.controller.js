@@ -99,8 +99,14 @@ let CommerceController = class CommerceController {
     identity(user) {
         return this.accounts.startIdentity(String(user._id));
     }
-    connect(user) {
-        return this.accounts.startConnect(user);
+    connect(user, dto) {
+        return this.accounts.startConnect(user, dto.businessType);
+    }
+    earnings(user) {
+        return this.orders.sellerEarnings(String(user._id));
+    }
+    withdraw(user) {
+        return this.orders.releaseForSeller(String(user._id));
     }
     reviewQueue() {
         return this.orders.reviewQueue();
@@ -191,10 +197,29 @@ __decorate([
 __decorate([
     (0, common_1.Post)("seller/onboarding"),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, commerce_dto_1.SellerOnboardingDto]),
+    __metadata("design:returntype", void 0)
+], CommerceController.prototype, "connect", null);
+__decorate([
+    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(user_schema_1.UserRole.Seller, user_schema_1.UserRole.Admin),
+    (0, common_1.Get)("seller/earnings"),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
-], CommerceController.prototype, "connect", null);
+], CommerceController.prototype, "earnings", null);
+__decorate([
+    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(user_schema_1.UserRole.Seller, user_schema_1.UserRole.Admin),
+    (0, common_1.Post)("seller/withdraw"),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], CommerceController.prototype, "withdraw", null);
 __decorate([
     (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
     (0, roles_decorator_1.Roles)(user_schema_1.UserRole.Admin),

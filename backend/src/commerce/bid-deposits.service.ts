@@ -89,7 +89,7 @@ export class BidDepositsService {
   }
   async activate(productId: string, seller: string) {
     this.stripe.sdk;
-    await this.accounts.requireSeller(seller);
+    await this.accounts.requireEligibleSeller(seller);
     return this.products.db.transaction(async (session) => {
       const product = await this.products.findById(productId).session(session);
       if (!product || String(product.seller) !== seller)
@@ -146,6 +146,7 @@ export class BidDepositsService {
         throw new ConflictException(
           "Auction is not eligible for a bid guarantee.",
         );
+      await this.accounts.requireEligibleSeller(String(product.seller));
       if (maximum < product.currentPrice + product.minBidIncrement)
         throw new ConflictException(
           "Maximum bid is below the current minimum.",

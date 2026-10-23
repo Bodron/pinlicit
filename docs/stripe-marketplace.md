@@ -9,7 +9,7 @@ flowchart LR
   A[Act + selfie la Stripe Identity] --> B[Rezultat verificat în backend]
   C[Vânzător: onboarding Connect] --> D[Cont eligibil pentru transferuri]
   B --> E[Ofertă / Cumpără acum]
-  D --> E
+  D --> K
   E --> F[Comandă cu preț fixat pe server]
   F --> G[Plată confirmată de Stripe]
   G --> H[Expediere / predare]
@@ -56,7 +56,7 @@ Prețul, comisionul și suma vânzătorului sunt calculate exclusiv pe server ș
 
 Prețul afișat la închiderea licitației este folosit pentru plată, nu maximul privat introdus de cumpărător. Un maxim care îndeplinește rezerva ridică prețul public cel puțin la rezervă. O licitație fără ofertant eligibil sau fără rezervă atinsă expiră fără comandă și fără plată.
 
-Pentru anunțurile financiare noi (`commerceVersion=1`), publicarea necesită onboarding complet, iar licitarea și cumpărarea imediată cer identitate verificată. Anunțurile vechi nu sunt înscrise automat în acest flux. Rezervările vechi necesită revizuire, nu o debitare retroactivă.
+Pentru anunțurile financiare noi (`commerceVersion=1`), publicarea necesită rol aprobat și cont neblocat; Connect este cerut la eliberarea încasărilor, iar licitarea și cumpărarea imediată cer identitate verificată. Anunțurile vechi nu sunt înscrise automat în acest flux. Rezervările vechi necesită revizuire, nu o debitare retroactivă.
 
 ## API
 
@@ -66,7 +66,7 @@ Toate rutele de utilizator cer JWT; identitatea și rolul sunt citite din utiliz
 | --- | --- |
 | `GET /commerce/me` | Status propriu Identity și Connect, fără datele documentului |
 | `POST /commerce/identity/session` | Creare/reluare verificare proprie |
-| `POST /commerce/seller/onboarding` | Link temporar de onboarding, numai vânzător/admin verificat |
+| `POST /commerce/seller/onboarding` | Link temporar de onboarding, numai vânzător/admin eligibil; body `businessType: individual/company` |
 | `GET /commerce/orders` | Ultimele 50 de comenzi proprii, ca vânzător sau cumpărător |
 | `POST /commerce/products/:id/order` | Creează/returnează comanda rezervării proprii |
 | `POST /commerce/orders/:id/payment` | PaymentIntent al cumpărătorului, cu sumă din snapshot |

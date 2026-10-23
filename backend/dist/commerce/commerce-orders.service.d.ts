@@ -26,6 +26,8 @@ export declare class CommerceOrdersService {
         amountDue: number;
         fee: any;
         sellerAmount: any;
+        payoutSetupRequired: boolean;
+        fundsReviewAt: any;
         currency: any;
         status: any;
         paymentDeadline: any;
@@ -50,6 +52,8 @@ export declare class CommerceOrdersService {
         amountDue: number;
         fee: any;
         sellerAmount: any;
+        payoutSetupRequired: boolean;
+        fundsReviewAt: any;
         currency: any;
         status: any;
         paymentDeadline: any;
@@ -71,6 +75,8 @@ export declare class CommerceOrdersService {
         amountDue: number;
         fee: any;
         sellerAmount: any;
+        payoutSetupRequired: boolean;
+        fundsReviewAt: any;
         currency: any;
         status: any;
         paymentDeadline: any;
@@ -83,6 +89,25 @@ export declare class CommerceOrdersService {
     }>;
     private due;
     mine(userId: string): Promise<any[]>;
+    sellerEarnings(sellerId: string): Promise<{
+        currency: string;
+        awaitingDelivery: number;
+        readyForRelease: number;
+        transferPending: number;
+        transferred: number;
+        reviewCount: number;
+        reviewBy: Date | null;
+    }>;
+    releaseForSeller(sellerId: string): Promise<{
+        currency: string;
+        awaitingDelivery: number;
+        readyForRelease: number;
+        transferPending: number;
+        transferred: number;
+        reviewCount: number;
+        reviewBy: Date | null;
+    }>;
+    private destinationForRelease;
     private requireOrder;
     payment(id: string, buyerId: string): Promise<{
         status: string;
@@ -104,6 +129,8 @@ export declare class CommerceOrdersService {
         amountDue: number;
         fee: any;
         sellerAmount: any;
+        payoutSetupRequired: boolean;
+        fundsReviewAt: any;
         currency: any;
         status: any;
         paymentDeadline: any;
@@ -125,6 +152,8 @@ export declare class CommerceOrdersService {
         amountDue: number;
         fee: any;
         sellerAmount: any;
+        payoutSetupRequired: boolean;
+        fundsReviewAt: any;
         currency: any;
         status: any;
         paymentDeadline: any;
@@ -146,6 +175,8 @@ export declare class CommerceOrdersService {
         amountDue: number;
         fee: any;
         sellerAmount: any;
+        payoutSetupRequired: boolean;
+        fundsReviewAt: any;
         currency: any;
         status: any;
         paymentDeadline: any;
@@ -167,6 +198,8 @@ export declare class CommerceOrdersService {
         amountDue: number;
         fee: any;
         sellerAmount: any;
+        payoutSetupRequired: boolean;
+        fundsReviewAt: any;
         currency: any;
         status: any;
         paymentDeadline: any;

@@ -57,7 +57,8 @@ export class ProductsService {
     }
 
     const commerce = this.config?.get<string>("STRIPE_ENABLED") === "true";
-    if (commerce) await this.commerceAccounts.requireSeller(String(seller._id));
+    if (commerce)
+      await this.commerceAccounts.requireEligibleSeller(String(seller._id));
     if (!this.uploads)
       throw new ServiceUnavailableException("Image processing is unavailable.");
     const image = await this.uploads.requireImage(

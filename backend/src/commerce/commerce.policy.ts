@@ -29,6 +29,8 @@ export function publicOrder(order: any) {
     amountDue: order.amount - (order.depositCredit || 0),
     fee: order.fee,
     sellerAmount: order.sellerAmount,
+    payoutSetupRequired: order.payoutSetupRequired === true,
+    fundsReviewAt: order.fundsReviewAt,
     currency: order.currency,
     status: order.status,
     paymentDeadline: order.paymentDeadline,

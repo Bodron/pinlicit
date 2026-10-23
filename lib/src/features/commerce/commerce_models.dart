@@ -13,12 +13,13 @@ class CommerceOrder {
       releaseAfter = DateTime.tryParse('${json['releaseAfter']}'),
       carrier = json['carrier'] as String?,
       trackingCode = json['trackingCode'] as String?,
-      issueOpen = json['issueOpen'] == true;
+      issueOpen = json['issueOpen'] == true,
+      payoutSetupRequired = json['payoutSetupRequired'] == true;
   final String id, productId, title, buyerId, sellerId, status;
   final int amount, depositCredit, amountDue;
   final DateTime? paymentDeadline, releaseAfter;
   final String? carrier, trackingCode;
-  final bool issueOpen;
+  final bool issueOpen, payoutSetupRequired;
   bool get canPay =>
       status == 'awaiting_payment' &&
       paymentDeadline != null &&

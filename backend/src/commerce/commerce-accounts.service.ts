@@ -51,6 +51,7 @@ export class CommerceAccountsService {
       },
       sellerPayments: {
         connected: Boolean(profile?.connectedAccountId),
+        businessType: profile?.connectBusinessType || null,
         detailsSubmitted: profile?.detailsSubmitted || false,
         transfersEnabled: profile?.transfersEnabled || false,
         payoutsEnabled: profile?.payoutsEnabled || false,
@@ -109,20 +110,39 @@ export class CommerceAccountsService {
       return { status: session.status, url: session.url };
     });
   }
-  async startConnect(user: { _id: unknown; role: string; email: string }) {
+  async startConnect(
+    user: { _id: unknown; role: string; email: string },
+    businessType: "individual" | "company",
+  ) {
     if (!["seller", "admin"].includes(user.role))
       throw new ForbiddenException("Seller approval is required.");
+    await this.requireEligibleSeller(String(user._id));
     const sdk = this.stripe.sdk;
     const refreshUrl = this.stripe.returnUrl("STRIPE_CONNECT_REFRESH_URL");
-    const returnUrl = this.stripe.returnUrl("STRIPE_CONNECT_RETURN_URL");
+    const returnUrl = new URL(
+      this.stripe.returnUrl("STRIPE_CONNECT_RETURN_URL"),
+    );
+    returnUrl.searchParams.set("flow", "seller");
     return this.locks.run(`connect:${user._id}`, async () => {
       const profile = await this.profile(String(user._id));
-      if (profile.identityStatus !== "verified")
-        throw new ForbiddenException("Verify your identity first.");
+      if (!["individual", "company"].includes(businessType))
+        throw new ConflictException("Choose individual or company.");
+      if (
+        profile.connectBusinessType &&
+        profile.connectBusinessType !== businessType
+      )
+        throw new ConflictException(
+          "The Stripe account type cannot be changed here. Contact support.",
+        );
       if (!profile.connectedAccountId) {
+        if (profile.connectAttempt && !profile.connectBusinessType)
+          throw new ConflictException(
+            "Unresolved Stripe creation requires reconciliation. No duplicate will be created.",
+          );
         if (!profile.connectAttempt) {
           profile.connectAttempt = randomUUID();
           profile.connectAttemptAt = new Date();
+          profile.connectBusinessType = businessType;
           await profile.save();
         }
         this.requireFreshAttempt(profile.connectAttemptAt);
@@ -130,6 +150,9 @@ export class CommerceAccountsService {
           {
             type: "express",
             country: "RO",
+            business_type: profile.connectBusinessType as
+              | "individual"
+              | "company",
             email: user.email,
             capabilities: { transfers: { requested: true } },
             metadata: {
@@ -143,11 +166,15 @@ export class CommerceAccountsService {
         await profile.save();
       }
       const account = await sdk.accounts.retrieve(profile.connectedAccountId);
+      if (account.business_type && account.business_type !== businessType)
+        throw new ConflictException(
+          "The Stripe account type cannot be changed here. Contact support.",
+        );
       await this.applyConnect(account);
       const link = await sdk.accountLinks.create({
         account: profile.connectedAccountId,
         type: "account_onboarding",
-        return_url: returnUrl,
+        return_url: returnUrl.toString(),
         refresh_url: refreshUrl,
       });
       return { url: link.url, expiresAt: link.expires_at };
@@ -259,6 +286,9 @@ export class CommerceAccountsService {
       {
         $set: {
           connectedAccountId: account.id,
+          ...(account.business_type
+            ? { connectBusinessType: account.business_type }
+            : {}),
           transfersEnabled: account.capabilities?.transfers === "active",
           payoutsEnabled: account.payouts_enabled === true,
           detailsSubmitted: account.details_submitted === true,
@@ -277,7 +307,7 @@ export class CommerceAccountsService {
         "Identity verification is required before payment.",
       );
   }
-  async requireSeller(userId: string) {
+  async requireEligibleSeller(userId: string) {
     if (
       !(await this.users.exists({
         _id: userId,
@@ -289,14 +319,13 @@ export class CommerceAccountsService {
         "Seller account is not eligible for transfers.",
       );
     }
-    const profile = await this.accounts.findOne({
-      user: userId,
-      identityStatus: "verified",
-      transfersEnabled: true,
-      payoutsEnabled: true,
-    });
-    if (!profile?.connectedAccountId)
-      throw new ConflictException("Seller payment onboarding is incomplete.");
+  }
+  // Checkout only needs an eligible seller. Connect and its KYC are required
+  // when releasing funds, refreshed from Stripe even if cached flags are false.
+  async payoutDestination(userId: string): Promise<string | null> {
+    await this.requireEligibleSeller(userId);
+    const profile = await this.accounts.findOne({ user: userId });
+    if (!profile?.connectedAccountId) return null;
     // Refresh current capabilities instead of trusting a delayed webhook.
     const account = await this.stripe.sdk.accounts.retrieve(
       profile.connectedAccountId,
@@ -306,7 +335,13 @@ export class CommerceAccountsService {
       account.capabilities?.transfers !== "active" ||
       !account.payouts_enabled
     )
-      throw new ConflictException("Seller cannot receive funds currently.");
+      return null;
     return profile.connectedAccountId;
+  }
+  async requireSeller(userId: string) {
+    const destination = await this.payoutDestination(userId);
+    if (!destination)
+      throw new ConflictException("Seller payment onboarding is incomplete.");
+    return destination;
   }
 }

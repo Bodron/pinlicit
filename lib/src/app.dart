@@ -1,3 +1,4 @@
+import 'features/commerce/payment_methods_screen.dart';
 import 'features/commerce/commerce_review_screen.dart';
 import 'features/commerce/commerce_screen.dart';
 import 'package:licit/l10n/l10n.dart';
@@ -31,7 +32,9 @@ final routerProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       if (state.uri.scheme == 'pinbind') {
         // Stripe handles 3DS; a redirect alone never changes a payment state.
-        return '/commerce';
+        return state.uri.host == 'payment-methods'
+            ? '/payment-methods'
+            : '/commerce';
       }
       final restoring = !session.hasFinishedRestore;
       final onSplash = state.matchedLocation == '/splash';
@@ -56,6 +59,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
+      GoRoute(
+        path: '/payment-methods',
+        builder: (context, state) => const PaymentMethodsScreen(),
+      ),
       GoRoute(
         path: '/commerce-review',
         builder: (context, state) => const CommerceReviewScreen(),

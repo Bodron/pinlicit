@@ -34,6 +34,7 @@ import {
   OrderIssueDto,
   OrderRefundDto,
   ShipmentDto,
+  SellerOnboardingDto,
 } from "./commerce.dto";
 import { StripeClientService } from "./stripe-client.service";
 
@@ -119,8 +120,23 @@ export class CommerceController {
   @Post("identity/session") identity(@CurrentUser() user: any) {
     return this.accounts.startIdentity(String(user._id));
   }
-  @Post("seller/onboarding") connect(@CurrentUser() user: any) {
-    return this.accounts.startConnect(user);
+  @Post("seller/onboarding") connect(
+    @CurrentUser() user: any,
+    @Body() dto: SellerOnboardingDto,
+  ) {
+    return this.accounts.startConnect(user, dto.businessType);
+  }
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.Seller, UserRole.Admin)
+  @Get("seller/earnings")
+  earnings(@CurrentUser() user: any) {
+    return this.orders.sellerEarnings(String(user._id));
+  }
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.Seller, UserRole.Admin)
+  @Post("seller/withdraw")
+  withdraw(@CurrentUser() user: any) {
+    return this.orders.releaseForSeller(String(user._id));
   }
   @UseGuards(RolesGuard)
   @Roles(UserRole.Admin)

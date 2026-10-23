@@ -15,6 +15,10 @@ String commerceError(Object error) {
       const translations = {
         'Identity verification is required before payment.':
             'Verifică-ți identitatea prin Stripe înainte de licitare sau plată.',
+        'The Stripe account type cannot be changed here. Contact support.':
+            'Tipul contului Stripe a fost deja ales. Contactează suportul pentru schimbare.',
+        'Seller transfers are disabled.':
+            'Încasările nu sunt activate momentan. Plata cumpărătorului rămâne înregistrată.',
         'Verify your identity first.':
             'Finalizează mai întâi verificarea identității.',
         'Seller payment onboarding is incomplete.':

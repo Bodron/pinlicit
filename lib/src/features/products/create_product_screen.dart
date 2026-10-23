@@ -93,12 +93,12 @@ class _CreateProductScreenState extends ConsumerState<CreateProductScreen> {
                                     const _PageHeader(),
                                     TextButton.icon(
                                       onPressed: () =>
-                                          context.push('/commerce'),
+                                          context.push('/payment-methods'),
                                       icon: const Icon(
                                         Icons.account_balance_outlined,
                                       ),
                                       label: const Text(
-                                        'Verifică identitatea și configurează încasările Stripe',
+                                        'Poți configura încasările și după prima vânzare',
                                       ),
                                     ),
                                     const SizedBox(height: 40),

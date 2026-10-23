@@ -19,6 +19,8 @@ export declare function publicOrder(order: any): {
     amountDue: number;
     fee: any;
     sellerAmount: any;
+    payoutSetupRequired: boolean;
+    fundsReviewAt: any;
     currency: any;
     status: any;
     paymentDeadline: any;
