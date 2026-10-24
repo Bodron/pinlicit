@@ -25,9 +25,12 @@ describe("ProductsService", () => {
     productModel.create.mockReset();
   });
 
-  it("requires seller approval before creating a product", async () => {
+  it("blocks suspended accounts from creating a product", async () => {
     await expect(
-      service.create({ _id: "user-id", role: UserRole.User }, validDto),
+      service.create(
+        { _id: "user-id", role: UserRole.User, blocked: true },
+        validDto,
+      ),
     ).rejects.toBeInstanceOf(ForbiddenException);
   });
 

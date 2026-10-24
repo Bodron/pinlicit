@@ -1,3 +1,4 @@
+import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -65,7 +66,7 @@ class _CheckoutPayments extends StripePayments {
 
 void main() {
   setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
-  Future<void> open(
+  Future<GoRouter> open(
     WidgetTester tester,
     _CheckoutApi api,
     _CheckoutPayments payments,
@@ -82,6 +83,20 @@ void main() {
         role: 'user',
         blocked: false,
       );
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (context, state) => const CheckoutScreen(orderId: 'order'),
+        ),
+        GoRoute(
+          path: '/activity',
+          builder: (context, state) =>
+              const Scaffold(body: Text('Produsele cumpărate')),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -89,10 +104,11 @@ void main() {
           stripePaymentsProvider.overrideWithValue(payments),
           sessionControllerProvider.overrideWith((ref) => session),
         ],
-        child: const MaterialApp(home: CheckoutScreen(orderId: 'order')),
+        child: MaterialApp.router(routerConfig: router),
       ),
     );
     await tester.pumpAndSettle();
+    return router;
   }
 
   testWidgets('blocks the invalid one-leu order before opening Stripe', (
@@ -123,22 +139,33 @@ void main() {
       expect(api.paymentRequests, 1);
       expect(find.textContaining('în curs de confirmare'), findsOneWidget);
       expect(find.textContaining('Plată confirmată'), findsNothing);
-      await tester.pumpWidget(const SizedBox());
-    },
-  );
-  testWidgets(
-    'only canonical payment success changes checkout to confirmation',
-    (tester) async {
-      final api = _CheckoutApi();
-      await open(tester, api, _CheckoutPayments(api)..confirmOnServer = true);
-      await tester.tap(find.byType(FilledButton));
+      expect(find.text('Produsele cumpărate'), findsNothing);
+      api.status = 'paid';
+      await tester.pump(const Duration(seconds: 10));
       await tester.pumpAndSettle();
-      expect(find.text('Comanda ta'), findsOneWidget);
-      expect(find.text('Vezi comenzile tale'), findsOneWidget);
-      expect(tester.takeException(), isNull);
+      expect(find.text('Produsele cumpărate'), findsOneWidget);
       await tester.pumpWidget(const SizedBox());
     },
   );
+  testWidgets('only canonical payment success opens purchased activity', (
+    tester,
+  ) async {
+    final api = _CheckoutApi();
+    final router = await open(
+      tester,
+      api,
+      _CheckoutPayments(api)..confirmOnServer = true,
+    );
+    await tester.tap(find.byType(FilledButton));
+    await tester.pumpAndSettle();
+    expect(find.text('Produsele cumpărate'), findsOneWidget);
+    expect(router.routeInformationProvider.value.uri.queryParameters, {
+      'filter': 'wins',
+      'purchase': 'order',
+    });
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+  });
   testWidgets(
     'payment error survives background refresh and the buyer can retry',
     (tester) async {

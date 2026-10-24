@@ -17,9 +17,6 @@ const common_1 = require("@nestjs/common");
 const platform_express_1 = require("@nestjs/platform-express");
 const jwt_auth_guard_1 = require("../auth/jwt-auth.guard");
 const current_user_decorator_1 = require("../common/current-user.decorator");
-const roles_decorator_1 = require("../common/roles.decorator");
-const roles_guard_1 = require("../common/roles.guard");
-const user_schema_1 = require("../users/schemas/user.schema");
 const image_policy_1 = require("./image-policy");
 const image_capacity_interceptor_1 = require("./image-capacity.interceptor");
 const uploads_service_1 = require("./uploads.service");
@@ -49,8 +46,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], UploadsController.prototype, "upload", null);
 exports.UploadsController = UploadsController = __decorate([
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)(user_schema_1.UserRole.Seller, user_schema_1.UserRole.Admin),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Controller)("uploads"),
     __metadata("design:paramtypes", [uploads_service_1.UploadsService])
 ], UploadsController);

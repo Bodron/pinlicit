@@ -11,7 +11,6 @@ import { ConfigService } from "@nestjs/config";
 import { CommerceAccountsService } from "../commerce/commerce-accounts.service";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model, Types } from "mongoose";
-import { UserRole } from "../users/schemas/user.schema";
 import { CreateProductDto } from "./dto/create-product.dto";
 import { FeedQueryDto } from "./dto/feed-query.dto";
 import { CatalogQueryDto } from "./dto/catalog-query.dto";
@@ -32,10 +31,8 @@ export class ProductsService {
   ) {}
 
   async create(seller: any, dto: CreateProductDto) {
-    if (seller.role !== UserRole.Seller && seller.role !== UserRole.Admin) {
-      throw new ForbiddenException(
-        "Seller approval is required before listing products.",
-      );
+    if (seller.blocked) {
+      throw new ForbiddenException("Account is blocked.");
     }
     if (dto.reservePrice && dto.reservePrice < dto.startingPrice) {
       throw new BadRequestException(

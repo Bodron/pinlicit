@@ -203,8 +203,6 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], CommerceController.prototype, "connect", null);
 __decorate([
-    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)(user_schema_1.UserRole.Seller, user_schema_1.UserRole.Admin),
     (0, common_1.Get)("seller/earnings"),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __metadata("design:type", Function),
@@ -212,8 +210,6 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], CommerceController.prototype, "earnings", null);
 __decorate([
-    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)(user_schema_1.UserRole.Seller, user_schema_1.UserRole.Admin),
     (0, common_1.Post)("seller/withdraw"),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __metadata("design:type", Function),

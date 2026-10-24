@@ -246,7 +246,7 @@ async function main() {
       name: "Seller",
       email: "seller@example.invalid",
       passwordHash: "unused",
-      role: "seller",
+      role: "user",
     });
     const buyer = await model("User").create({
       name: "Buyer",
@@ -329,14 +329,14 @@ async function main() {
     }
     await post("seller/onboarding", buyer, {
       businessType: "individual",
-    }).expect(403);
-    await post("seller/onboarding", seller, {
-      businessType: "individual",
     }).expect(201);
     await post("seller/onboarding", seller, {
       businessType: "individual",
     }).expect(201);
-    assert.equal(fake.calls.account, 1);
+    await post("seller/onboarding", seller, {
+      businessType: "individual",
+    }).expect(201);
+    assert.equal(fake.calls.account, 2);
     const productBase = {
       seller: seller._id,
       category: new (require("mongoose").Types.ObjectId)(),
@@ -832,7 +832,7 @@ async function main() {
       name: "Late seller",
       email: "late@example.invalid",
       passwordHash: "unused",
-      role: "seller",
+      role: "user",
     });
     const lateAssetKey = `images/v1/${"c".repeat(64)}/960x640.webp`;
     await model("ImageAsset").create({
@@ -906,7 +906,7 @@ async function main() {
       ).body.readyForRelease,
       19000,
     );
-    await api.get("/commerce/seller/earnings").set(auth(buyer)).expect(403);
+    await api.get("/commerce/seller/earnings").set(auth(buyer)).expect(200);
     await post("seller/withdraw", lateSeller).expect(409);
     await post("seller/onboarding", lateSeller).expect(400);
     await post("seller/onboarding", lateSeller, {
@@ -956,7 +956,7 @@ async function main() {
       name: "Never seller",
       email: "never@example.invalid",
       passwordHash: "unused",
-      role: "seller",
+      role: "user",
     });
     const neverProduct = await model("Product").create({
       ...productBase,

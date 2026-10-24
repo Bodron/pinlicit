@@ -69,11 +69,8 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                                   activeBidCount: _bids.length,
                                   wonItemCount: _wonItemsCount,
                                   onLogout: () => _logout(session),
-                                  onSellerTap: () => context.go(
-                                    user?.isSeller == true
-                                        ? '/activity?section=sales'
-                                        : '/seller',
-                                  ),
+                                  onSellerTap: () =>
+                                      context.go('/activity?section=sales'),
                                 ),
                                 const SizedBox(height: 32),
                                 _BidsColumn(
@@ -100,11 +97,8 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                                   activeBidCount: _bids.length,
                                   wonItemCount: _wonItemsCount,
                                   onLogout: () => _logout(session),
-                                  onSellerTap: () => context.go(
-                                    user?.isSeller == true
-                                        ? '/activity?section=sales'
-                                        : '/seller',
-                                  ),
+                                  onSellerTap: () =>
+                                      context.go('/activity?section=sales'),
                                 ),
                               ),
                               const SizedBox(width: 64),
@@ -213,8 +207,6 @@ class _ProfileColumn extends StatelessWidget {
   final VoidCallback onLogout;
   final VoidCallback onSellerTap;
 
-  bool get _isSeller => role == 'seller' || role == 'admin';
-
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -314,7 +306,7 @@ class _ProfileColumn extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 16),
-        _SellerStatusCard(seller: _isSeller, role: role, onTap: onSellerTap),
+        _SellerStatusCard(onTap: onSellerTap),
         const SizedBox(height: 28),
         _QuickLink(
           icon: Icons.account_balance_outlined,
@@ -422,14 +414,8 @@ class _StatTile extends StatelessWidget {
 }
 
 class _SellerStatusCard extends StatelessWidget {
-  const _SellerStatusCard({
-    required this.seller,
-    required this.role,
-    required this.onTap,
-  });
+  const _SellerStatusCard({required this.onTap});
 
-  final bool seller;
-  final String role;
   final VoidCallback onTap;
 
   @override
@@ -450,9 +436,7 @@ class _SellerStatusCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    seller
-                        ? context.l10n.sellerStatus
-                        : context.l10n.becomeSeller,
+                    'Anunțurile mele',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 24,
@@ -462,9 +446,7 @@ class _SellerStatusCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    seller
-                        ? context.l10n.memberStatus(_sellerLabel(context, role))
-                        : context.l10n.requestSellerApproval,
+                    'Publică gratuit și urmărește vânzările tale.',
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.78),
                       fontSize: 12,
@@ -474,20 +456,11 @@ class _SellerStatusCard extends StatelessWidget {
                 ],
               ),
             ),
-            Icon(
-              seller ? Icons.verified_user_outlined : Icons.storefront_outlined,
-              color: Colors.white,
-              size: 32,
-            ),
+            Icon(Icons.storefront_outlined, color: Colors.white, size: 32),
           ],
         ),
       ),
     );
-  }
-
-  String _sellerLabel(BuildContext context, String role) {
-    if (role == 'admin') return context.l10n.adminPremium;
-    return context.l10n.verifiedPremium;
   }
 }
 

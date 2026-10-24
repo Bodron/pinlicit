@@ -34,6 +34,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen>
   bool _loading = true, _busy = false, _refreshing = false, _foreground = true;
   String? _error, _notice;
   Timer? _timer;
+  bool _redirected = false;
   @override
   void initState() {
     super.initState();
@@ -69,6 +70,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen>
         api.commerceGet('me'),
         api.commerceGet('orders/${widget.orderId}'),
       ]);
+      final wasAwaitingPayment = _order?.status == 'awaiting_payment';
       final order = CommerceOrder.fromJson(rows[2]);
       Product? product = _product;
       if (product == null || product.id != order.productId) {
@@ -86,6 +88,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen>
         _product = product;
         if (!quiet) _error = null;
       });
+      if (wasAwaitingPayment) _goToPurchases(order);
     } catch (error) {
       if (mounted && !quiet) setState(() => _error = commerceError(error));
     } finally {
@@ -110,6 +113,25 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen>
       ].contains(_order!.status);
   bool get _buyer =>
       _order?.buyerId == ref.read(sessionControllerProvider).user?.id;
+  void _goToPurchases(CommerceOrder order) {
+    if (_redirected ||
+        !mounted ||
+        order.buyerId != ref.read(sessionControllerProvider).user?.id ||
+        ![
+          'paid',
+          'shipped',
+          'delivered',
+          'transfer_pending',
+          'completed',
+        ].contains(order.status)) {
+      return;
+    }
+    _redirected = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) context.go('/activity?filter=wins&purchase=${order.id}');
+    });
+  }
+
   Future<void> _pay() async {
     if (_busy || _belowMinimum || !_buyer || _order?.canPay != true) return;
     setState(() {
@@ -144,6 +166,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen>
             .commerceGet('orders/${widget.orderId}'),
       );
       if (mounted) {
+        _goToPurchases(order);
         setState(() {
           _order = order;
           if (order.status == 'awaiting_payment') {
@@ -632,7 +655,9 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen>
                             onPressed: _busy
                                 ? null
                                 : _paid
-                                ? () => context.go('/commerce')
+                                ? () => context.go(
+                                    '/activity?filter=wins&purchase=${order.id}',
+                                  )
                                 : order.canPay &&
                                       _buyer &&
                                       !_belowMinimum &&

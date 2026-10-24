@@ -9,15 +9,11 @@ import {
 import { FileInterceptor } from "@nestjs/platform-express";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { CurrentUser } from "../common/current-user.decorator";
-import { Roles } from "../common/roles.decorator";
-import { RolesGuard } from "../common/roles.guard";
-import { UserRole } from "../users/schemas/user.schema";
 import { MAX_IMAGE_BYTES } from "./image-policy";
 import { ImageCapacityInterceptor } from "./image-capacity.interceptor";
 import { UploadsService } from "./uploads.service";
 
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.Seller, UserRole.Admin)
+@UseGuards(JwtAuthGuard)
 @Controller("uploads")
 export class UploadsController {
   constructor(private readonly uploadsService: UploadsService) {}

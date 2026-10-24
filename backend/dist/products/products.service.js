@@ -19,7 +19,6 @@ const config_1 = require("@nestjs/config");
 const commerce_accounts_service_1 = require("../commerce/commerce-accounts.service");
 const mongoose_1 = require("@nestjs/mongoose");
 const mongoose_2 = require("mongoose");
-const user_schema_1 = require("../users/schemas/user.schema");
 const product_schema_1 = require("./schemas/product.schema");
 let ProductsService = class ProductsService {
     constructor(productModel, config, commerceAccounts, uploads) {
@@ -29,8 +28,8 @@ let ProductsService = class ProductsService {
         this.uploads = uploads;
     }
     async create(seller, dto) {
-        if (seller.role !== user_schema_1.UserRole.Seller && seller.role !== user_schema_1.UserRole.Admin) {
-            throw new common_1.ForbiddenException("Seller approval is required before listing products.");
+        if (seller.blocked) {
+            throw new common_1.ForbiddenException("Account is blocked.");
         }
         if (dto.reservePrice && dto.reservePrice < dto.startingPrice) {
             throw new common_1.BadRequestException("Reserve price must be at least the starting price.");

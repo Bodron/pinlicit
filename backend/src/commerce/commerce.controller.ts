@@ -126,14 +126,10 @@ export class CommerceController {
   ) {
     return this.accounts.startConnect(user, dto.businessType);
   }
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.Seller, UserRole.Admin)
   @Get("seller/earnings")
   earnings(@CurrentUser() user: any) {
     return this.orders.sellerEarnings(String(user._id));
   }
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.Seller, UserRole.Admin)
   @Post("seller/withdraw")
   withdraw(@CurrentUser() user: any) {
     return this.orders.releaseForSeller(String(user._id));

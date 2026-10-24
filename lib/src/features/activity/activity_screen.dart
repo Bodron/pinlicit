@@ -1,3 +1,4 @@
+import '../commerce/commerce_models.dart';
 import '../../shared/images/product_image.dart';
 import 'package:licit/l10n/l10n.dart';
 import 'package:flutter/material.dart';
@@ -14,9 +15,15 @@ import '../../shared/utils/money.dart';
 enum _ActivityFilter { all, bids, watching, wins }
 
 class ActivityScreen extends ConsumerStatefulWidget {
-  const ActivityScreen({super.key, this.showSales = false});
+  const ActivityScreen({
+    super.key,
+    this.showSales = false,
+    this.showWins = false,
+    this.purchaseId,
+  });
 
-  final bool showSales;
+  final bool showSales, showWins;
+  final String? purchaseId;
 
   @override
   ConsumerState<ActivityScreen> createState() => _ActivityScreenState();
@@ -24,6 +31,8 @@ class ActivityScreen extends ConsumerStatefulWidget {
 
 class _ActivityScreenState extends ConsumerState<ActivityScreen> {
   List<Bid> _bids = [];
+  List<CommerceOrder> _purchases = [];
+  final Map<String, Future<Product>> _purchasePreviews = {};
   Set<String> _wonProductIds = {};
   List<Product> _favorites = [];
   _ActivityFilter _filter = _ActivityFilter.all;
@@ -36,15 +45,21 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
   void initState() {
     super.initState();
     _salesVisited = widget.showSales;
+    if (widget.showWins) _filter = _ActivityFilter.wins;
     if (!widget.showSales) _load();
   }
 
   @override
   void didUpdateWidget(covariant ActivityScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.showWins != widget.showWins ||
+        oldWidget.purchaseId != widget.purchaseId) {
+      _filter = widget.showWins ? _ActivityFilter.wins : _ActivityFilter.all;
+    }
     if (widget.showSales) {
       _salesVisited = true;
-    } else if (!_purchasesVisited) {
+    } else if (!_purchasesVisited ||
+        oldWidget.purchaseId != widget.purchaseId) {
       _load();
     }
   }
@@ -171,10 +186,22 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
       return _ActivityMessage(message: context.l10n.watchlistEmpty);
     }
 
-    final items = _filter == _ActivityFilter.wins
-        ? _bids.where(_isWin).toList()
-        : _bids;
-    if (items.isEmpty) {
+    final purchases =
+        [_ActivityFilter.all, _ActivityFilter.wins].contains(_filter)
+        ? _purchases
+              .where(
+                (order) =>
+                    _filter != _ActivityFilter.wins ||
+                    !['payment_expired', 'refunded'].contains(order.status),
+              )
+              .toList()
+        : <CommerceOrder>[];
+    final purchasedIds = purchases.map((order) => order.productId).toSet();
+    final items =
+        (_filter == _ActivityFilter.wins ? _bids.where(_isWin) : _bids)
+            .where((bid) => !purchasedIds.contains(bid.product?.id))
+            .toList();
+    if (items.isEmpty && purchases.isEmpty) {
       return _ActivityMessage(
         message: _filter == _ActivityFilter.wins
             ? context.l10n.noWonAuctions
@@ -186,10 +213,23 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
       onRefresh: _load,
       child: ListView.separated(
         padding: const EdgeInsets.fromLTRB(16, 18, 16, 28),
-        itemCount: items.length,
+        itemCount: purchases.length + items.length,
         separatorBuilder: (_, _) => const SizedBox(height: 12),
-        itemBuilder: (context, index) =>
-            _ActivityCard(bid: items[index], won: _isWin(items[index])),
+        itemBuilder: (context, index) {
+          if (index < purchases.length) {
+            final order = purchases[index];
+            return _PurchaseActivityCard(
+              key: ValueKey(order.id),
+              order: order,
+              product: _purchasePreviews.putIfAbsent(
+                order.productId,
+                () => ref.read(apiClientProvider).product(order.productId),
+              ),
+            );
+          }
+          final bid = items[index - purchases.length];
+          return _ActivityCard(bid: bid, won: _isWin(bid));
+        },
       ),
     );
   }
@@ -222,9 +262,16 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
           _bids = results[0] as List<Bid>;
           _favorites = results[1] as List<Product>;
           final userId = ref.read(sessionControllerProvider).user?.id;
-          _wonProductIds = (results[2] as List<Map<String, dynamic>>)
+          _purchases = (results[2] as List<Map<String, dynamic>>)
               .where((order) => order['buyerId'] == userId)
-              .map((order) => order['productId'] as String)
+              .map(CommerceOrder.fromJson)
+              .toList();
+          _wonProductIds = _purchases
+              .where(
+                (order) =>
+                    !['payment_expired', 'refunded'].contains(order.status),
+              )
+              .map((order) => order.productId)
               .toSet();
         });
       }
@@ -315,6 +362,81 @@ class _Tab extends StatelessWidget {
                 ? const Color(0xff363a34)
                 : const Color(0xff454842).withValues(alpha: 0.65),
             fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+class _PurchaseActivityCard extends StatelessWidget {
+  const _PurchaseActivityCard({
+    super.key,
+    required this.order,
+    required this.product,
+  });
+  final CommerceOrder order;
+  final Future<Product> product;
+  @override
+  Widget build(BuildContext context) => FutureBuilder<Product>(
+    future: product,
+    builder: (context, snapshot) => Material(
+      color: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: Color(0xffe2e2e3)),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => context.push('/checkout/${order.id}'),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              _ProductActivityImage(
+                imageUrl: snapshot.data?.imageForWidth(240),
+                icon: Icons.shopping_bag_outlined,
+                accent: const Color(0xff0f766e),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      order.label,
+                      style: const TextStyle(
+                        color: Color(0xff0f766e),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      order.title,
+                      style: const TextStyle(
+                        color: Color(0xff363a34),
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 7),
+                    Text(
+                      formatRon(order.amount),
+                      style: const TextStyle(
+                        color: Color(0xff454842),
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: Color(0xff70746b),
+                size: 22,
+              ),
+            ],
           ),
         ),
       ),

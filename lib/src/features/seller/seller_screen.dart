@@ -1,6 +1,5 @@
 import '../../shared/images/product_image.dart';
 import 'package:licit/l10n/l10n.dart';
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -8,29 +7,21 @@ import 'package:go_router/go_router.dart';
 
 import '../products/create_product_screen.dart';
 import '../../shared/models/product.dart';
-import '../../shared/models/seller_application.dart';
 import '../../shared/state/session_controller.dart';
 import '../../shared/notifications/app_notifier.dart';
 import '../../shared/state/catalog_updates.dart';
 import '../../shared/utils/money.dart';
 
-/// The publishing tab contains only the form (or the required seller access).
+/// Free publishing for every authenticated account.
 class SellScreen extends ConsumerWidget {
   const SellScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isSeller = ref.watch(
-      sessionControllerProvider.select(
-        (session) => session.user?.isSeller == true,
-      ),
-    );
     // Discard a successfully published draft, but preserve unfinished forms
     // when navigating between the persistent tabs.
     final revision = ref.watch(catalogUpdatesProvider);
-    return isSeller
-        ? CreateProductScreen(key: ValueKey(revision))
-        : const SellerAccessScreen();
+    return CreateProductScreen(key: ValueKey(revision));
   }
 }
 
@@ -59,7 +50,7 @@ class _SellerScreenState extends ConsumerState<SellerScreen> {
     ref.listen(catalogUpdatesProvider, (_, _) => _load());
     final session = ref.watch(sessionControllerProvider);
     final user = session.user;
-    if (user?.isSeller != true) return const SellerAccessScreen();
+
     final theme = Theme.of(context).copyWith(
       textTheme: GoogleFonts.montserratTextTheme(Theme.of(context).textTheme),
     );
@@ -176,7 +167,7 @@ class _SellerScreenState extends ConsumerState<SellerScreen> {
 
   Future<void> _load() async {
     final request = ++_request;
-    if (ref.read(sessionControllerProvider).user?.isSeller != true) {
+    if (ref.read(sessionControllerProvider).user == null) {
       setState(() => _loading = false);
       return;
     }
@@ -204,106 +195,9 @@ class _SellerScreenState extends ConsumerState<SellerScreen> {
   }
 }
 
-/// Shared access form for accounts that cannot publish yet.
-class SellerAccessScreen extends ConsumerStatefulWidget {
-  const SellerAccessScreen({super.key});
-  @override
-  ConsumerState<SellerAccessScreen> createState() => _SellerAccessScreenState();
-}
-
-class _SellerAccessScreenState extends ConsumerState<SellerAccessScreen> {
-  final _displayName = TextEditingController();
-  final _phone = TextEditingController();
-  final _notes = TextEditingController();
-  List<SellerApplication> _applications = [];
-  bool _loading = true;
-  bool _submitting = false;
-  String? _message;
-
-  @override
-  void initState() {
-    super.initState();
-    final user = ref.read(sessionControllerProvider).user;
-    _displayName.text = user?.name ?? '';
-    _phone.text = user?.phone ?? '';
-    _load();
-  }
-
-  @override
-  void dispose() {
-    _displayName.dispose();
-    _phone.dispose();
-    _notes.dispose();
-    super.dispose();
-  }
-
-  Future<void> _load() async {
-    try {
-      final applications = await ref
-          .read(apiClientProvider)
-          .mySellerApplications();
-      if (mounted) setState(() => _applications = applications);
-    } catch (error) {
-      if (mounted) {
-        setState(() => _message = localizedError(error, context.l10n));
-      }
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
-  }
-
-  Future<void> _requestSeller() async {
-    if (_submitting) return;
-    setState(() {
-      _submitting = true;
-      _message = null;
-    });
-    try {
-      await ref
-          .read(apiClientProvider)
-          .requestSeller(
-            displayName: _displayName.text.trim(),
-            contactPhone: _phone.text.trim(),
-            notes: _notes.text.trim(),
-          );
-      if (mounted) await _load();
-    } on DioException catch (error) {
-      if (mounted) {
-        setState(() => _message = localizedError(error, context.l10n));
-      }
-    } finally {
-      if (mounted) setState(() => _submitting = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) => RefreshIndicator(
-    onRefresh: _load,
-    child: ListView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
-      children: [
-        if (_loading) const _LoadingStrip(),
-        if (_message != null) ...[
-          _InlineNotice(icon: Icons.info_outline, text: _message!),
-          const SizedBox(height: 16),
-        ],
-        _SellerApplicationPanel(
-          displayName: _displayName,
-          phone: _phone,
-          notes: _notes,
-          applications: _applications,
-          onSubmit: _submitting ? null : _requestSeller,
-        ),
-      ],
-    ),
-  );
-}
-
 class _SellerColors {
   static const background = Color(0xfff9f9fa);
   static const surface = Color(0xffffffff);
-  static const surfaceLow = Color(0xfff3f3f4);
   static const surfaceContainer = Color(0xffeeeeef);
   static const surfaceHigh = Color(0xffe8e8e9);
   static const secondaryContainer = Color(0xffe4e3d8);
@@ -1039,121 +933,6 @@ class _SoldItemRow extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _SellerApplicationPanel extends StatelessWidget {
-  const _SellerApplicationPanel({
-    required this.displayName,
-    required this.phone,
-    required this.notes,
-    required this.applications,
-    required this.onSubmit,
-  });
-
-  final TextEditingController displayName;
-  final TextEditingController phone;
-  final TextEditingController notes;
-  final List<SellerApplication> applications;
-  final VoidCallback? onSubmit;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: _SellerColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: _SellerColors.outlineVariant.withValues(alpha: 0.3),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            context.l10n.becomeSeller,
-            style: const TextStyle(
-              color: _SellerColors.primary,
-              fontSize: 24,
-              height: 1.35,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            context.l10n.sellerApplicationDescription,
-            style: const TextStyle(
-              color: _SellerColors.onSurfaceVariant,
-              fontSize: 14,
-              height: 1.5,
-            ),
-          ),
-          const SizedBox(height: 20),
-          TextField(
-            controller: displayName,
-            style: const TextStyle(color: _SellerColors.primary),
-            decoration: _inputDecoration(context.l10n.sellerName),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: phone,
-            keyboardType: TextInputType.phone,
-            style: const TextStyle(color: _SellerColors.primary),
-            decoration: _inputDecoration(context.l10n.contactPhone),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: notes,
-            minLines: 3,
-            maxLines: 5,
-            style: const TextStyle(color: _SellerColors.primary),
-            decoration: _inputDecoration(context.l10n.whatDoYouSell),
-          ),
-          const SizedBox(height: 16),
-          FilledButton.icon(
-            onPressed: onSubmit,
-            style: FilledButton.styleFrom(
-              backgroundColor: _SellerColors.primary,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            icon: const Icon(Icons.send_outlined),
-            label: Text(context.l10n.submitApplication),
-          ),
-          if (applications.isNotEmpty) ...[
-            const SizedBox(height: 20),
-            for (final application in applications)
-              _InlineNotice(
-                icon: Icons.verified_user_outlined,
-                text:
-                    '${application.displayName} - ${application.contactPhone} - ${localizedStatus(application.status, context.l10n)}',
-              ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  InputDecoration _inputDecoration(String label) {
-    return InputDecoration(
-      labelText: label,
-      labelStyle: const TextStyle(color: _SellerColors.onSurfaceVariant),
-      filled: true,
-      fillColor: _SellerColors.surfaceLow,
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(
-          color: _SellerColors.outlineVariant.withValues(alpha: 0.35),
-        ),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: _SellerColors.primary),
       ),
     );
   }

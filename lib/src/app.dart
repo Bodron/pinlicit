@@ -139,6 +139,8 @@ final routerProvider = Provider<GoRouter>((ref) {
                 path: '/activity',
                 builder: (context, state) => ActivityScreen(
                   showSales: state.uri.queryParameters['section'] == 'sales',
+                  showWins: state.uri.queryParameters['filter'] == 'wins',
+                  purchaseId: state.uri.queryParameters['purchase'],
                 ),
               ),
             ],

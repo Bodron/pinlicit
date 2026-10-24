@@ -114,8 +114,6 @@ export class CommerceAccountsService {
     user: { _id: unknown; role: string; email: string },
     businessType: "individual" | "company",
   ) {
-    if (!["seller", "admin"].includes(user.role))
-      throw new ForbiddenException("Seller approval is required.");
     await this.requireEligibleSeller(String(user._id));
     const sdk = this.stripe.sdk;
     const refreshUrl = this.stripe.returnUrl("STRIPE_CONNECT_REFRESH_URL");
@@ -312,7 +310,6 @@ export class CommerceAccountsService {
       !(await this.users.exists({
         _id: userId,
         blocked: false,
-        role: { $in: ["seller", "admin"] },
       }))
     ) {
       throw new ForbiddenException(

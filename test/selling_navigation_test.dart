@@ -204,12 +204,15 @@ void main() {
   );
 
   testWidgets(
-    'buyer keeps seller application gate instead of publishing form',
+    'regular users publish directly and can manage their own listings',
     (tester) async {
-      await mount(tester, role: 'user');
-      expect(find.byType(SellerAccessScreen), findsOneWidget);
-      expect(find.byType(CreateProductScreen), findsNothing);
-      expect(find.text('Performanță'), findsNothing);
+      final (router, api, _) = await mount(tester, role: 'user');
+      expect(find.byType(CreateProductScreen), findsOneWidget);
+      expect(find.text('Devino vânzător'), findsNothing);
+      router.go('/activity?section=sales');
+      await tester.pumpAndSettle();
+      expect(api.productsRead, 1);
+      expect(find.text('Performanță'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
   );

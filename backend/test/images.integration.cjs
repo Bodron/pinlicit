@@ -65,7 +65,7 @@ async function main() {
       name: "Seller",
       email: "seller@local.invalid",
       passwordHash: "unused",
-      role: "seller",
+      role: "user",
     });
     const buyer = await users.create({
       name: "Buyer",
@@ -77,7 +77,7 @@ async function main() {
       name: "Other seller",
       email: "other@local.invalid",
       passwordHash: "unused",
-      role: "seller",
+      role: "user",
     });
     const jwt = module.get(JwtService);
     const token = (user) =>
@@ -112,7 +112,15 @@ async function main() {
       .post("/uploads/images")
       .attach("image", image, "product.png")
       .expect(401);
-    await upload(buyer).expect(403);
+    await users.updateOne({ _id: buyer._id }, { blocked: true });
+    await upload(buyer).expect(401);
+    await api
+      .post("/products")
+      .set("Authorization", "Bearer " + token(buyer))
+      .send({})
+      .expect(401);
+    await users.updateOne({ _id: buyer._id }, { blocked: false });
+
     const uploaded = await upload(seller);
     assert.equal(uploaded.status, 201, JSON.stringify(uploaded.body));
     assert(uploaded.body.variants.length >= 2);
@@ -186,6 +194,7 @@ async function main() {
       .set("Authorization", "Bearer " + token(seller))
       .send(dto)
       .expect(201);
+    assert.equal((await users.findById(seller._id)).role, "user");
     assert.equal(product.body.imageUrl, uploaded.body.imageUrl);
     assert.equal(
       product.body.imageVariants.length,

@@ -80,8 +80,7 @@ class _CommerceScreenState extends ConsumerState<CommerceScreen>
       }
       final orders = await api.commerceList('orders');
       final deposits = await api.commerceList('deposits');
-      final products =
-          ref.read(sessionControllerProvider).user?.isSeller == true
+      final products = ref.read(sessionControllerProvider).user != null
           ? await api.myProducts()
           : <Product>[];
       if (!mounted) return;
@@ -359,7 +358,7 @@ class _CommerceScreenState extends ConsumerState<CommerceScreen>
                         ),
                       ),
                     ),
-                    if (['seller', 'admin'].contains(user?.role))
+                    if (user != null)
                       Card(
                         child: Padding(
                           padding: const EdgeInsets.all(16),

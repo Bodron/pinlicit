@@ -43,10 +43,7 @@ class _PaymentMethodsScreenState extends ConsumerState<PaymentMethodsScreen>
     if (_foreground && !_busy) _load(quiet: true);
   }
 
-  bool get _seller => [
-    'seller',
-    'admin',
-  ].contains(ref.read(sessionControllerProvider).user?.role);
+  bool get _seller => ref.read(sessionControllerProvider).user != null;
   Future<void> _load({bool quiet = false}) async {
     if (_refreshing) return;
     _refreshing = true;

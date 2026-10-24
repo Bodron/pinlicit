@@ -107,8 +107,6 @@ let CommerceAccountsService = class CommerceAccountsService {
         });
     }
     async startConnect(user, businessType) {
-        if (!["seller", "admin"].includes(user.role))
-            throw new common_1.ForbiddenException("Seller approval is required.");
         await this.requireEligibleSeller(String(user._id));
         const sdk = this.stripe.sdk;
         const refreshUrl = this.stripe.returnUrl("STRIPE_CONNECT_REFRESH_URL");
@@ -273,7 +271,6 @@ let CommerceAccountsService = class CommerceAccountsService {
         if (!(await this.users.exists({
             _id: userId,
             blocked: false,
-            role: { $in: ["seller", "admin"] },
         }))) {
             throw new common_1.ForbiddenException("Seller account is not eligible for transfers.");
         }
