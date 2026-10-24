@@ -6,6 +6,10 @@
     <array><dict><key>CFBundleURLSchemes</key><array><string>pinbind</string></array></dict></array>
     <key>NSCameraUsageDescription</key>
     <string>Poți scana cardul în formularul securizat Stripe.</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>Pinbind îți permite să alegi fotografii din bibliotecă pentru a le adăuga la anunțurile tale.</string>
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>Componenta foto poate folosi locația în timpul utilizării pentru a asocia locul realizării fotografiilor făcute pentru anunțurile tale.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>

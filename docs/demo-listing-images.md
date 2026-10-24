@@ -32,3 +32,18 @@ Mostrele refolosesc imaginile ilustrative, au prețuri de test și expiră la 14
 ### Activarea mostrelor după actualizarea backendului
 
 După publicarea backendului cu `deferredSellerOnboarding=true`, `node scripts/add-demo-listings.cjs --enable-stripe` verifică planul fără modificări. `node scripts/add-demo-listings.cjs --apply --enable-stripe` înscrie numai aceste trei mostre în checkout sandbox. Cere buildul nou și Stripe sandbox activ, verifică vânzătorul eligibil și folosește tranzacții; omite mostrele rezervate/expirate sau cu oferte, garanții ori comenzi. Nu modifică cele trei anunțuri originale și nu fabrică un rezultat Identity/Connect. Sumele sunt simulate, iar descrierile păstrează eticheta demonstrativă. Nu rula activarea înainte să actualizezi procesul public.
+
+## Catalog suplimentar — 24 octombrie 2026
+
+Lotul `pinbind-catalog-demo-2026-10-v1` adaugă 12 mostre separate: cameră foto, căști, laptop, ceas, sneakers, ținută casual, decorațiuni de Crăciun, Audi coupé, lampadar, partituri, BMW albastru și telefon cu căști. Sunt distribuite în cele cinci categorii existente. Prețurile sunt în bani, cu afișare în RON; licitațiile expiră eșalonat după 3–14 zile.
+
+Fotografiile au fost verificate vizual și descărcate pentru verificarea formatului/dimensiunilor. Fiecare anunț are trei dimensiuni publice Pexels (320, 960 și 1280), fără a depinde de accesul S3. Sursele sunt în [manifestul catalogului](../backend/scripts/catalog-demo-products.json), în metadatele `demoImage` și în descrierea fiecărui anunț. Se aplică [Pexels License](https://www.pexels.com/license/). Sunt imagini ilustrative pentru produse fictive, marcate DEMO.
+
+Din `backend`:
+
+```sh
+node scripts/add-catalog-demos.cjs --enable-stripe
+node scripts/add-catalog-demos.cjs --apply --enable-stripe
+```
+
+Prima comandă verifică planul, fără scrieri. A doua adaugă mostrele cu checkout sandbox și verifică existența vânzătorului demo eligibil, Stripe în modul test și suportul backendului pentru onboarding amânat. Nu creează plăți, oferte sau comenzi și nu modifică verificările contului. Fără `--enable-stripe`, mostrele sunt doar de afișare. ID-urile sunt stabile: reluarea omite documentele existente fără a le reactiva, schimba sau duplica, inclusiv dacă au fost vândute.

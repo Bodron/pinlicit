@@ -1,0 +1,122 @@
+[
+  {
+    "slug": "camera-mirrorless",
+    "title": "Aparat foto mirrorless cu obiectiv",
+    "category": "electronice",
+    "photo": 90946,
+    "price": 120000,
+    "buy": 220000,
+    "increment": 2500,
+    "description": "Cameră foto compactă, cu obiectiv interschimbabil și finisaj negru. Ideală pentru a testa afișarea unui anunț de fotografie."
+  },
+  {
+    "slug": "casti-albe",
+    "title": "Căști wireless over-ear, alb mat",
+    "category": "electronice",
+    "photo": 3394650,
+    "price": 15000,
+    "buy": 45000,
+    "increment": 1000,
+    "description": "Design minimalist, cupe mari și finisaj alb mat. Mostră pentru categoria audio."
+  },
+  {
+    "slug": "laptop-aluminiu",
+    "title": "Laptop ultraportabil din aluminiu",
+    "category": "electronice",
+    "photo": 205421,
+    "price": 90000,
+    "buy": 190000,
+    "increment": 2500,
+    "description": "Laptop subțire cu tastatură neagră și carcasă argintie. Fotografie de prezentare pe fundal din lemn."
+  },
+  {
+    "slug": "ceas-cronograf",
+    "title": "Ceas cronograf cu brățară metalică",
+    "category": "fashion",
+    "photo": 190819,
+    "price": 25000,
+    "buy": 70000,
+    "increment": 1000,
+    "description": "Cadran închis, detalii galbene și brățară din oțel. Un accesoriu cu aspect sportiv."
+  },
+  {
+    "slug": "sneakers-color",
+    "title": "Sneakers sport cu accente colorate",
+    "category": "fashion",
+    "photo": 2529148,
+    "price": 12000,
+    "buy": 35000,
+    "increment": 500,
+    "description": "Pantofi sport gri, cu detalii galbene și roșii. Fotografie de produs cu fundal curat."
+  },
+  {
+    "slug": "tinuta-casual",
+    "title": "Set casual: pulover crem și jeans",
+    "category": "fashion",
+    "photo": 934070,
+    "price": 8000,
+    "buy": 24000,
+    "increment": 500,
+    "description": "Ținută în tonuri neutre, cu pulover texturat și denim. Mostră pentru testarea categoriei fashion."
+  },
+  {
+    "slug": "decor-craciun",
+    "title": "Set de decorațiuni pentru Crăciun",
+    "category": "casa",
+    "photo": 186614,
+    "price": 5000,
+    "buy": 15000,
+    "increment": 500,
+    "description": "Decorațiuni festive, conuri de brad și accente roșii, fotografiate în lumină caldă."
+  },
+  {
+    "slug": "audi-coupe",
+    "title": "Audi coupé negru, stil sport",
+    "category": "auto",
+    "photo": 909907,
+    "price": 3500000,
+    "buy": 6900000,
+    "increment": 10000,
+    "description": "Coupé negru într-un cadru urban din cărămidă. Anunț auto fictiv, exclusiv pentru testare."
+  },
+  {
+    "slug": "lampadar-negru",
+    "title": "Lampadar negru cu braț curbat",
+    "category": "casa",
+    "photo": 112811,
+    "price": 10000,
+    "buy": 35000,
+    "increment": 1000,
+    "description": "Lampă de podea cu siluetă simplă, abajur negru și braț curbat. Potrivită vizual unui interior modern."
+  },
+  {
+    "slug": "partituri-vintage",
+    "title": "Colecție de partituri muzicale",
+    "category": "collectibles",
+    "photo": 164821,
+    "price": 4000,
+    "buy": 12000,
+    "increment": 500,
+    "description": "Pagini cu notație muzicală, fotografiate în prim-plan. Mostră pentru categoria de obiecte de colecție."
+  },
+  {
+    "slug": "bmw-albastru",
+    "title": "BMW sedan albastru, pachet sport",
+    "category": "auto",
+    "photo": 170811,
+    "price": 2800000,
+    "buy": 5800000,
+    "increment": 10000,
+    "description": "Sedan albastru fotografiat în lumină naturală. Anunț fictiv pentru explorarea categoriei Auto."
+  },
+  {
+    "slug": "telefon-argintiu",
+    "title": "Telefon argintiu cu căști wireless",
+    "category": "electronice",
+    "photo": 788946,
+    "price": 45000,
+    "buy": 110000,
+    "increment": 2500,
+    "description": "Telefon cu finisaj argintiu și căști albe, pe fundal neutru. Mostră pentru testarea anunțurilor de telefonie."
+  }
+]
