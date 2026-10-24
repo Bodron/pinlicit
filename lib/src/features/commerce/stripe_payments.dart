@@ -29,7 +29,7 @@ class StripePayments {
       final intent = await Stripe.instance.retrievePaymentIntent(clientSecret);
       if (intent.livemode || intent.currency.toLowerCase() != 'ron') {
         throw StateError(
-          'Configurația plății nu corespunde modului de test RON.',
+          'Plata nu poate fi inițiată. Verifică starea comenzii și încearcă din nou.',
         );
       }
       if (intent.amount < 300) {

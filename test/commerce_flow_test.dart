@@ -84,10 +84,15 @@ class _StatusApi extends ApiClient {
 
 class _PayoutApi extends ApiClient {
   Map<String, dynamic>? onboarding;
+  int earningsRequests = 0;
   @override
   Future<Map<String, dynamic>> commerceGet(String path) async => switch (path) {
     'config' => {'enabled': true, 'ready': true},
-    'seller/earnings' => {'readyForRelease': 19000, 'awaitingDelivery': 10000},
+    'seller/earnings' => {
+      'readyForRelease': 19000,
+      'awaitingDelivery': 10000,
+      'requestCount': ++earningsRequests,
+    },
     _ => {
       'identity': {'status': 'unverified'},
       'sellerPayments': {'connected': false},
@@ -105,6 +110,34 @@ class _PayoutApi extends ApiClient {
 }
 
 void main() {
+  testWidgets('buyer can view payments without requesting seller earnings', (
+    tester,
+  ) async {
+    final api = _PayoutApi();
+    final session = SessionController(api, SecureTokenStore())
+      ..user = const AppUser(
+        id: 'buyer',
+        name: 'Buyer',
+        email: 'buyer@example.invalid',
+        role: 'user',
+        blocked: false,
+      );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          apiClientProvider.overrideWithValue(api),
+          sessionControllerProvider.overrideWith((ref) => session),
+        ],
+        child: const MaterialApp(home: PaymentMethodsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Plățile tale'), findsOneWidget);
+    expect(find.text('Încasări din vânzări'), findsNothing);
+    expect(api.earningsRequests, 0);
+    expect(find.textContaining('Mod de test'), findsNothing);
+    await tester.pumpWidget(const SizedBox());
+  });
   Map<String, dynamic> order(String state) => {
     'id': 'order',
     'productId': 'product',
@@ -146,7 +179,14 @@ void main() {
         );
         await tester.pumpAndSettle();
         final configure = find.text('Configurează încasările');
-        await tester.ensureVisible(configure);
+        for (
+          var i = 0;
+          i < 12 && configure.hitTestable().evaluate().isEmpty;
+          i++
+        ) {
+          await tester.drag(find.byType(ListView), const Offset(0, -220));
+          await tester.pumpAndSettle();
+        }
         await tester.tap(configure);
         await tester.pumpAndSettle();
         expect(find.text('Persoană fizică'), findsOneWidget);
@@ -154,6 +194,8 @@ void main() {
         await tester.tap(find.text(choice.key));
         await tester.pumpAndSettle();
         expect(api.onboarding, {'businessType': choice.value});
+        await tester.fling(find.byType(ListView), const Offset(0, 1800), 3000);
+        await tester.pumpAndSettle();
         expect(find.text('Link Stripe invalid.'), findsOneWidget);
         await tester.pumpWidget(const SizedBox());
       },

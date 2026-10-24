@@ -14,6 +14,8 @@ String commerceError(Object error) {
     final message = body is Map ? body['message'] : null;
     if (message is String) {
       const translations = {
+        'Forbidden resource':
+            'Nu ai acces la această secțiune. Verifică dacă ești autentificat cu contul potrivit.',
         'Identity verification is required before payment.':
             'Verifică-ți identitatea prin Stripe înainte de licitare sau plată.',
         'The Stripe account type cannot be changed here. Contact support.':
@@ -29,7 +31,7 @@ String commerceError(Object error) {
         'A confirmed 10% bid guarantee is required.':
             'Achită și confirmă garanția de 10% înainte de ofertă.',
         'Order amount is below the minimum card payment of 3 RON.':
-            'Suma comenzii este sub minimul de 3 lei pentru plata cu cardul. Contactează suportul pentru corectarea rezervării de test.',
+            'Suma comenzii este sub minimul de 3 lei pentru plata cu cardul. Contactează suportul pentru verificarea rezervării.',
         'Order is not payable.':
             'Comanda nu mai poate fi plătită. Verifică starea și termenul ei.',
         'Maximum bid must be between 30 and 999999.99 RON.':
@@ -107,7 +109,7 @@ Future<bool> ensureBidGuarantee(
     builder: (context) => AlertDialog(
       title: const Text('Garanție de participare — 10%'),
       content: Text(
-        'Maxim de licitare: ${formatRon(maximum)}.\n\nDe achitat acum: ${formatRon((quote['amount'] as num).toInt())}.\n\nDacă pierzi, garanția se rambursează după închiderea licitației. Dacă câștigi, se scade din preț; orice surplus se restituie. Majorarea maximului poate cere o completare.\n\nNu este comision. Ești în modul de test.',
+        'Maxim de licitare: ${formatRon(maximum)}.\n\nDe achitat acum: ${formatRon((quote['amount'] as num).toInt())}.\n\nDacă pierzi, garanția se rambursează după închiderea licitației. Dacă câștigi, se scade din preț; orice surplus se restituie. Majorarea maximului poate cere o completare.\n\nGaranția nu este un comision.',
       ),
       actions: [
         TextButton(

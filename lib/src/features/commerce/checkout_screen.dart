@@ -349,27 +349,6 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen>
                         height: 1.6,
                       ),
                     ),
-                    if (_config?['mode'] == 'test')
-                      Padding(
-                        padding: const EdgeInsets.only(top: 14),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 6,
-                              height: 6,
-                              decoration: const BoxDecoration(
-                                color: _teal,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            const SizedBox(width: 7),
-                            const Text(
-                              'Mod de test · fără bani reali',
-                              style: TextStyle(fontSize: 10, color: _muted),
-                            ),
-                          ],
-                        ),
-                      ),
                     if (_error != null) _message(_error!, error: true),
                     if (_notice != null) _message(_notice!),
                     const SizedBox(height: 22),
@@ -560,7 +539,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen>
                       ),
                       if (_belowMinimum && order.canPay)
                         _message(
-                          'Suma acestei rezervări este sub minimul de ${formatRon(_minimum)} acceptat de aplicație. Nu poate fi plătită cu cardul. Contactează suportul pentru corectarea anunțului de test.',
+                          'Suma acestei rezervări este sub minimul de ${formatRon(_minimum)} acceptat de aplicație. Nu poate fi plătită cu cardul. Contactează suportul pentru verificarea anunțului.',
                           error: true,
                         ),
                       if (_config?['ready'] != true)

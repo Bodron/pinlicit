@@ -304,10 +304,6 @@ class _CommerceScreenState extends ConsumerState<CommerceScreen>
                 child: ListView(
                   padding: const EdgeInsets.all(20),
                   children: [
-                    const Text(
-                      'Mod de test Stripe — fără bani reali.',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
                     if (_error != null)
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 12),

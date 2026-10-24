@@ -124,3 +124,7 @@ Fotografiile trec prin `POST /uploads/images` ca multipart: backend-ul valideaz�
 ## Plăți Stripe în aplicația mobilă
 
 Profil → **Plăți și comenzi** deschide verificarea identității, configurarea încasărilor și comenzile. Licitarea pe anunțurile Stripe cere o garanție rambursabilă de 10% din maximul ales. Plata produsului folosește PaymentSheet în aplicație, cu garanția scăzută din preț. Implementarea este exclusiv sandbox; instrucțiunile și limitele sunt în [ghidul de testare mobilă](docs/stripe-mobile-testing.md).
+
+## iOS / Codemagic / TestFlight
+
+Workflow-ul `ios-app-store` din `codemagic.yaml` construiește **Pinbind** cu identificatorul `com.pinbind.ro`. Configurarea certificatelor și a variabilelor este descrisă în [ghidul Codemagic](docs/codemagic-ios.md).
